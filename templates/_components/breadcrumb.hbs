@@ -1,13 +1,7 @@
-<nav aria-label="パンくず">
-  <ol>
-    {{#each breadcrumb}}
-    <li>
-      {{#if this.url}}
-      <a href="{{this.url}}">{{this.label}}</a>
-      {{else}}
-      <span>{{this.label}}</span>
-      {{/if}}
-    </li>
-    {{/each}}
-  </ol>
+<nav class="breadcrumb" aria-label="パンくず">
+  {{#each breadcrumb}}
+  <span>
+    {{#if this.url}}<a href="{{this.url}}">{{this.label}}</a>{{else}}{{this.label}}{{/if}}
+  </span>
+  {{/each}}
 </nav>

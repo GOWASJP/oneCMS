@@ -1,17 +1,12 @@
-{{> breadcrumb}}
-<h1>{{type.label}}</h1>
-
 <div class="card-list">
   {{#each items}}
   <article class="card">
     {{#if this.image}}<img src="{{this.image}}" alt="{{this.title}}">{{/if}}
     <div class="card-body">
       <h3><a href="{{this.url}}">{{this.title}}</a></h3>
-      {{#if this.publishedAt}}<time>{{formatDate this.publishedAt "YYYY年MM月DD日"}}</time>{{/if}}
-      <p>{{truncate this.body 120}}</p>
+      {{#if this.date}}<time>{{this.date}}</time>{{/if}}
+      {{#if this.excerpt}}<p>{{this.excerpt}}</p>{{/if}}
     </div>
   </article>
   {{/each}}
 </div>
-
-{{> pagination}}

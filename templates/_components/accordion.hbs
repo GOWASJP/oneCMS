@@ -1,0 +1,8 @@
+<div class="accordion">
+  {{#each items}}
+  <details{{#if @first}} open{{/if}}>
+    <summary>{{this.title}}</summary>
+    <div class="accordion-content">{{{this.content}}}</div>
+  </details>
+  {{/each}}
+</div>

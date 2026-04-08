@@ -1,0 +1,12 @@
+<div class="tabs" x-data="{ active: 0 }">
+  <div role="tablist">
+    {{#each items}}
+    <button role="tab" :aria-selected="active === {{@index}}" @click="active = {{@index}}">{{this.label}}</button>
+    {{/each}}
+  </div>
+  {{#each items}}
+  <div role="tabpanel" x-show="active === {{@index}}">
+    {{{this.content}}}
+  </div>
+  {{/each}}
+</div>

@@ -1,0 +1,8 @@
+<div class="card-list">
+  {{#each images}}
+  <figure class="card">
+    <img src="{{this.url}}" alt="{{this.alt}}">
+    {{#if this.caption}}<figcaption>{{this.caption}}</figcaption>{{/if}}
+  </figure>
+  {{/each}}
+</div>

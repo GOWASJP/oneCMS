@@ -480,6 +480,59 @@
                       class="gh-input-light w-full"
                     ></textarea>
                   </div>
+
+                  <div class="h-px bg-[#ebeef0] my-2"></div>
+                  <h2 class="text-lg font-bold">デザイン</h2>
+
+                  <!-- カラーテーマ -->
+                  <div>
+                    <label class="gh-label">カラーテーマ</label>
+                    <div class="flex gap-2 flex-wrap">
+                      <template
+                        x-for="t in [
+                        {id:'blue',label:'ブルー',color:'#2563eb'},
+                        {id:'green',label:'グリーン',color:'#16a34a'},
+                        {id:'navy',label:'ネイビー',color:'#1e3a5f'},
+                        {id:'red',label:'レッド',color:'#dc2626'},
+                        {id:'purple',label:'パープル',color:'#7c3aed'}
+                      ]"
+                        :key="t.id"
+                      >
+                        <button
+                          @click="siteConfig.theme = {...(siteConfig.theme||{}), id: t.id, primary: t.color}"
+                          class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all"
+                          :class="(siteConfig.theme?.id || 'blue') === t.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                        >
+                          <span class="w-4 h-4 rounded-full" :style="'background:'+t.color"></span>
+                          <span x-text="t.label"></span>
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- フォント -->
+                  <div>
+                    <label class="gh-label">フォント</label>
+                    <div class="flex gap-2 flex-wrap">
+                      <template
+                        x-for="f in [
+                        {id:'system',label:'システムフォント'},
+                        {id:'noto',label:'Noto Sans JP'},
+                        {id:'mincho',label:'明朝体'}
+                      ]"
+                        :key="f.id"
+                      >
+                        <button
+                          @click="siteConfig.theme = {...(siteConfig.theme||{}), fontId: f.id}"
+                          class="px-3 py-2 rounded-md border text-sm transition-all"
+                          :class="(siteConfig.theme?.fontId || 'system') === f.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                        >
+                          <span x-text="f.label"></span>
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+
                   <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
                 </div>
               </div>

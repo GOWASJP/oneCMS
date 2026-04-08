@@ -1,11 +1,18 @@
 {{> breadcrumb}}
 <article>
-  <h1>{{page.title}}</h1>
-  {{#if page.publishedAt}}
-  <time datetime="{{page.publishedAt}}">{{formatDate page.publishedAt "YYYY年MM月DD日"}}</time>
-  {{/if}}
+  <header style="margin-bottom:1.5em">
+    <h1>{{page.title}}</h1>
+    {{#if page.publishedAt}}
+    <time style="color:#6b7280;font-size:0.9em">{{formatDate page.publishedAt "YYYY年MM月DD日"}}</time>
+    {{/if}}
+  </header>
   {{#if page.image}}
-  <img src="{{page.image}}" alt="{{page.title}}">
+  <figure>
+    <img src="{{page.image}}" alt="{{page.title}}" style="border-radius:8px">
+  </figure>
   {{/if}}
-  {{{page.body}}}
+  <div class="entry-content">
+    {{{page.body}}}
+  </div>
 </article>
+{{langSwitcher pagePath locales defaultLang lang}}

@@ -1,0 +1,58 @@
+{
+  "menus": [
+    {
+      "id": "primary",
+      "name": "メインメニュー",
+      "items": [
+        {
+          "id": "1",
+          "label": "ホーム",
+          "type": "custom",
+          "url": "/",
+          "target": "",
+          "parent": "",
+          "order": 0
+        },
+        {
+          "id": "2",
+          "label": "会社概要",
+          "type": "page",
+          "object": "about",
+          "url": "/about/",
+          "target": "",
+          "parent": "",
+          "order": 1
+        },
+        {
+          "id": "3",
+          "label": "お知らせ",
+          "type": "post_type",
+          "object": "news",
+          "url": "/news/",
+          "target": "",
+          "parent": "",
+          "order": 2
+        }
+      ]
+    },
+    {
+      "id": "footer",
+      "name": "フッターメニュー",
+      "items": [
+        {
+          "id": "10",
+          "label": "プライバシーポリシー",
+          "type": "custom",
+          "url": "/privacy/",
+          "target": "",
+          "parent": "",
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "locations": {
+    "primary": "primary",
+    "footer": "footer"
+  }
+}

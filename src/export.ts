@@ -244,6 +244,24 @@ export class Exporter {
     const defaultLang = languages.default || 'ja'
     let step = 0
 
+    // メニューデータ読み込み
+    const menuData = (await this.fs.readJson<any>('content/menus.json')) || {
+      menus: [],
+      locations: {},
+    }
+    const getMenu = (location: string) => {
+      const menuId = menuData.locations?.[location]
+      const menu = menuData.menus?.find((m: any) => m.id === menuId)
+      return menu?.items || siteConfig.nav || []
+    }
+    // site オブジェクトにメニューを注入
+    const site = {
+      ...siteConfig,
+      nav: getMenu('primary'),
+      footerNav: getMenu('footer'),
+      mobileNav: getMenu('mobile'),
+    }
+
     for (const locale of locales) {
       const lang = locale.code
       const prefix = lang === defaultLang ? '' : `${lang}/`
@@ -256,7 +274,7 @@ export class Exporter {
         const breadcrumb = [{ label: siteConfig.name || 'Home', url: '/' }, { label: page.title }]
 
         const pagePath = page.id === 'index' ? '' : `${page.id}/`
-        const ctx = { page, site: siteConfig, lang, breadcrumb, locales, defaultLang, pagePath }
+        const ctx = { page, site, lang, breadcrumb, locales, defaultLang, pagePath }
 
         const pageHtml = pageTemplate
           ? pageTemplate(ctx)
@@ -301,7 +319,7 @@ export class Exporter {
           const listCtx = {
             type,
             items: pageItems,
-            site: siteConfig,
+            site,
             lang,
             current: p,
             total: totalPages,
@@ -342,7 +360,7 @@ export class Exporter {
           const detailPagePath = `${type.slug}/${item.id}/`
           const detailCtx = {
             page: item,
-            site: siteConfig,
+            site,
             lang,
             breadcrumb: [
               { label: siteConfig.name || 'Home', url: '/' },

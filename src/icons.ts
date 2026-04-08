@@ -11,6 +11,7 @@ export {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
 
   // エディタ・操作
   Save,

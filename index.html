@@ -96,6 +96,14 @@
 
                 <div class="h-px bg-white/5 my-3"></div>
 
+                <button
+                  @click="loadMenus()"
+                  :class="view === 'menus' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
+                  <i data-lucide="menu" class="w-[18px] h-[18px]"></i>
+                  <span>メニュー</span>
+                </button>
                 <button @click="loadTaxonomies()" class="gh-nav-item w-full">
                   <i data-lucide="tag" class="w-[18px] h-[18px]"></i>
                   <span>カテゴリ・タグ</span>
@@ -771,6 +779,185 @@
               </div>
             </template>
 
+            <!-- メニュー管理 -->
+            <template x-if="view === 'menus'">
+              <div class="px-8 py-6 max-w-3xl mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                  <h1 class="text-2xl font-bold">メニュー</h1>
+                  <button @click="addMenu()" class="gh-btn-green text-[13px]">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    新規メニュー
+                  </button>
+                </div>
+
+                <!-- メニュー選択タブ -->
+                <div class="flex gap-1 border-b border-[#ebeef0] mb-6">
+                  <template x-for="m in menuData.menus" :key="m.id">
+                    <button
+                      @click="selectMenu(m.id)"
+                      class="px-4 py-2 text-sm border-b-2 transition-colors"
+                      :class="currentMenuId === m.id ? 'border-[#30cf43] text-[#15171a] font-semibold' : 'border-transparent text-[#7c8b9a] hover:text-[#15171a]'"
+                      x-text="m.name"
+                    ></button>
+                  </template>
+                </div>
+
+                <template x-if="currentMenu">
+                  <div>
+                    <!-- メニュー設定 -->
+                    <div class="flex gap-4 mb-4 pb-4 border-b border-[#ebeef0]">
+                      <div class="flex-1">
+                        <label class="gh-label">メニュー名</label>
+                        <input
+                          type="text"
+                          x-model="currentMenu.name"
+                          class="gh-input-light w-full text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <!-- 項目追加パネル -->
+                    <div class="flex gap-2 mb-4">
+                      <div class="text-xs text-[#7c8b9a]">追加:</div>
+                      <button @click="addMenuItem('page')" class="gh-btn-outline text-xs">
+                        固定ページ
+                      </button>
+                      <button @click="addMenuItem('post_type')" class="gh-btn-outline text-xs">
+                        投稿タイプ
+                      </button>
+                      <button
+                        @click="addMenuItem('custom', '', '', '')"
+                        class="gh-btn-outline text-xs"
+                      >
+                        カスタムリンク
+                      </button>
+                      <button @click="addMenuItem('category')" class="gh-btn-outline text-xs">
+                        カテゴリ
+                      </button>
+                    </div>
+
+                    <!-- メニュー項目一覧 -->
+                    <div class="space-y-1 mb-6">
+                      <template x-for="(item, idx) in currentMenu.items" :key="item.id">
+                        <div
+                          class="border border-[#ebeef0] rounded-md bg-white"
+                          :style="'margin-left:' + (item.parent ? '24px' : '0')"
+                        >
+                          <div class="flex items-center gap-2 px-3 py-2">
+                            <div class="flex flex-col gap-0.5">
+                              <button
+                                @click="moveMenuItem(idx, -1)"
+                                class="text-[#7c8b9a] hover:text-[#15171a]"
+                              >
+                                <i data-lucide="chevron-up" class="w-3 h-3"></i>
+                              </button>
+                              <button
+                                @click="moveMenuItem(idx, 1)"
+                                class="text-[#7c8b9a] hover:text-[#15171a]"
+                              >
+                                <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                              </button>
+                            </div>
+                            <div class="flex-1 grid grid-cols-3 gap-2">
+                              <input
+                                type="text"
+                                x-model="item.label"
+                                placeholder="ラベル"
+                                class="gh-input-light text-xs"
+                              />
+                              <input
+                                type="text"
+                                x-model="item.url"
+                                placeholder="/about/"
+                                class="gh-input-light text-xs"
+                              />
+                              <div class="flex items-center gap-1">
+                                <span
+                                  class="gh-badge bg-[#f1f3f5] text-[#7c8b9a]"
+                                  x-text="item.type === 'custom' ? 'カスタム' : item.type === 'page' ? 'ページ' : item.type === 'post_type' ? '投稿' : 'カテゴリ'"
+                                ></span>
+                                <select
+                                  x-model="item.parent"
+                                  class="gh-select-light text-[10px] w-20"
+                                >
+                                  <option value="">トップ</option>
+                                  <template
+                                    x-for="p in currentMenu.items.filter(i => i.id !== item.id)"
+                                    :key="p.id"
+                                  >
+                                    <option :value="p.id" x-text="'└ ' + p.label"></option>
+                                  </template>
+                                </select>
+                              </div>
+                            </div>
+                            <button
+                              @click="removeMenuItem(idx)"
+                              class="text-[#dc2626] hover:text-[#dc2626]/80 p-1"
+                            >
+                              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </template>
+                      <template x-if="!currentMenu.items.length">
+                        <div class="py-8 text-center text-sm text-[#ced4da]">項目がありません</div>
+                      </template>
+                    </div>
+
+                    <!-- メニュー位置 -->
+                    <div class="border-t border-[#ebeef0] pt-4 mb-6">
+                      <h3 class="text-sm font-bold mb-2">メニューの位置</h3>
+                      <div class="space-y-2">
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            :checked="menuData.locations.primary === currentMenuId"
+                            @change="menuData.locations.primary = $event.target.checked ? currentMenuId : ''"
+                            class="accent-[#30cf43]"
+                          />
+                          ヘッダーナビゲーション (primary)
+                        </label>
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            :checked="menuData.locations.footer === currentMenuId"
+                            @change="menuData.locations.footer = $event.target.checked ? currentMenuId : ''"
+                            class="accent-[#30cf43]"
+                          />
+                          フッター (footer)
+                        </label>
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            :checked="menuData.locations.mobile === currentMenuId"
+                            @change="menuData.locations.mobile = $event.target.checked ? currentMenuId : ''"
+                            class="accent-[#30cf43]"
+                          />
+                          モバイルメニュー (mobile)
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- アクション -->
+                    <div class="flex justify-between">
+                      <button @click="deleteMenu()" class="text-[#dc2626] text-xs hover:underline">
+                        このメニューを削除
+                      </button>
+                      <button @click="saveMenus()" class="gh-btn-green text-[13px]">
+                        メニューを保存
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <template x-if="!menuData.menus.length">
+                  <div class="py-16 text-center text-sm text-[#ced4da]">
+                    メニューがありません。「新規メニュー」から作成してください。
+                  </div>
+                </template>
+              </div>
+            </template>
+
             <!-- 設定 -->
             <template x-if="view === 'settings'">
               <div class="px-8 py-6 max-w-xl mx-auto">
@@ -791,39 +978,6 @@
                       rows="3"
                       class="gh-input-light w-full"
                     ></textarea>
-                  </div>
-
-                  <div class="h-px bg-[#ebeef0] my-2"></div>
-                  <h2 class="text-lg font-bold">ナビゲーション</h2>
-                  <div class="space-y-2">
-                    <template x-for="(item, idx) in (siteConfig.nav || [])" :key="idx">
-                      <div class="flex gap-2 items-center">
-                        <input
-                          type="text"
-                          x-model="item.label"
-                          placeholder="ラベル"
-                          class="gh-input-light flex-1 text-xs"
-                        />
-                        <input
-                          type="text"
-                          x-model="item.url"
-                          placeholder="/about/"
-                          class="gh-input-light flex-1 text-xs"
-                        />
-                        <button
-                          @click="siteConfig.nav.splice(idx,1)"
-                          class="text-[#dc2626] text-xs"
-                        >
-                          削除
-                        </button>
-                      </div>
-                    </template>
-                    <button
-                      @click="siteConfig.nav = [...(siteConfig.nav||[]), {label:'',url:''}]"
-                      class="gh-btn-outline text-xs"
-                    >
-                      + 項目追加
-                    </button>
                   </div>
 
                   <div class="h-px bg-[#ebeef0] my-2"></div>

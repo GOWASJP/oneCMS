@@ -111,6 +111,19 @@ interface CmsComponent {
   refreshTranslationStatus(): Promise<void>
   availableCategories: Array<{ id: string; label: string }>
   availableTags: Array<{ id: string; label: string }>
+  // メニュー管理
+  menuData: { menus: any[]; locations: Record<string, string> }
+  currentMenuId: string
+  currentMenu: any
+  loadMenus(): Promise<void>
+  saveMenus(): Promise<void>
+  addMenu(): void
+  deleteMenu(): void
+  selectMenu(id: string): void
+  addMenuItem(type: string, label?: string, url?: string, object?: string): void
+  removeMenuItem(idx: number): void
+  moveMenuItem(idx: number, dir: number): void
+  setItemParent(idx: number, parentId: string): void
   // コンテンツタイプ管理
   showTypeEditor: boolean
   editingType: ContentType | null
@@ -165,6 +178,11 @@ Alpine.data('cms', () => {
 
     // 翻訳ステータス
     translationStatuses: [],
+
+    // メニュー管理
+    menuData: { menus: [], locations: {} } as any,
+    currentMenuId: '',
+    currentMenu: null as any,
 
     // ページ作成
     showPageCreator: false,
@@ -241,6 +259,8 @@ Alpine.data('cms', () => {
         hash = `#/content/${this.currentType.id}/${this.currentPage.id}`
       } else if (this.view === 'settings') {
         hash = '#/settings'
+      } else if (this.view === 'menus') {
+        hash = '#/menus'
       }
       if (hash) {
         history.replaceState(null, '', hash)
@@ -256,6 +276,8 @@ Alpine.data('cms', () => {
 
       if (parts[0] === 'settings') {
         this.view = 'settings'
+      } else if (parts[0] === 'menus') {
+        await this.loadMenus()
       } else if (parts[0] === 'pages' && parts[1]) {
         const page = this.pages.find((p) => p.id === parts[1])
         if (page) await this.openPage(page)
@@ -982,6 +1004,103 @@ Alpine.data('cms', () => {
       this.currentType = null
       this.view = 'welcome'
       this.showToast('削除しました')
+    },
+
+    // --- メニュー管理 ---
+
+    async loadMenus() {
+      if (!this.fs) return
+      const data = await this.fs.readJson<any>('content/menus.json')
+      this.menuData = data || { menus: [], locations: {} }
+      if (this.menuData.menus.length && !this.currentMenuId) {
+        this.selectMenu(this.menuData.menus[0].id)
+      }
+      this.view = 'menus'
+      this.updateHash()
+    },
+
+    selectMenu(id: string) {
+      this.currentMenuId = id
+      this.currentMenu = this.menuData.menus.find((m: any) => m.id === id) || null
+    },
+
+    addMenu() {
+      const name = window.prompt('メニュー名')
+      if (!name?.trim()) return
+      const id =
+        name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-') || `menu-${Date.now()}`
+      const menu = { id, name: name.trim(), items: [] }
+      this.menuData.menus.push(menu)
+      this.selectMenu(id)
+    },
+
+    deleteMenu() {
+      if (!this.currentMenu) return
+      if (!window.confirm(`「${this.currentMenu.name}」を削除しますか？`)) return
+      this.menuData.menus = this.menuData.menus.filter((m: any) => m.id !== this.currentMenuId)
+      // locationsからも削除
+      for (const [loc, menuId] of Object.entries(this.menuData.locations)) {
+        if (menuId === this.currentMenuId) delete this.menuData.locations[loc]
+      }
+      this.currentMenu = null
+      this.currentMenuId = ''
+      if (this.menuData.menus.length) this.selectMenu(this.menuData.menus[0].id)
+    },
+
+    addMenuItem(type: string, label?: string, url?: string, object?: string) {
+      if (!this.currentMenu) return
+      const id = String(Date.now())
+      this.currentMenu.items.push({
+        id,
+        label: label || '新規項目',
+        type,
+        url: url || '',
+        object: object || '',
+        target: '',
+        parent: '',
+        order: this.currentMenu.items.length,
+      })
+    },
+
+    removeMenuItem(idx: number) {
+      if (!this.currentMenu) return
+      const removed = this.currentMenu.items[idx]
+      // 子項目の親をクリア
+      for (const item of this.currentMenu.items) {
+        if (item.parent === removed.id) item.parent = removed.parent || ''
+      }
+      this.currentMenu.items.splice(idx, 1)
+    },
+
+    moveMenuItem(idx: number, dir: number) {
+      if (!this.currentMenu) return
+      const items = this.currentMenu.items
+      const newIdx = idx + dir
+      if (newIdx < 0 || newIdx >= items.length) return
+      const tmp = items[idx]
+      items[idx] = items[newIdx]
+      items[newIdx] = tmp
+    },
+
+    setItemParent(idx: number, parentId: string) {
+      if (!this.currentMenu) return
+      this.currentMenu.items[idx].parent = parentId
+    },
+
+    async saveMenus() {
+      if (!this.fs) return
+      // orderを再計算
+      for (const menu of this.menuData.menus) {
+        menu.items.forEach((item: any, i: number) => {
+          item.order = i
+        })
+      }
+      await this.fs.writeJson('content/menus.json', this.menuData)
+      this.showToast('メニューを保存しました')
     },
 
     // --- タクソノミー管理 ---

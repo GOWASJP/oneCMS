@@ -565,7 +565,12 @@ Alpine.data('cms', () => {
       if (!file || !this.fs) return
       try {
         const result = await saveImage(this.fs, file)
-        this.editData[fieldKey] = `/${result.path}`
+        // Data URLでプレビュー表示、実パスは_imagePathsに保存
+        this.editData[fieldKey] = result.blobUrl || `/${result.path}`
+        this.editData._imagePaths = {
+          ...((this.editData._imagePaths as Record<string, string>) || {}),
+          [fieldKey]: `/${result.path}`,
+        }
         const saved = ((1 - result.size / result.originalSize) * 100).toFixed(0)
         this.showToast(`画像を最適化しました（${saved}%削減）`)
       } catch (e) {

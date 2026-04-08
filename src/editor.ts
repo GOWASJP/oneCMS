@@ -52,7 +52,7 @@ export function createEditor(
         inlineToolbar: true,
       },
       list: {
-        class: List,
+        class: List as any,
         inlineToolbar: true,
       },
       image: {

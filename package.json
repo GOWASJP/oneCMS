@@ -36,7 +36,7 @@
     "@editorjs/image": "^2.10.3",
     "@editorjs/inline-code": "^1.5.2",
     "@editorjs/link": "^2.6.2",
-    "@editorjs/list": "^2.0.9",
+    "@editorjs/list": "^1.10.0",
     "@editorjs/quote": "^2.7.6",
     "@editorjs/table": "^2.4.5",
     "alpinejs": "^3.15.11",

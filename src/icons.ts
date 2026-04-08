@@ -12,6 +12,7 @@ export {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  GripVertical,
 
   // エディタ・操作
   Save,

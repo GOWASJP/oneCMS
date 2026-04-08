@@ -1,6 +1,6 @@
 import EditorJS from '@editorjs/editorjs'
 import Header from '@editorjs/header'
-import List from '@editorjs/list'
+import NestedList from '@editorjs/nested-list'
 import ImageTool from '@editorjs/image'
 import Quote from '@editorjs/quote'
 import CodeTool from '@editorjs/code'
@@ -40,28 +40,29 @@ function normalizeListBlocks(data: EditorData): EditorData {
       if (block.type !== 'list') return block
       const items = block.data?.items
       if (!items || !items.length) return block
-      // v1形式(string[])ならそのまま
-      if (typeof items[0] === 'string') return block
-      // v2形式({content, items}[])をフラットなstring[]に変換
-      const flatten = (arr: any[]): string[] => {
-        const result: string[] = []
-        for (const item of arr) {
-          if (typeof item === 'string') {
-            result.push(item)
-          } else {
-            result.push(item.content || '')
-            if (item.items?.length) {
-              result.push(...flatten(item.items))
-            }
-          }
+      // nested-list は {content, items}[] 形式を要求
+      // v1形式(string[])をnested-list形式に変換
+      if (typeof items[0] === 'string') {
+        return {
+          ...block,
+          data: {
+            ...block.data,
+            items: items.map((s: string) => ({ content: s, items: [] })),
+          },
         }
-        return result
       }
+      // v2形式({content, items, meta}[])はそのまま（nested-listと互換）
+      // metaフィールドを除去してクリーンにする
+      const cleanItems = (arr: any[]): any[] =>
+        arr.map((item: any) => ({
+          content: item.content || '',
+          items: item.items?.length ? cleanItems(item.items) : [],
+        }))
       return {
         ...block,
         data: {
           ...block.data,
-          items: flatten(items),
+          items: cleanItems(items),
         },
       }
     }),
@@ -94,8 +95,11 @@ export function createEditor(
         inlineToolbar: true,
       },
       list: {
-        class: List as any,
+        class: NestedList as any,
         inlineToolbar: true,
+        config: {
+          defaultStyle: 'unordered',
+        },
       },
       image: {
         class: ImageTool,
@@ -175,13 +179,17 @@ export function editorJsonToHtml(data: EditorData): string {
 
         case 'list': {
           const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
-          const items = (block.data.items as any[])
-            .map((i) => {
-              const text = typeof i === 'string' ? i : i.content || ''
-              return `<li>${text}</li>`
-            })
-            .join('')
-          return `<${tag}>${items}</${tag}>`
+          const renderListItems = (arr: any[]): string =>
+            arr
+              .map((i) => {
+                const text = typeof i === 'string' ? i : i.content || ''
+                const children = i.items?.length
+                  ? `<${tag}>${renderListItems(i.items)}</${tag}>`
+                  : ''
+                return `<li>${text}${children}</li>`
+              })
+              .join('')
+          return `<${tag}>${renderListItems(block.data.items)}</${tag}>`
         }
 
         case 'image': {

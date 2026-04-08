@@ -12,6 +12,17 @@ import { RevisionManager } from './revision.ts'
 import { saveImage } from './image.ts'
 import { saveFolderHandle, restoreFolderHandle } from './storage.ts'
 import { createEditor, editorJsonToHtml, htmlToEditorJson, type EditorData } from './editor.ts'
+import {
+  APP_NAME,
+  STORAGE_AUTHOR_KEY,
+  TOAST_DURATION,
+  PATH_SITE_CONFIG,
+  PATH_LANGUAGES,
+  PATH_MENUS,
+  PATH_TAXONOMIES_CATEGORIES,
+  PATH_TAXONOMIES_TAGS,
+  PATH_ASSETS_FILES,
+} from './constants.ts'
 import type {
   SiteConfig,
   Languages,
@@ -164,7 +175,7 @@ interface CmsComponent {
 Alpine.data('cms', () => {
   const component: CmsComponent & ThisType<CmsComponent> = {
     // 状態管理
-    authorName: localStorage.getItem('one-cms-author') || '',
+    authorName: localStorage.getItem(STORAGE_AUTHOR_KEY) || '',
     authorInput: '',
     folderHandle: null,
     view: 'welcome',
@@ -320,17 +331,17 @@ Alpine.data('cms', () => {
       if (this.view === 'content-list' && this.currentType) return this.currentType.label
       if (this.view === 'settings') return 'サイト設定'
       if (this.view === 'export-result') return '公開準備 完了'
-      return 'ONE CMS'
+      return APP_NAME
     },
 
     setAuthor() {
       const name = this.authorInput.trim()
       if (!name) return
       this.authorName = name
-      localStorage.setItem('one-cms-author', name)
+      localStorage.setItem(STORAGE_AUTHOR_KEY, name)
     },
 
-    showToast(message: string, duration = 3000) {
+    showToast(message: string, duration = TOAST_DURATION) {
       this.toast = message
       setTimeout(() => {
         this.toast = null
@@ -408,24 +419,23 @@ Alpine.data('cms', () => {
       // 初回起動時に初期データを自動生成
       await this.ensureInitialData()
 
-      this.siteConfig = (await this.fs.readJson<SiteConfig>('content/site.json')) || {
+      this.siteConfig = (await this.fs.readJson<SiteConfig>(PATH_SITE_CONFIG)) || {
         name: '',
         url: '',
         description: '',
         services: {},
         theme: {},
       }
-      this.languages =
-        (await this.fs.readJson<Languages>('content/languages.json')) || this.languages
+      this.languages = (await this.fs.readJson<Languages>(PATH_LANGUAGES)) || this.languages
       this.currentLang = this.languages.default || 'ja'
       this.contentTypes = await this.fs.readContentTypes()
       this.pages = await this.fs.readPages(this.currentLang)
       // カテゴリ・タグ読み込み
       const cats = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
-        'content/taxonomies/categories.json',
+        PATH_TAXONOMIES_CATEGORIES,
       )
       const tags = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
-        'content/taxonomies/tags.json',
+        PATH_TAXONOMIES_TAGS,
       )
       this.availableCategories = cats?.items || []
       this.availableTags = tags?.items || []
@@ -436,11 +446,11 @@ Alpine.data('cms', () => {
       if (!this.fs) return
 
       // site.json がなければ初期データ一式を作成
-      const existing = await this.fs.readJson('content/site.json')
+      const existing = await this.fs.readJson(PATH_SITE_CONFIG)
       if (existing) return
 
       // site.json
-      await this.fs.writeJson('content/site.json', {
+      await this.fs.writeJson(PATH_SITE_CONFIG, {
         name: 'マイサイト',
         url: '',
         description: '',
@@ -451,7 +461,7 @@ Alpine.data('cms', () => {
       })
 
       // languages.json
-      await this.fs.writeJson('content/languages.json', {
+      await this.fs.writeJson(PATH_LANGUAGES, {
         default: 'ja',
         locales: [
           { code: 'ja', label: '日本語', flag: '🇯🇵' },
@@ -668,7 +678,7 @@ Alpine.data('cms', () => {
       if (!file || !this.fs) return
       try {
         const buffer = await file.arrayBuffer()
-        const path = `assets/files/${file.name}`
+        const path = `${PATH_ASSETS_FILES}/${file.name}`
         await this.fs.writeBlob(path, new Blob([buffer]))
         this.editData[fieldKey] = `/${path}`
         this.showToast(`${file.name} をアップロードしました`)
@@ -711,7 +721,7 @@ Alpine.data('cms', () => {
 
     async saveSiteConfig() {
       if (!this.fs) return
-      await this.fs.writeJson('content/site.json', this.siteConfig)
+      await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
       this.showToast('サイト設定を保存しました')
     },
 
@@ -1067,7 +1077,7 @@ Alpine.data('cms', () => {
 
     async loadMenus() {
       if (!this.fs) return
-      const data = await this.fs.readJson<any>('content/menus.json')
+      const data = await this.fs.readJson<any>(PATH_MENUS)
       this.menuData = data || { menus: [], locations: {} }
       if (this.menuData.menus.length && !this.currentMenuId) {
         this.selectMenu(this.menuData.menus[0].id)
@@ -1156,7 +1166,7 @@ Alpine.data('cms', () => {
           item.order = i
         })
       }
-      await this.fs.writeJson('content/menus.json', this.menuData)
+      await this.fs.writeJson(PATH_MENUS, this.menuData)
       this.showToast('メニューを保存しました')
     },
 
@@ -1165,10 +1175,10 @@ Alpine.data('cms', () => {
     async loadTaxonomies() {
       if (!this.fs) return
       const cats = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
-        'content/taxonomies/categories.json',
+        PATH_TAXONOMIES_CATEGORIES,
       )
       const tags = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
-        'content/taxonomies/tags.json',
+        PATH_TAXONOMIES_TAGS,
       )
       this.taxonomyData = {
         categories: cats?.items || [],
@@ -1179,12 +1189,12 @@ Alpine.data('cms', () => {
 
     async saveTaxonomies() {
       if (!this.fs) return
-      await this.fs.writeJson('content/taxonomies/categories.json', {
+      await this.fs.writeJson(PATH_TAXONOMIES_CATEGORIES, {
         id: 'categories',
         label: 'カテゴリ',
         items: this.taxonomyData.categories,
       })
-      await this.fs.writeJson('content/taxonomies/tags.json', {
+      await this.fs.writeJson(PATH_TAXONOMIES_TAGS, {
         id: 'tags',
         label: 'タグ',
         items: this.taxonomyData.tags,
@@ -1212,7 +1222,7 @@ Alpine.data('cms', () => {
 
     async saveLangConfig() {
       if (!this.fs) return
-      await this.fs.writeJson('content/languages.json', this.langEditorData)
+      await this.fs.writeJson(PATH_LANGUAGES, this.langEditorData)
       this.languages = JSON.parse(JSON.stringify(this.langEditorData))
       this.showLangEditor = false
       this.showToast('言語設定を保存しました')

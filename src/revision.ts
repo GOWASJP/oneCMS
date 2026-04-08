@@ -1,4 +1,5 @@
 import type { FileSystem } from './fs.ts'
+import { MAX_REVISIONS, PATH_REVISIONS_DIR } from './constants.ts'
 import type { ContentData, RevisionEntry } from './types.ts'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -24,13 +25,13 @@ export class RevisionManager {
   private fs: FileSystem
   private max: number
 
-  constructor(fs: FileSystem, maxRevisions = 20) {
+  constructor(fs: FileSystem, maxRevisions = MAX_REVISIONS) {
     this.fs = fs
     this.max = maxRevisions
   }
 
   private _dirPath(typePath: string, pageId: string, lang: string): string {
-    return `.revisions/${typePath}/${pageId}/${lang}`
+    return `${PATH_REVISIONS_DIR}/${typePath}/${pageId}/${lang}`
   }
 
   private _timestamp(): string {

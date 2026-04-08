@@ -1,10 +1,17 @@
 import type { FileSystem } from './fs.ts'
 import type { ImageOptions, ImageSaveResult } from './types.ts'
+import {
+  IMAGE_MAX_WIDTH,
+  IMAGE_QUALITY,
+  IMAGE_FORMAT,
+  PATH_ASSETS_ORIGINALS,
+  PATH_ASSETS_IMAGES,
+} from './constants.ts'
 
 const DEFAULTS: Required<ImageOptions> = {
-  maxWidth: 1200,
-  quality: 0.8,
-  format: 'image/webp',
+  maxWidth: IMAGE_MAX_WIDTH,
+  quality: IMAGE_QUALITY,
+  format: IMAGE_FORMAT,
 }
 
 interface OptimizeResult {
@@ -54,11 +61,11 @@ export async function saveImage(
   options: ImageOptions = {},
 ): Promise<ImageSaveResult> {
   const originalBuffer = await file.arrayBuffer()
-  await fs.writeBlob(`assets/_originals/${file.name}`, new Blob([originalBuffer]))
+  await fs.writeBlob(`${PATH_ASSETS_ORIGINALS}/${file.name}`, new Blob([originalBuffer]))
 
   const result = await optimizeImage(file, options)
 
-  const savePath = `assets/images/${result.filename}`
+  const savePath = `${PATH_ASSETS_IMAGES}/${result.filename}`
   await fs.writeBlob(savePath, result.blob)
 
   const dataUrl = await blobToDataUrl(result.blob)

@@ -257,6 +257,14 @@
                   placeholder="タイトル..."
                   class="gh-title-input"
                 />
+                <div class="flex items-center gap-2 mb-4 text-xs text-[#7c8b9a]">
+                  <span>slug:</span>
+                  <input
+                    type="text"
+                    x-model="editData.id"
+                    class="border-b border-[#ebeef0] bg-transparent outline-none text-xs text-[#7c8b9a] py-0.5 flex-1 max-w-48 focus:border-[#30cf43]"
+                  />
+                </div>
                 <div id="editorjs" class="gh-editorjs"></div>
               </div>
             </template>
@@ -925,79 +933,85 @@
 
     <!-- コンテンツタイプ編集モーダル -->
     <div
-      x-show="showTypeEditor"
+      x-show="showTypeEditor && editingType"
       class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
       @click.self="showTypeEditor=false"
     >
-      <div
-        class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
-      >
-        <h2
-          class="text-lg font-bold mb-4"
-          x-text="editingType?.id ? 'コンテンツタイプ編集' : '新規コンテンツタイプ'"
-        ></h2>
-        <div class="space-y-3">
-          <div>
-            <label class="gh-label">ラベル</label>
-            <input type="text" x-model="editingType.label" class="gh-input-light w-full" />
-          </div>
-          <div>
-            <label class="gh-label">スラッグ (URL用)</label>
-            <input
-              type="text"
-              x-model="editingType.slug"
-              class="gh-input-light w-full"
-              placeholder="news"
-            />
-          </div>
-          <div>
-            <label class="gh-label">1ページあたりの件数</label>
-            <input type="number" x-model="editingType.pagination" class="gh-input-light w-24" />
-          </div>
-          <div class="h-px bg-[#ebeef0] my-2"></div>
-          <h3 class="text-sm font-bold">フィールド定義</h3>
-          <template x-for="(f, idx) in editingType?.fields || []" :key="idx">
-            <div class="flex gap-2 items-end border border-[#ebeef0] rounded p-2">
-              <div class="flex-1">
-                <label class="text-[10px] text-[#7c8b9a]">キー</label>
-                <input type="text" x-model="f.key" class="gh-input-light w-full text-xs" />
-              </div>
-              <div class="flex-1">
-                <label class="text-[10px] text-[#7c8b9a]">ラベル</label>
-                <input type="text" x-model="f.label" class="gh-input-light w-full text-xs" />
-              </div>
-              <div class="w-28">
-                <label class="text-[10px] text-[#7c8b9a]">タイプ</label>
-                <select x-model="f.type" class="gh-select-light w-full text-xs">
-                  <template
-                    x-for="ft in ['text','textarea','richtext','number','url','email','date','datetime','daterange','image','imagelist','file','select','multiselect','radio','checkbox','toggle','relation','repeater','group','year','color','hidden']"
-                    :key="ft"
-                  >
-                    <option :value="ft" x-text="ft"></option>
-                  </template>
-                </select>
-              </div>
-              <button @click="removeFieldFromType(idx)" class="text-[#dc2626] text-xs pb-1">
-                削除
-              </button>
+      <template x-if="editingType">
+        <div
+          class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+        >
+          <h2
+            class="text-lg font-bold mb-4"
+            x-text="editingType.id ? 'コンテンツタイプ編集' : '新規コンテンツタイプ'"
+          ></h2>
+          <div class="space-y-3">
+            <div>
+              <label class="gh-label">ラベル</label>
+              <input type="text" x-model="editingType.label" class="gh-input-light w-full" />
             </div>
-          </template>
-          <button @click="addFieldToType()" class="gh-btn-outline text-xs">+ フィールド追加</button>
-        </div>
-        <div class="flex justify-between mt-6">
-          <button
-            x-show="editingType?.id"
-            @click="deleteType()"
-            class="text-[#dc2626] text-xs hover:underline"
-          >
-            削除
-          </button>
-          <div class="flex gap-2 ml-auto">
-            <button @click="showTypeEditor=false" class="gh-btn-outline text-xs">キャンセル</button>
-            <button @click="saveType()" class="gh-btn-green text-xs">保存</button>
+            <div>
+              <label class="gh-label">スラッグ (URL用)</label>
+              <input
+                type="text"
+                x-model="editingType.slug"
+                class="gh-input-light w-full"
+                placeholder="news"
+              />
+            </div>
+            <div>
+              <label class="gh-label">1ページあたりの件数</label>
+              <input type="number" x-model="editingType.pagination" class="gh-input-light w-24" />
+            </div>
+            <div class="h-px bg-[#ebeef0] my-2"></div>
+            <h3 class="text-sm font-bold">フィールド定義</h3>
+            <template x-for="(f, idx) in editingType?.fields || []" :key="idx">
+              <div class="flex gap-2 items-end border border-[#ebeef0] rounded p-2">
+                <div class="flex-1">
+                  <label class="text-[10px] text-[#7c8b9a]">キー</label>
+                  <input type="text" x-model="f.key" class="gh-input-light w-full text-xs" />
+                </div>
+                <div class="flex-1">
+                  <label class="text-[10px] text-[#7c8b9a]">ラベル</label>
+                  <input type="text" x-model="f.label" class="gh-input-light w-full text-xs" />
+                </div>
+                <div class="w-28">
+                  <label class="text-[10px] text-[#7c8b9a]">タイプ</label>
+                  <select x-model="f.type" class="gh-select-light w-full text-xs">
+                    <template
+                      x-for="ft in ['text','textarea','richtext','number','url','email','date','datetime','daterange','image','imagelist','file','select','multiselect','radio','checkbox','toggle','relation','repeater','group','year','color','hidden']"
+                      :key="ft"
+                    >
+                      <option :value="ft" x-text="ft"></option>
+                    </template>
+                  </select>
+                </div>
+                <button @click="removeFieldFromType(idx)" class="text-[#dc2626] text-xs pb-1">
+                  削除
+                </button>
+              </div>
+            </template>
+            <button @click="addFieldToType()" class="gh-btn-outline text-xs">
+              + フィールド追加
+            </button>
+          </div>
+          <div class="flex justify-between mt-6">
+            <button
+              x-show="editingType?.id"
+              @click="deleteType()"
+              class="text-[#dc2626] text-xs hover:underline"
+            >
+              削除
+            </button>
+            <div class="flex gap-2 ml-auto">
+              <button @click="showTypeEditor=false" class="gh-btn-outline text-xs">
+                キャンセル
+              </button>
+              <button @click="saveType()" class="gh-btn-green text-xs">保存</button>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- タクソノミー管理モーダル -->

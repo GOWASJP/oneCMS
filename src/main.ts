@@ -111,6 +111,17 @@ interface CmsComponent {
   refreshTranslationStatus(): Promise<void>
   availableCategories: Array<{ id: string; label: string }>
   availableTags: Array<{ id: string; label: string }>
+  // カスタムモーダル
+  modalVisible: boolean
+  modalTitle: string
+  modalMessage: string
+  modalInput: string
+  modalShowInput: boolean
+  modalResolve: ((value: string | boolean | null) => void) | null
+  showConfirm(message: string): Promise<boolean>
+  showPrompt(title: string, defaultValue?: string): Promise<string | null>
+  modalOk(): void
+  modalCancel(): void
   // メニュー管理
   menuData: { menus: any[]; locations: Record<string, string> }
   currentMenuId: string
@@ -178,6 +189,14 @@ Alpine.data('cms', () => {
 
     // 翻訳ステータス
     translationStatuses: [],
+
+    // カスタムモーダル
+    modalVisible: false,
+    modalTitle: '',
+    modalMessage: '',
+    modalInput: '',
+    modalShowInput: false,
+    modalResolve: null as ((value: string | boolean | null) => void) | null,
 
     // メニュー管理
     menuData: { menus: [], locations: {} } as any,
@@ -316,6 +335,44 @@ Alpine.data('cms', () => {
       setTimeout(() => {
         this.toast = null
       }, duration)
+    },
+
+    showConfirm(message: string): Promise<boolean> {
+      return new Promise((resolve) => {
+        this.modalTitle = '確認'
+        this.modalMessage = message
+        this.modalShowInput = false
+        this.modalInput = ''
+        this.modalResolve = resolve as any
+        this.modalVisible = true
+      })
+    },
+
+    showPrompt(title: string, defaultValue = ''): Promise<string | null> {
+      return new Promise((resolve) => {
+        this.modalTitle = title
+        this.modalMessage = ''
+        this.modalShowInput = true
+        this.modalInput = defaultValue
+        this.modalResolve = resolve as any
+        this.modalVisible = true
+      })
+    },
+
+    modalOk() {
+      this.modalVisible = false
+      if (this.modalResolve) {
+        this.modalResolve(this.modalShowInput ? this.modalInput : true)
+        this.modalResolve = null
+      }
+    },
+
+    modalCancel() {
+      this.modalVisible = false
+      if (this.modalResolve) {
+        this.modalResolve(this.modalShowInput ? null : false)
+        this.modalResolve = null
+      }
     },
 
     // --- フォルダ選択・データ読み込み ---
@@ -663,7 +720,7 @@ Alpine.data('cms', () => {
     async deleteContent() {
       if (!this.fs || !this.currentType || !this.currentPage) return
       const title = this.currentPage.title || this.currentPage.id
-      if (!window.confirm(`「${title}」を削除しますか？`)) return
+      if (!(await this.showConfirm(`「${title}」を削除しますか？`))) return
       const dir = await this.fs.getDir(`content/${this.currentType.id}/${this.currentPage.id}`)
       if (dir) {
         // ディレクトリ内の全ファイルを削除
@@ -685,7 +742,7 @@ Alpine.data('cms', () => {
     async deletePage() {
       if (!this.fs || !this.currentPage) return
       const title = this.currentPage.title || this.currentPage.id
-      if (!window.confirm(`「${title}」を削除しますか？`)) return
+      if (!(await this.showConfirm(`「${title}」を削除しますか？`))) return
       const parentDir = await this.fs.getDir('content/pages')
       if (parentDir) {
         try {
@@ -981,7 +1038,7 @@ Alpine.data('cms', () => {
       const typeId = this.currentType?.id || this.editingType?.id
       const typeLabel = this.currentType?.label || this.editingType?.label || typeId || '不明'
       if (!this.fs) return
-      if (!window.confirm(`「${typeLabel}」を削除しますか？`)) return
+      if (!(await this.showConfirm(`「${typeLabel}」を削除しますか？`))) return
 
       const dir = await this.fs.getDir('content/_types')
       if (dir && typeId) {
@@ -1024,8 +1081,8 @@ Alpine.data('cms', () => {
       this.currentMenu = this.menuData.menus.find((m: any) => m.id === id) || null
     },
 
-    addMenu() {
-      const name = window.prompt('メニュー名')
+    async addMenu() {
+      const name = await this.showPrompt('メニュー名')
       if (!name?.trim()) return
       const id =
         name
@@ -1038,9 +1095,9 @@ Alpine.data('cms', () => {
       this.selectMenu(id)
     },
 
-    deleteMenu() {
+    async deleteMenu() {
       if (!this.currentMenu) return
-      if (!window.confirm(`「${this.currentMenu.name}」を削除しますか？`)) return
+      if (!(await this.showConfirm(`「${this.currentMenu.name}」を削除しますか？`))) return
       this.menuData.menus = this.menuData.menus.filter((m: any) => m.id !== this.currentMenuId)
       // locationsからも削除
       for (const [loc, menuId] of Object.entries(this.menuData.locations)) {

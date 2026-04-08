@@ -1438,6 +1438,30 @@
       x-text="toast"
     ></div>
 
+    <!-- カスタムモーダル（confirm/prompt代替） -->
+    <div
+      x-show="modalVisible"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]"
+      @keydown.escape.window="modalCancel()"
+    >
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-[#15171a]" @click.stop>
+        <h3 class="text-base font-bold mb-3" x-text="modalTitle"></h3>
+        <p x-show="modalMessage" class="text-sm text-[#7c8b9a] mb-4" x-text="modalMessage"></p>
+        <input
+          x-show="modalShowInput"
+          type="text"
+          x-model="modalInput"
+          @keydown.enter="modalOk()"
+          class="gh-input-light w-full mb-4"
+          x-ref="modalInputRef"
+        />
+        <div class="flex justify-end gap-2">
+          <button @click="modalCancel()" class="gh-btn-outline text-xs">キャンセル</button>
+          <button @click="modalOk()" class="gh-btn-green text-xs">OK</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ローディング -->
     <div
       x-show="exporting"

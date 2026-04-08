@@ -817,23 +817,63 @@
                     </div>
 
                     <!-- 項目追加パネル -->
-                    <div class="flex gap-2 mb-4">
-                      <div class="text-xs text-[#7c8b9a]">追加:</div>
-                      <button @click="addMenuItem('page')" class="gh-btn-outline text-xs">
-                        固定ページ
-                      </button>
-                      <button @click="addMenuItem('post_type')" class="gh-btn-outline text-xs">
-                        投稿タイプ
-                      </button>
-                      <button
-                        @click="addMenuItem('custom', '', '', '')"
-                        class="gh-btn-outline text-xs"
-                      >
-                        カスタムリンク
-                      </button>
-                      <button @click="addMenuItem('category')" class="gh-btn-outline text-xs">
-                        カテゴリ
-                      </button>
+                    <div
+                      class="grid grid-cols-2 gap-3 mb-6 p-4 bg-[#f9fafb] rounded-lg border border-[#ebeef0]"
+                    >
+                      <!-- 固定ページ -->
+                      <div>
+                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">固定ページ</div>
+                        <div class="space-y-1 max-h-32 overflow-y-auto">
+                          <template x-for="p in pages" :key="p.id">
+                            <button
+                              @click="addMenuItem('page', p.title || p.id, '/' + (p.id === 'index' ? '' : p.id + '/'), p.id)"
+                              class="block w-full text-left px-2 py-1 text-xs rounded hover:bg-white border border-transparent hover:border-[#ebeef0] truncate"
+                              x-text="p.title || p.id"
+                            ></button>
+                          </template>
+                        </div>
+                      </div>
+                      <!-- 投稿タイプ -->
+                      <div>
+                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">投稿タイプ</div>
+                        <div class="space-y-1 max-h-32 overflow-y-auto">
+                          <template x-for="t in contentTypes" :key="t.id">
+                            <button
+                              @click="addMenuItem('post_type', t.label, '/' + t.slug + '/', t.id)"
+                              class="block w-full text-left px-2 py-1 text-xs rounded hover:bg-white border border-transparent hover:border-[#ebeef0] truncate"
+                              x-text="t.label"
+                            ></button>
+                          </template>
+                        </div>
+                      </div>
+                      <!-- カテゴリ -->
+                      <div>
+                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">カテゴリ</div>
+                        <div class="space-y-1 max-h-32 overflow-y-auto">
+                          <template x-for="cat in availableCategories" :key="cat.id">
+                            <button
+                              @click="addMenuItem('category', cat.label, '', cat.id)"
+                              class="block w-full text-left px-2 py-1 text-xs rounded hover:bg-white border border-transparent hover:border-[#ebeef0] truncate"
+                              x-text="cat.label"
+                            ></button>
+                          </template>
+                          <template x-if="!availableCategories.length">
+                            <p class="text-[10px] text-[#ced4da]">カテゴリなし</p>
+                          </template>
+                        </div>
+                      </div>
+                      <!-- カスタムリンク -->
+                      <div>
+                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">
+                          カスタムリンク
+                        </div>
+                        <button
+                          @click="addMenuItem('custom', '', '', '')"
+                          class="gh-btn-outline text-xs w-full"
+                        >
+                          + カスタムリンクを追加
+                        </button>
+                      </div>
                     </div>
 
                     <!-- メニュー項目一覧 -->

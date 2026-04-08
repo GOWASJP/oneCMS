@@ -946,24 +946,31 @@ Alpine.data('cms', () => {
     },
 
     async deleteType() {
-      const typeId = this.editingType?.id || this.currentType?.id
-      const typeLabel = this.editingType?.label || this.currentType?.label || ''
-      if (!this.fs || !typeId) return
+      const typeId = this.currentType?.id || this.editingType?.id
+      const typeLabel = this.currentType?.label || this.editingType?.label || typeId || '不明'
+      if (!this.fs) return
       if (!window.confirm(`「${typeLabel}」を削除しますか？`)) return
+
       const dir = await this.fs.getDir('content/_types')
-      if (dir) {
+      if (dir && typeId) {
         try {
           await dir.removeEntry(`${typeId}.json`)
         } catch {
           /* skip */
         }
       }
+      // IDが空のファイル(.json)も探して削除
+      if (dir && !typeId) {
+        try {
+          await dir.removeEntry('.json')
+        } catch {
+          /* skip */
+        }
+      }
       this.contentTypes = await this.fs.readContentTypes()
       this.showTypeEditor = false
-      if (this.currentType?.id === typeId) {
-        this.currentType = null
-        this.view = 'welcome'
-      }
+      this.currentType = null
+      this.view = 'welcome'
       this.showToast('削除しました')
     },
 

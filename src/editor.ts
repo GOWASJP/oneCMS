@@ -30,6 +30,45 @@ export function getImageUrlMap(): Map<string, string> {
 }
 
 /**
+ * v2形式のリストブロックをv1形式(string[])に変換
+ */
+function normalizeListBlocks(data: EditorData): EditorData {
+  if (!data?.blocks) return data
+  return {
+    ...data,
+    blocks: data.blocks.map((block) => {
+      if (block.type !== 'list') return block
+      const items = block.data?.items
+      if (!items || !items.length) return block
+      // v1形式(string[])ならそのまま
+      if (typeof items[0] === 'string') return block
+      // v2形式({content, items}[])をフラットなstring[]に変換
+      const flatten = (arr: any[]): string[] => {
+        const result: string[] = []
+        for (const item of arr) {
+          if (typeof item === 'string') {
+            result.push(item)
+          } else {
+            result.push(item.content || '')
+            if (item.items?.length) {
+              result.push(...flatten(item.items))
+            }
+          }
+        }
+        return result
+      }
+      return {
+        ...block,
+        data: {
+          ...block.data,
+          items: flatten(items),
+        },
+      }
+    }),
+  }
+}
+
+/**
  * Editor.js インスタンスを生成
  */
 export function createEditor(
@@ -37,10 +76,13 @@ export function createEditor(
   data: EditorData | null,
   fs: FileSystem | null,
 ): EditorJS {
+  // v2形式のリストブロックをv1形式に変換
+  const normalizedData = data ? normalizeListBlocks(data) : undefined
+
   return new EditorJS({
     holder: holderId,
     placeholder: '/ でメニューを開く、またはテキストを入力...',
-    data: data || undefined,
+    data: normalizedData,
     inlineToolbar: ['bold', 'italic', 'inlineCode', 'link'],
     tools: {
       header: {
@@ -133,20 +175,13 @@ export function editorJsonToHtml(data: EditorData): string {
 
         case 'list': {
           const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
-          const renderItems = (items: any[]): string => {
-            return items
-              .map((i) => {
-                // v2形式: {content, items} / v1形式: string
-                const text = typeof i === 'string' ? i : i.content || ''
-                const nested =
-                  typeof i === 'object' && i.items?.length
-                    ? `<${tag}>${renderItems(i.items)}</${tag}>`
-                    : ''
-                return `<li>${text}${nested}</li>`
-              })
-              .join('')
-          }
-          return `<${tag}>${renderItems(block.data.items)}</${tag}>`
+          const items = (block.data.items as any[])
+            .map((i) => {
+              const text = typeof i === 'string' ? i : i.content || ''
+              return `<li>${text}</li>`
+            })
+            .join('')
+          return `<${tag}>${items}</${tag}>`
         }
 
         case 'image': {

@@ -1,5 +1,6 @@
 import type { FileSystem } from './fs.ts'
 import type { ExportFile, DiffResult } from './types.ts'
+import { PATH_DIST, PATH_CHANGED, PATH_ASSETS_IMAGES, PATH_ASSETS_FILES } from './constants.ts'
 
 /**
  * 差分抽出エンジン
@@ -23,7 +24,7 @@ export class DiffEngine {
 
   /** 前回のmanifest.jsonを読み込み */
   async loadManifest(): Promise<Record<string, string>> {
-    return (await this.fs.readJson<Record<string, string>>('dist/manifest.json')) || {}
+    return (await this.fs.readJson<Record<string, string>>(`${PATH_DIST}/manifest.json`)) || {}
   }
 
   /** 書き出しファイルのハッシュを計算し、差分を検出 */
@@ -54,21 +55,21 @@ export class DiffEngine {
   ): Promise<{ totalFiles: number; changedFiles: number }> {
     // HTML/XML/txt ファイル書き出し
     for (const file of files) {
-      await this.fs.writeText(`dist/${file.path}`, file.content)
+      await this.fs.writeText(`${PATH_DIST}/${file.path}`, file.content)
     }
 
-    await this.fs.writeJson('dist/manifest.json', manifest)
+    await this.fs.writeJson(`${PATH_DIST}/manifest.json`, manifest)
 
     // changed/ に差分のみ
     for (const file of changed) {
-      await this.fs.writeText(`changed/${file.path}`, file.content)
+      await this.fs.writeText(`${PATH_CHANGED}/${file.path}`, file.content)
     }
 
     // assets/ を dist/assets/ と changed/assets/ にコピー
-    await this.fs.copyDir('assets/images', 'dist/assets/images')
-    await this.fs.copyDir('assets/files', 'dist/assets/files')
-    await this.fs.copyDir('assets/images', 'changed/assets/images')
-    await this.fs.copyDir('assets/files', 'changed/assets/files')
+    await this.fs.copyDir(PATH_ASSETS_IMAGES, `${PATH_DIST}/${PATH_ASSETS_IMAGES}`)
+    await this.fs.copyDir(PATH_ASSETS_FILES, `${PATH_DIST}/${PATH_ASSETS_FILES}`)
+    await this.fs.copyDir(PATH_ASSETS_IMAGES, `${PATH_CHANGED}/${PATH_ASSETS_IMAGES}`)
+    await this.fs.copyDir(PATH_ASSETS_FILES, `${PATH_CHANGED}/${PATH_ASSETS_FILES}`)
 
     return {
       totalFiles: files.length,

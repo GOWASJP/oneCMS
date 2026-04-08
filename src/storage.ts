@@ -1,15 +1,14 @@
+import { STORAGE_DB_NAME, STORAGE_HANDLE_KEY } from './constants.ts'
+
 /**
  * IndexedDB にFileSystemDirectoryHandleを保存・復元する
- * localStorageにはハンドルを保存できないためIndexedDBを使用
  */
 
-const DB_NAME = 'one-cms'
 const STORE_NAME = 'handles'
-const KEY = 'rootFolder'
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
+    const req = indexedDB.open(STORAGE_DB_NAME, 1)
     req.onupgradeneeded = () => {
       req.result.createObjectStore(STORE_NAME)
     }
@@ -23,7 +22,7 @@ export async function saveFolderHandle(handle: FileSystemDirectoryHandle): Promi
   const db = await openDB()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite')
-    tx.objectStore(STORE_NAME).put(handle, KEY)
+    tx.objectStore(STORE_NAME).put(handle, STORAGE_HANDLE_KEY)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
   })
@@ -35,14 +34,13 @@ export async function restoreFolderHandle(): Promise<FileSystemDirectoryHandle |
     const db = await openDB()
     const handle = await new Promise<FileSystemDirectoryHandle | null>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly')
-      const req = tx.objectStore(STORE_NAME).get(KEY)
+      const req = tx.objectStore(STORE_NAME).get(STORAGE_HANDLE_KEY)
       req.onsuccess = () => resolve(req.result || null)
       req.onerror = () => reject(req.error)
     })
 
     if (!handle) return null
 
-    // 読み書き権限を再要求
     const perm = await handle.requestPermission({ mode: 'readwrite' })
     if (perm === 'granted') return handle
 

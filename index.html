@@ -804,144 +804,169 @@
 
                 <template x-if="currentMenu">
                   <div>
-                    <!-- メニュー設定 -->
-                    <div class="flex gap-4 mb-4 pb-4 border-b border-[#ebeef0]">
-                      <div class="flex-1">
-                        <label class="gh-label">メニュー名</label>
-                        <input
-                          type="text"
-                          x-model="currentMenu.name"
-                          class="gh-input-light w-full text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <!-- 項目追加パネル -->
-                    <div
-                      class="grid grid-cols-2 gap-3 mb-6 p-4 bg-[#f9fafb] rounded-lg border border-[#ebeef0]"
-                    >
-                      <!-- 固定ページ -->
-                      <div>
-                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">固定ページ</div>
-                        <div class="space-y-1 max-h-32 overflow-y-auto">
-                          <template x-for="p in pages" :key="p.id">
-                            <button
-                              @click="addMenuItem('page', p.title || p.id, '/' + (p.id === 'index' ? '' : p.id + '/'), p.id)"
-                              class="block w-full text-left px-2 py-1 text-xs rounded hover:bg-white border border-transparent hover:border-[#ebeef0] truncate"
-                              x-text="p.title || p.id"
-                            ></button>
-                          </template>
-                        </div>
-                      </div>
-                      <!-- 投稿タイプ -->
-                      <div>
-                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">投稿タイプ</div>
-                        <div class="space-y-1 max-h-32 overflow-y-auto">
-                          <template x-for="t in contentTypes" :key="t.id">
-                            <button
-                              @click="addMenuItem('post_type', t.label, '/' + t.slug + '/', t.id)"
-                              class="block w-full text-left px-2 py-1 text-xs rounded hover:bg-white border border-transparent hover:border-[#ebeef0] truncate"
-                              x-text="t.label"
-                            ></button>
-                          </template>
-                        </div>
-                      </div>
-                      <!-- カテゴリ -->
-                      <div>
-                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">カテゴリ</div>
-                        <div class="space-y-1 max-h-32 overflow-y-auto">
-                          <template x-for="cat in availableCategories" :key="cat.id">
-                            <button
-                              @click="addMenuItem('category', cat.label, '', cat.id)"
-                              class="block w-full text-left px-2 py-1 text-xs rounded hover:bg-white border border-transparent hover:border-[#ebeef0] truncate"
-                              x-text="cat.label"
-                            ></button>
-                          </template>
-                          <template x-if="!availableCategories.length">
-                            <p class="text-[10px] text-[#ced4da]">カテゴリなし</p>
-                          </template>
-                        </div>
-                      </div>
-                      <!-- カスタムリンク -->
-                      <div>
-                        <div class="text-xs font-semibold text-[#7c8b9a] mb-1.5">
-                          カスタムリンク
-                        </div>
-                        <button
-                          @click="addMenuItem('custom', '', '', '')"
-                          class="gh-btn-outline text-xs w-full"
-                        >
-                          + カスタムリンクを追加
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- メニュー項目一覧 -->
-                    <div class="space-y-1 mb-6">
-                      <template x-for="(item, idx) in currentMenu.items" :key="item.id">
-                        <div
-                          class="border border-[#ebeef0] rounded-md bg-white"
-                          :style="'margin-left:' + (item.parent ? '24px' : '0')"
-                        >
-                          <div class="flex items-center gap-2 px-3 py-2">
-                            <div class="flex flex-col gap-0.5">
+                    <!-- 2カラム: 左=追加パネル / 右=メニュー構造 -->
+                    <div class="flex gap-6">
+                      <!-- 左カラム: 項目追加 -->
+                      <div class="w-64 shrink-0 space-y-3">
+                        <!-- 固定ページ -->
+                        <details class="border border-[#ebeef0] rounded-md" open>
+                          <summary
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                          >
+                            固定ページ
+                          </summary>
+                          <div class="p-2 space-y-0.5 max-h-40 overflow-y-auto">
+                            <template x-for="p in pages" :key="p.id">
                               <button
-                                @click="moveMenuItem(idx, -1)"
-                                class="text-[#7c8b9a] hover:text-[#15171a]"
-                              >
-                                <i data-lucide="chevron-up" class="w-3 h-3"></i>
-                              </button>
+                                @click="addMenuItem('page', p.title || p.id, '/' + (p.id === 'index' ? '' : p.id + '/'), p.id)"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                x-text="p.title || p.id"
+                              ></button>
+                            </template>
+                          </div>
+                        </details>
+                        <!-- 投稿タイプ -->
+                        <details class="border border-[#ebeef0] rounded-md">
+                          <summary
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                          >
+                            投稿タイプ
+                          </summary>
+                          <div class="p-2 space-y-0.5 max-h-40 overflow-y-auto">
+                            <template x-for="t in contentTypes" :key="t.id">
                               <button
-                                @click="moveMenuItem(idx, 1)"
-                                class="text-[#7c8b9a] hover:text-[#15171a]"
-                              >
-                                <i data-lucide="chevron-down" class="w-3 h-3"></i>
-                              </button>
-                            </div>
-                            <div class="flex-1 grid grid-cols-3 gap-2">
-                              <input
-                                type="text"
-                                x-model="item.label"
-                                placeholder="ラベル"
-                                class="gh-input-light text-xs"
-                              />
-                              <input
-                                type="text"
-                                x-model="item.url"
-                                placeholder="/about/"
-                                class="gh-input-light text-xs"
-                              />
-                              <div class="flex items-center gap-1">
-                                <span
-                                  class="gh-badge bg-[#f1f3f5] text-[#7c8b9a]"
-                                  x-text="item.type === 'custom' ? 'カスタム' : item.type === 'page' ? 'ページ' : item.type === 'post_type' ? '投稿' : 'カテゴリ'"
-                                ></span>
-                                <select
-                                  x-model="item.parent"
-                                  class="gh-select-light text-[10px] w-20"
-                                >
-                                  <option value="">トップ</option>
-                                  <template
-                                    x-for="p in currentMenu.items.filter(i => i.id !== item.id)"
-                                    :key="p.id"
-                                  >
-                                    <option :value="p.id" x-text="'└ ' + p.label"></option>
-                                  </template>
-                                </select>
-                              </div>
-                            </div>
+                                @click="addMenuItem('post_type', t.label, '/' + t.slug + '/', t.id)"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                x-text="t.label"
+                              ></button>
+                            </template>
+                          </div>
+                        </details>
+                        <!-- カテゴリ -->
+                        <details class="border border-[#ebeef0] rounded-md">
+                          <summary
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                          >
+                            カテゴリ
+                          </summary>
+                          <div class="p-2 space-y-0.5 max-h-40 overflow-y-auto">
+                            <template x-for="cat in availableCategories" :key="cat.id">
+                              <button
+                                @click="addMenuItem('category', cat.label, '', cat.id)"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                x-text="cat.label"
+                              ></button>
+                            </template>
+                            <template x-if="!availableCategories.length">
+                              <p class="text-[10px] text-[#ced4da] px-2">カテゴリなし</p>
+                            </template>
+                          </div>
+                        </details>
+                        <!-- カスタムリンク -->
+                        <details class="border border-[#ebeef0] rounded-md">
+                          <summary
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                          >
+                            カスタムリンク
+                          </summary>
+                          <div class="p-2">
                             <button
-                              @click="removeMenuItem(idx)"
-                              class="text-[#dc2626] hover:text-[#dc2626]/80 p-1"
+                              @click="addMenuItem('custom', '', '', '')"
+                              class="gh-btn-outline text-xs w-full"
                             >
-                              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                              + 追加
                             </button>
                           </div>
+                        </details>
+                      </div>
+
+                      <!-- 右カラム: メニュー構造 -->
+                      <div class="flex-1">
+                        <div class="flex gap-3 mb-4">
+                          <div class="flex-1">
+                            <label class="gh-label">メニュー名</label>
+                            <input
+                              type="text"
+                              x-model="currentMenu.name"
+                              class="gh-input-light w-full text-sm"
+                            />
+                          </div>
                         </div>
-                      </template>
-                      <template x-if="!currentMenu.items.length">
-                        <div class="py-8 text-center text-sm text-[#ced4da]">項目がありません</div>
-                      </template>
+
+                        <h3 class="text-xs font-semibold text-[#7c8b9a] mb-2">メニュー構造</h3>
+                        <div class="space-y-1 mb-6 min-h-[120px]">
+                          <template x-for="(item, idx) in currentMenu.items" :key="item.id">
+                            <div
+                              class="border border-[#ebeef0] rounded-md bg-white"
+                              :style="'margin-left:' + (item.parent ? '24px' : '0')"
+                            >
+                              <div class="flex items-center gap-2 px-3 py-2">
+                                <div class="flex flex-col gap-0.5">
+                                  <button
+                                    @click="moveMenuItem(idx, -1)"
+                                    class="text-[#7c8b9a] hover:text-[#15171a]"
+                                  >
+                                    <i data-lucide="chevron-up" class="w-3 h-3"></i>
+                                  </button>
+                                  <button
+                                    @click="moveMenuItem(idx, 1)"
+                                    class="text-[#7c8b9a] hover:text-[#15171a]"
+                                  >
+                                    <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                                  </button>
+                                </div>
+                                <div class="flex-1 space-y-1">
+                                  <div class="flex gap-2">
+                                    <input
+                                      type="text"
+                                      x-model="item.label"
+                                      placeholder="ラベル"
+                                      class="gh-input-light text-xs flex-1"
+                                    />
+                                    <input
+                                      type="text"
+                                      x-model="item.url"
+                                      placeholder="/about/"
+                                      class="gh-input-light text-xs flex-1"
+                                    />
+                                  </div>
+                                  <div class="flex items-center gap-2">
+                                    <span
+                                      class="gh-badge bg-[#f1f3f5] text-[#7c8b9a]"
+                                      x-text="item.type === 'custom' ? 'カスタム' : item.type === 'page' ? 'ページ' : item.type === 'post_type' ? '投稿' : 'カテゴリ'"
+                                    ></span>
+                                    <select
+                                      x-model="item.parent"
+                                      class="gh-select-light text-[10px]"
+                                    >
+                                      <option value="">トップ</option>
+                                      <template
+                                        x-for="p in currentMenu.items.filter(i => i.id !== item.id)"
+                                        :key="p.id"
+                                      >
+                                        <option :value="p.id" x-text="'└ ' + p.label"></option>
+                                      </template>
+                                    </select>
+                                  </div>
+                                </div>
+                                <button
+                                  @click="removeMenuItem(idx)"
+                                  class="text-[#dc2626] hover:text-[#dc2626]/80 p-1"
+                                >
+                                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+                          <template x-if="!currentMenu.items.length">
+                            <div
+                              class="py-12 text-center text-sm text-[#ced4da] border border-dashed border-[#ebeef0] rounded-md"
+                            >
+                              左パネルから項目を追加
+                            </div>
+                          </template>
+                        </div>
+                      </div>
                     </div>
 
                     <!-- メニュー位置 -->

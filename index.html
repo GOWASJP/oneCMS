@@ -76,18 +76,40 @@
 
                 <div class="gh-nav-section">コンテンツ</div>
                 <template x-for="type in contentTypes" :key="type.id">
-                  <button
-                    @click="openContentType(type)"
-                    :class="currentType?.id === type.id ? 'gh-nav-active' : ''"
-                    class="gh-nav-item w-full"
-                  >
-                    <i data-lucide="layers" class="w-[18px] h-[18px]"></i>
-                    <span x-text="type.label" class="truncate"></span>
-                  </button>
+                  <div class="flex items-center group">
+                    <button
+                      @click="openContentType(type)"
+                      :class="currentType?.id === type.id ? 'gh-nav-active' : ''"
+                      class="gh-nav-item flex-1"
+                    >
+                      <i data-lucide="layers" class="w-[18px] h-[18px]"></i>
+                      <span x-text="type.label" class="truncate"></span>
+                    </button>
+                    <button
+                      @click="openTypeEditor(type)"
+                      class="opacity-0 group-hover:opacity-100 p-1 mr-1 rounded hover:bg-white/10 transition-opacity"
+                      title="編集"
+                    >
+                      <i data-lucide="pencil" class="w-3 h-3 text-[#7c8b9a]"></i>
+                    </button>
+                  </div>
                 </template>
+                <button @click="openTypeEditor()" class="gh-nav-item w-full text-[#505a66]">
+                  <i data-lucide="plus" class="w-[18px] h-[18px]"></i>
+                  <span>タイプ追加</span>
+                </button>
 
                 <div class="h-px bg-white/5 my-3"></div>
 
+                <button @click="loadTaxonomies()" class="gh-nav-item w-full">
+                  <i data-lucide="tag" class="w-[18px] h-[18px]"></i>
+                  <span>カテゴリ・タグ</span>
+                </button>
+
+                <button @click="loadLangEditor()" class="gh-nav-item w-full">
+                  <i data-lucide="languages" class="w-[18px] h-[18px]"></i>
+                  <span>言語設定</span>
+                </button>
                 <button
                   @click="view = 'settings'; updateHash()"
                   :class="view === 'settings' ? 'gh-nav-active' : ''"
@@ -413,6 +435,151 @@
                             class="w-10 h-8 rounded border border-[#ebeef0] cursor-pointer"
                           />
                         </template>
+                        <!-- radio -->
+                        <template x-if="field.type === 'radio'">
+                          <div class="flex flex-col gap-1.5">
+                            <template x-for="opt in (field.options || [])" :key="opt.value || opt">
+                              <label class="flex items-center gap-2 cursor-pointer text-sm">
+                                <input
+                                  type="radio"
+                                  :name="field.key"
+                                  :value="opt.value || opt"
+                                  x-model="editData[field.key]"
+                                  class="accent-[#30cf43]"
+                                />
+                                <span x-text="opt.label || opt"></span>
+                              </label>
+                            </template>
+                          </div>
+                        </template>
+                        <!-- multiselect -->
+                        <template x-if="field.type === 'multiselect'">
+                          <div class="flex flex-wrap gap-2">
+                            <template x-for="opt in (field.options || [])" :key="opt.value || opt">
+                              <label
+                                class="flex items-center gap-1.5 px-2 py-1 border border-[#ebeef0] rounded text-xs cursor-pointer"
+                                :class="(editData[field.key]||[]).includes(opt.value||opt) ? 'bg-[#30cf43]/10 border-[#30cf43]' : ''"
+                              >
+                                <input
+                                  type="checkbox"
+                                  :value="opt.value || opt"
+                                  x-model="editData[field.key]"
+                                  class="hidden"
+                                />
+                                <span x-text="opt.label || opt"></span>
+                              </label>
+                            </template>
+                          </div>
+                        </template>
+                        <!-- daterange -->
+                        <template x-if="field.type === 'daterange'">
+                          <div class="flex items-center gap-2">
+                            <input
+                              type="date"
+                              x-model="editData[field.key + '_from']"
+                              class="gh-input-light"
+                            />
+                            <span class="text-[#7c8b9a] text-sm">〜</span>
+                            <input
+                              type="date"
+                              x-model="editData[field.key + '_to']"
+                              class="gh-input-light"
+                            />
+                          </div>
+                        </template>
+                        <!-- year -->
+                        <template x-if="field.type === 'year'">
+                          <input
+                            type="number"
+                            x-model="editData[field.key]"
+                            min="1900"
+                            max="2100"
+                            placeholder="2025"
+                            class="gh-input-light w-32"
+                          />
+                        </template>
+                        <!-- hidden -->
+                        <template x-if="field.type === 'hidden'">
+                          <input type="hidden" x-model="editData[field.key]" />
+                        </template>
+                        <!-- imagelist -->
+                        <template x-if="field.type === 'imagelist'">
+                          <div>
+                            <div class="flex flex-wrap gap-2 mb-2">
+                              <template
+                                x-for="(img, idx) in (editData[field.key] || [])"
+                                :key="idx"
+                              >
+                                <div class="relative">
+                                  <img
+                                    :src="img"
+                                    class="w-20 h-20 object-cover rounded border border-[#ebeef0]"
+                                  />
+                                  <button
+                                    @click="editData[field.key].splice(idx,1)"
+                                    class="absolute -top-1 -right-1 w-4 h-4 bg-[#dc2626] text-white rounded-full text-[10px] flex items-center justify-center"
+                                  >
+                                    x
+                                  </button>
+                                </div>
+                              </template>
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              @change="for(const f of $event.target.files){handleImageUpload({target:{files:[f]}}, '__tmp');editData[field.key]=[...(editData[field.key]||[]),editData.__tmp];delete editData.__tmp}"
+                              class="text-xs text-[#7c8b9a]"
+                            />
+                          </div>
+                        </template>
+                        <!-- repeater -->
+                        <template x-if="field.type === 'repeater'">
+                          <div class="space-y-2">
+                            <template x-for="(row, idx) in (editData[field.key] || [])" :key="idx">
+                              <div class="flex gap-2 items-center">
+                                <input
+                                  type="text"
+                                  x-model="editData[field.key][idx]"
+                                  class="gh-input-light flex-1"
+                                />
+                                <button
+                                  @click="editData[field.key].splice(idx,1)"
+                                  class="text-[#dc2626] text-xs"
+                                >
+                                  削除
+                                </button>
+                              </div>
+                            </template>
+                            <button
+                              @click="editData[field.key] = [...(editData[field.key]||[]), '']"
+                              class="gh-btn-outline text-xs"
+                            >
+                              + 追加
+                            </button>
+                          </div>
+                        </template>
+                        <!-- group -->
+                        <template x-if="field.type === 'group'">
+                          <details class="border border-[#ebeef0] rounded-md" open>
+                            <summary
+                              class="px-3 py-2 text-sm font-medium cursor-pointer bg-[#f9fafb]"
+                              x-text="field.label"
+                            ></summary>
+                            <div class="p-3 text-xs text-[#7c8b9a]">
+                              グループフィールドはJSONで直接編集してください
+                            </div>
+                          </details>
+                        </template>
+                        <!-- relation -->
+                        <template x-if="field.type === 'relation'">
+                          <input
+                            type="text"
+                            x-model="editData[field.key]"
+                            placeholder="関連コンテンツID"
+                            class="gh-input-light w-full"
+                          />
+                        </template>
                       </div>
                     </template>
                   </div>
@@ -682,6 +849,189 @@
         </aside>
       </div>
     </template>
+
+    <!-- コンテンツタイプ編集モーダル -->
+    <div
+      x-show="showTypeEditor"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      @click.self="showTypeEditor=false"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+      >
+        <h2
+          class="text-lg font-bold mb-4"
+          x-text="editingType?.id ? 'コンテンツタイプ編集' : '新規コンテンツタイプ'"
+        ></h2>
+        <div class="space-y-3">
+          <div>
+            <label class="gh-label">ラベル</label>
+            <input type="text" x-model="editingType.label" class="gh-input-light w-full" />
+          </div>
+          <div>
+            <label class="gh-label">スラッグ (URL用)</label>
+            <input
+              type="text"
+              x-model="editingType.slug"
+              class="gh-input-light w-full"
+              placeholder="news"
+            />
+          </div>
+          <div>
+            <label class="gh-label">1ページあたりの件数</label>
+            <input type="number" x-model="editingType.pagination" class="gh-input-light w-24" />
+          </div>
+          <div class="h-px bg-[#ebeef0] my-2"></div>
+          <h3 class="text-sm font-bold">フィールド定義</h3>
+          <template x-for="(f, idx) in editingType?.fields || []" :key="idx">
+            <div class="flex gap-2 items-end border border-[#ebeef0] rounded p-2">
+              <div class="flex-1">
+                <label class="text-[10px] text-[#7c8b9a]">キー</label>
+                <input type="text" x-model="f.key" class="gh-input-light w-full text-xs" />
+              </div>
+              <div class="flex-1">
+                <label class="text-[10px] text-[#7c8b9a]">ラベル</label>
+                <input type="text" x-model="f.label" class="gh-input-light w-full text-xs" />
+              </div>
+              <div class="w-28">
+                <label class="text-[10px] text-[#7c8b9a]">タイプ</label>
+                <select x-model="f.type" class="gh-select-light w-full text-xs">
+                  <template
+                    x-for="ft in ['text','textarea','richtext','number','url','email','date','datetime','daterange','image','imagelist','file','select','multiselect','radio','checkbox','toggle','relation','repeater','group','year','color','hidden']"
+                    :key="ft"
+                  >
+                    <option :value="ft" x-text="ft"></option>
+                  </template>
+                </select>
+              </div>
+              <button @click="removeFieldFromType(idx)" class="text-[#dc2626] text-xs pb-1">
+                削除
+              </button>
+            </div>
+          </template>
+          <button @click="addFieldToType()" class="gh-btn-outline text-xs">+ フィールド追加</button>
+        </div>
+        <div class="flex justify-between mt-6">
+          <button
+            x-show="editingType?.id"
+            @click="deleteType()"
+            class="text-[#dc2626] text-xs hover:underline"
+          >
+            削除
+          </button>
+          <div class="flex gap-2 ml-auto">
+            <button @click="showTypeEditor=false" class="gh-btn-outline text-xs">キャンセル</button>
+            <button @click="saveType()" class="gh-btn-green text-xs">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- タクソノミー管理モーダル -->
+    <div
+      x-show="showTaxonomyEditor"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      @click.self="showTaxonomyEditor=false"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+      >
+        <h2 class="text-lg font-bold mb-4">カテゴリ・タグ管理</h2>
+        <h3 class="text-sm font-bold mb-2">カテゴリ</h3>
+        <div class="space-y-1 mb-3">
+          <template x-for="(cat, idx) in taxonomyData.categories" :key="idx">
+            <div class="flex gap-2 items-center">
+              <input type="text" x-model="cat.label" class="gh-input-light flex-1 text-sm" />
+              <button @click="taxonomyData.categories.splice(idx,1)" class="text-[#dc2626] text-xs">
+                削除
+              </button>
+            </div>
+          </template>
+          <button
+            @click="taxonomyData.categories.push({id:Date.now().toString(),label:''})"
+            class="gh-btn-outline text-xs"
+          >
+            + カテゴリ追加
+          </button>
+        </div>
+        <h3 class="text-sm font-bold mb-2">タグ</h3>
+        <div class="space-y-1 mb-3">
+          <template x-for="(tag, idx) in taxonomyData.tags" :key="idx">
+            <div class="flex gap-2 items-center">
+              <input type="text" x-model="tag.label" class="gh-input-light flex-1 text-sm" />
+              <button @click="taxonomyData.tags.splice(idx,1)" class="text-[#dc2626] text-xs">
+                削除
+              </button>
+            </div>
+          </template>
+          <button
+            @click="taxonomyData.tags.push({id:Date.now().toString(),label:''})"
+            class="gh-btn-outline text-xs"
+          >
+            + タグ追加
+          </button>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button @click="showTaxonomyEditor=false" class="gh-btn-outline text-xs">
+            キャンセル
+          </button>
+          <button @click="saveTaxonomies()" class="gh-btn-green text-xs">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 言語設定モーダル -->
+    <div
+      x-show="showLangEditor"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      @click.self="showLangEditor=false"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+      >
+        <h2 class="text-lg font-bold mb-4">言語設定</h2>
+        <div class="mb-3">
+          <label class="gh-label">デフォルト言語コード</label>
+          <input
+            type="text"
+            x-model="langEditorData.default"
+            class="gh-input-light w-24"
+            placeholder="ja"
+          />
+        </div>
+        <h3 class="text-sm font-bold mb-2">言語一覧</h3>
+        <div class="space-y-2 mb-3">
+          <template x-for="(loc, idx) in langEditorData.locales" :key="idx">
+            <div class="flex gap-2 items-center">
+              <input
+                type="text"
+                x-model="loc.code"
+                class="gh-input-light w-16 text-xs"
+                placeholder="ja"
+              />
+              <input
+                type="text"
+                x-model="loc.label"
+                class="gh-input-light flex-1 text-xs"
+                placeholder="日本語"
+              />
+              <input
+                type="text"
+                x-model="loc.flag"
+                class="gh-input-light w-12 text-xs text-center"
+                placeholder="🇯🇵"
+              />
+              <button @click="removeLangLocale(idx)" class="text-[#dc2626] text-xs">削除</button>
+            </div>
+          </template>
+          <button @click="addLangLocale()" class="gh-btn-outline text-xs">+ 言語追加</button>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button @click="showLangEditor=false" class="gh-btn-outline text-xs">キャンセル</button>
+          <button @click="saveLangConfig()" class="gh-btn-green text-xs">保存</button>
+        </div>
+      </div>
+    </div>
 
     <!-- トースト -->
     <div

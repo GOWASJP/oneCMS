@@ -22,7 +22,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git remote:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(grep -n \"addContentType\\\\|editContentType\\\\|newType\\\\|typeManagement\" /Users/kiminorifujii/Documents/Projects/GowasCms/index.html /Users/kiminorifujii/Documents/Projects/GowasCms/src/*.ts)",
+      "Bash(wc:*)"
     ]
   }
 }

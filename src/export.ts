@@ -247,19 +247,18 @@ export class Exporter {
     // メニューデータ読み込み
     const menuData = (await this.fs.readJson<any>('content/menus.json')) || {
       menus: [],
-      locations: {},
     }
-    const getMenu = (location: string) => {
-      const menuId = menuData.locations?.[location]
-      const menu = menuData.menus?.find((m: any) => m.id === menuId)
-      return menu?.items || siteConfig.nav || []
+    // 全メニューを site.menus.<id> でアクセス可能にする
+    const menus: Record<string, any[]> = {}
+    for (const menu of menuData.menus || []) {
+      menus[menu.id] = menu.items || []
     }
     // site オブジェクトにメニューを注入
     const site = {
       ...siteConfig,
-      nav: getMenu('primary'),
-      footerNav: getMenu('footer'),
-      mobileNav: getMenu('mobile'),
+      menus,
+      // 後方互換: 最初のメニューを nav として提供
+      nav: menuData.menus?.[0]?.items || siteConfig.nav || [],
     }
 
     for (const locale of locales) {

@@ -41,13 +41,6 @@ export const PATH_ASSETS_ORIGINALS = 'assets/_originals'
 export const PATH_DIST = 'dist'
 export const PATH_CHANGED = 'changed'
 
-// --- メニュー位置 ---
-export const MENU_LOCATIONS = [
-  { id: 'primary', label: 'ヘッダーナビゲーション' },
-  { id: 'footer', label: 'フッター' },
-  { id: 'mobile', label: 'モバイルメニュー' },
-] as const
-
 // --- ステータス ---
 export const CONTENT_STATUSES = [
   { value: 'draft', label: '下書き' },

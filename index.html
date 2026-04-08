@@ -907,7 +907,6 @@
                               @dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
                               @drop.prevent="if(dragIdx !== null && dragIdx !== idx){ currentMenu.items.splice(idx, 0, currentMenu.items.splice(dragIdx, 1)[0]) }; dragIdx = null"
                               @dragend="dragIdx = null"
-                              x-data="{ open: false }"
                             >
                               <!-- ヘッダー -->
                               <div class="flex items-center gap-2 px-3 py-2.5 text-sm">
@@ -917,7 +916,7 @@
                                 ></i>
                                 <span
                                   class="flex-1 font-medium truncate cursor-pointer"
-                                  @click="open = !open"
+                                  @click="item._open = !item._open"
                                   x-text="item.label || '（無題）'"
                                 ></span>
                                 <span
@@ -925,19 +924,19 @@
                                   x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
                                 ></span>
                                 <button
-                                  @click="open = !open"
+                                  @click="item._open = !item._open"
                                   class="p-1 text-[#7c8b9a] hover:text-[#15171a] hover:bg-[#f1f3f5] rounded shrink-0"
                                 >
                                   <i
                                     data-lucide="chevron-down"
                                     class="w-3.5 h-3.5 transition-transform"
-                                    :class="open && 'rotate-180'"
+                                    :class="item._open && 'rotate-180'"
                                   ></i>
                                 </button>
                               </div>
                               <!-- 展開時の編集エリア -->
                               <div
-                                x-show="open"
+                                x-show="item._open"
                                 class="px-3 pb-3 pt-1 border-t border-[#ebeef0] space-y-2"
                               >
                                 <div>

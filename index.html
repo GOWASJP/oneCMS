@@ -935,11 +935,12 @@
                                       class="gh-badge bg-[#f1f3f5] text-[#7c8b9a]"
                                       x-text="item.type === 'custom' ? 'カスタム' : item.type === 'page' ? 'ページ' : item.type === 'post_type' ? '投稿' : 'カテゴリ'"
                                     ></span>
+                                    <span class="text-[10px] text-[#ced4da]">親:</span>
                                     <select
                                       x-model="item.parent"
                                       class="gh-select-light text-[10px]"
                                     >
-                                      <option value="">トップ</option>
+                                      <option value="">なし（トップレベル）</option>
                                       <template
                                         x-for="p in currentMenu.items.filter(i => i.id !== item.id)"
                                         :key="p.id"

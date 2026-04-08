@@ -134,16 +134,16 @@ interface CmsComponent {
   modalOk(): void
   modalCancel(): void
   // メニュー管理
-  menuData: { menus: any[]; locations: Record<string, string> }
+  menuData: { menus: any[] }
   currentMenuId: string
   currentMenu: any
   loadMenus(): Promise<void>
   saveMenus(): Promise<void>
-  addMenu(): void
-  deleteMenu(): void
+  addMenu(): Promise<void>
+  deleteMenu(): Promise<void>
   selectMenu(id: string): void
   addMenuItem(type: string, label?: string, url?: string, object?: string): void
-  removeMenuItem(idx: number): void
+  removeMenuItem(idx: number): Promise<void>
   moveMenuItem(idx: number, dir: number): void
   setItemParent(idx: number, parentId: string): void
   // コンテンツタイプ管理
@@ -210,7 +210,7 @@ Alpine.data('cms', () => {
     modalResolve: null as ((value: string | boolean | null) => void) | null,
 
     // メニュー管理
-    menuData: { menus: [], locations: {} } as any,
+    menuData: { menus: [] } as any,
     currentMenuId: '',
     currentMenu: null as any,
 
@@ -1078,7 +1078,7 @@ Alpine.data('cms', () => {
     async loadMenus() {
       if (!this.fs) return
       const data = await this.fs.readJson<any>(PATH_MENUS)
-      this.menuData = data || { menus: [], locations: {} }
+      this.menuData = data || { menus: [] }
       if (this.menuData.menus.length && !this.currentMenuId) {
         this.selectMenu(this.menuData.menus[0].id)
       }
@@ -1094,12 +1094,20 @@ Alpine.data('cms', () => {
     async addMenu() {
       const name = await this.showPrompt('メニュー名')
       if (!name?.trim()) return
-      const id =
-        name
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '-')
-          .replace(/-+/g, '-') || `menu-${Date.now()}`
+      const slug = name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+      // 英数字がない場合（日本語名等）は連番IDを生成
+      const existingIds = new Set(this.menuData.menus.map((m: any) => m.id))
+      let id = slug
+      if (!id) {
+        let n = 1
+        while (existingIds.has(`menu-${n}`)) n++
+        id = `menu-${n}`
+      }
       const menu = { id, name: name.trim(), items: [] }
       this.menuData.menus.push(menu)
       this.selectMenu(id)
@@ -1109,10 +1117,6 @@ Alpine.data('cms', () => {
       if (!this.currentMenu) return
       if (!(await this.showConfirm(`「${this.currentMenu.name}」を削除しますか？`))) return
       this.menuData.menus = this.menuData.menus.filter((m: any) => m.id !== this.currentMenuId)
-      // locationsからも削除
-      for (const [loc, menuId] of Object.entries(this.menuData.locations)) {
-        if (menuId === this.currentMenuId) delete this.menuData.locations[loc]
-      }
       this.currentMenu = null
       this.currentMenuId = ''
       if (this.menuData.menus.length) this.selectMenu(this.menuData.menus[0].id)
@@ -1121,9 +1125,10 @@ Alpine.data('cms', () => {
     addMenuItem(type: string, label?: string, url?: string, object?: string) {
       if (!this.currentMenu) return
       const id = String(Date.now())
+      const itemLabel = label || '新規項目'
       this.currentMenu.items.push({
         id,
-        label: label || '新規項目',
+        label: itemLabel,
         type,
         url: url || '',
         object: object || '',
@@ -1131,11 +1136,13 @@ Alpine.data('cms', () => {
         parent: '',
         order: this.currentMenu.items.length,
       })
+      this.showToast(`「${itemLabel}」を追加しました`)
     },
 
-    removeMenuItem(idx: number) {
+    async removeMenuItem(idx: number) {
       if (!this.currentMenu) return
       const removed = this.currentMenu.items[idx]
+      if (!(await this.showConfirm(`「${removed.label || '項目'}」を削除しますか？`))) return
       // 子項目の親をクリア
       for (const item of this.currentMenu.items) {
         if (item.parent === removed.id) item.parent = removed.parent || ''
@@ -1148,9 +1155,8 @@ Alpine.data('cms', () => {
       const items = this.currentMenu.items
       const newIdx = idx + dir
       if (newIdx < 0 || newIdx >= items.length) return
-      const tmp = items[idx]
-      items[idx] = items[newIdx]
-      items[newIdx] = tmp
+      const [moved] = items.splice(idx, 1)
+      items.splice(newIdx, 0, moved)
     },
 
     setItemParent(idx: number, parentId: string) {

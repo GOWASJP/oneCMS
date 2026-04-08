@@ -28,7 +28,8 @@
       "Bash(cp:*)",
       "Read(//Users/kiminorifujii/.claude/plugins/marketplaces/ui-ux-pro-max-skill/**)",
       "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"CMS admin panel ghost-style content management\" --design-system -p \"GOWAS CMS\")",
-      "Bash(python3 /Users/kiminorifujii/.claude/plugins/marketplaces/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py \"CMS admin ghost content management tool\" --design-system -p \"GOWAS CMS\")"
+      "Bash(python3 /Users/kiminorifujii/.claude/plugins/marketplaces/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py \"CMS admin ghost content management tool\" --design-system -p \"GOWAS CMS\")",
+      "Bash(curl -s http://localhost:5173/)"
     ]
   }
 }

@@ -1,0 +1,8 @@
+<nav>
+  <a href="/">{{site.name}}</a>
+  <ul>
+    {{#each nav}}
+    <li><a href="{{this.url}}">{{this.label}}</a></li>
+    {{/each}}
+  </ul>
+</nav>

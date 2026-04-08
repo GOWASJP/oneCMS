@@ -1,0 +1,21 @@
+{{#if (gt total 1)}}
+<nav aria-label="ページネーション">
+  <ul>
+    {{#if (gt current 1)}}
+    <li><a href="{{prevUrl}}">前へ</a></li>
+    {{/if}}
+    {{#each pages}}
+    <li>
+      {{#if (eq this.number ../current)}}
+      <span aria-current="page">{{this.number}}</span>
+      {{else}}
+      <a href="{{this.url}}">{{this.number}}</a>
+      {{/if}}
+    </li>
+    {{/each}}
+    {{#if (lt current total)}}
+    <li><a href="{{nextUrl}}">次へ</a></li>
+    {{/if}}
+  </ul>
+</nav>
+{{/if}}

@@ -1,0 +1,11 @@
+{{> breadcrumb}}
+<article>
+  <h1>{{page.title}}</h1>
+  {{#if page.publishedAt}}
+  <time datetime="{{page.publishedAt}}">{{formatDate page.publishedAt "YYYY年MM月DD日"}}</time>
+  {{/if}}
+  {{#if page.image}}
+  <img src="{{page.image}}" alt="{{page.title}}">
+  {{/if}}
+  {{{page.body}}}
+</article>

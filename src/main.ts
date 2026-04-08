@@ -508,6 +508,7 @@ Alpine.data('cms', () => {
         id,
         title: '',
         status: 'draft',
+        publishedAt: now.toISOString().split('T')[0],
         body: '',
         _meta: {
           createdAt: now.toISOString().split('T')[0],

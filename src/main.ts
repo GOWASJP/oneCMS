@@ -692,8 +692,28 @@ Alpine.data('cms', () => {
 
     async savePage() {
       if (!this.fs) return
+      // Editor.jsの内容を先に取得（バリデーション前に必要）
       if (this.editor) {
         this.editData.body = await this.getEditorHtml()
+      }
+      // 必須フィールドバリデーション
+      if (!this.editData.title?.trim()) {
+        this.showToast('タイトルを入力してください')
+        return
+      }
+      if (this.currentType) {
+        const missing = this.currentType.fields
+          .filter((f) => f.required && f.key !== 'title')
+          .filter((f) => {
+            const val = (this.editData as any)[f.key]
+            return val === undefined || val === null || val === ''
+          })
+        if (missing.length > 0) {
+          this.showToast(
+            `必須フィールドを入力してください: ${missing.map((f) => f.label).join(', ')}`,
+          )
+          return
+        }
       }
       this.editData._meta = {
         ...this.editData._meta,
@@ -996,7 +1016,7 @@ Alpine.data('cms', () => {
     // --- コンテンツタイプ管理 ---
 
     openTypeEditor(type?: ContentType) {
-      this.editingType = type
+      const raw = type
         ? JSON.parse(JSON.stringify(type))
         : {
             id: '',
@@ -1008,12 +1028,30 @@ Alpine.data('cms', () => {
               { key: 'body', label: '本文', type: 'richtext' },
             ],
           }
+      // showIf をフラット化し、UI用プロパティを付与
+      raw.fields = raw.fields.map((f: any) => ({
+        ...f,
+        _expanded: false,
+        showIf_field: f.showIf?.field || '',
+        showIf_value:
+          f.showIf?.value !== undefined && f.showIf?.value !== null ? String(f.showIf.value) : '',
+        options: f.options || [],
+      }))
+      this.editingType = raw
       this.showTypeEditor = true
     },
 
     addFieldToType() {
       if (!this.editingType) return
-      this.editingType.fields.push({ key: '', label: '', type: 'text' } as any)
+      this.editingType.fields.push({
+        key: '',
+        label: '',
+        type: 'text',
+        _expanded: false,
+        showIf_field: '',
+        showIf_value: '',
+        options: [],
+      } as any)
     },
 
     removeFieldFromType(idx: number) {
@@ -1038,7 +1076,23 @@ Alpine.data('cms', () => {
             .replace(/-+/g, '-')
       }
       if (!t.slug) t.slug = t.id
-      await this.fs.writeJson(`content/_types/${t.id}.json`, t)
+      // UI用プロパティを除去し、showIfオブジェクトを再構成
+      const cleanedFields = t.fields.map((f: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _expanded, showIf_field, showIf_value, showIf: _showIf, ...rest } = f
+        const field: any = { ...rest }
+        if (showIf_field?.trim()) {
+          let val: unknown = showIf_value
+          if (showIf_value === 'true') val = true
+          else if (showIf_value === 'false') val = false
+          field.showIf = { field: showIf_field.trim(), value: val }
+        }
+        if (!field.required) delete field.required
+        if (!field.options || field.options.length === 0) delete field.options
+        return field
+      })
+      const saveData = { ...t, fields: cleanedFields }
+      await this.fs.writeJson(`content/_types/${t.id}.json`, saveData)
       this.contentTypes = await this.fs.readContentTypes()
       this.showTypeEditor = false
       this.showToast(`${t.label} を保存しました`)

@@ -488,12 +488,13 @@ Alpine.data('cms', () => {
       this.showPreviewPanel = false
       this.view = 'content-edit'
       this.editData = { ...item }
-      this.$nextTick(() => {
+      // Alpine template x-if の入れ子展開を待つ
+      setTimeout(() => {
         const hasRichtext = this.currentFields.some((f) => f.type === 'richtext')
         if (hasRichtext) {
           this.initEditor((item as any)._editorJson || item.body || '')
         }
-      })
+      }, 100)
       this.updateHash()
       this.refreshTranslationStatus()
     },
@@ -516,12 +517,12 @@ Alpine.data('cms', () => {
       this.currentFields = this.currentType?.fields || []
       this.editData = { ...item }
       this.view = 'content-edit'
-      this.$nextTick(() => {
+      setTimeout(() => {
         const hasRichtext = this.currentFields.some((f) => f.type === 'richtext')
         if (hasRichtext) {
           this.initEditor('')
         }
-      })
+      }, 100)
     },
 
     // --- エディタ（Editor.js） ---

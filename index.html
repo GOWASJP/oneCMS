@@ -886,6 +886,43 @@
       </div>
     </template>
 
+    <!-- ページ作成モーダル -->
+    <div
+      x-show="showPageCreator"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      @click.self="showPageCreator=false"
+    >
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-[#15171a]">
+        <h2 class="text-lg font-bold mb-4">新規ページ</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="gh-label">ページタイトル</label>
+            <input
+              type="text"
+              x-model="editingPageTitle"
+              class="gh-input-light w-full"
+              placeholder="お問い合わせ"
+              @keydown.enter="confirmCreatePage()"
+              autofocus
+            />
+          </div>
+          <div>
+            <label class="gh-label">ページID（URL用）</label>
+            <input
+              type="text"
+              x-model="editingPageId"
+              class="gh-input-light w-full"
+              placeholder="contact（空欄ならタイトルから自動生成）"
+            />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-6">
+          <button @click="showPageCreator=false" class="gh-btn-outline text-xs">キャンセル</button>
+          <button @click="confirmCreatePage()" class="gh-btn-green text-xs">作成</button>
+        </div>
+      </div>
+    </div>
+
     <!-- コンテンツタイプ編集モーダル -->
     <div
       x-show="showTypeEditor"

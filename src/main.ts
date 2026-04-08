@@ -83,6 +83,10 @@ interface CmsComponent {
   loadSiteData(): Promise<void>
   ensureInitialData(): Promise<void>
   createPage(): void
+  confirmCreatePage(): void
+  showPageCreator: boolean
+  editingPageId: string
+  editingPageTitle: string
   openPage(page: ContentData): Promise<void>
   openContentType(type: ContentType): Promise<void>
   openContent(item: ContentData): Promise<void>
@@ -159,6 +163,11 @@ Alpine.data('cms', () => {
 
     // 翻訳ステータス
     translationStatuses: [],
+
+    // ページ作成
+    showPageCreator: false,
+    editingPageId: '',
+    editingPageTitle: '',
 
     // コンテンツタイプ管理
     showTypeEditor: false,
@@ -412,12 +421,21 @@ Alpine.data('cms', () => {
     // --- 固定ページ ---
 
     createPage() {
-      const id = prompt('ページID（URLに使用、例: contact）')
-      if (!id || !id.trim()) return
-      const slug = id.trim().toLowerCase().replace(/\s+/g, '-')
+      this.editingPageId = ''
+      this.editingPageTitle = ''
+      this.showPageCreator = true
+    },
+
+    confirmCreatePage() {
+      const slug = (this.editingPageId || this.editingPageTitle)
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+      if (!slug) return
+      this.showPageCreator = false
       const page: ContentData = {
         id: slug,
-        title: '',
+        title: this.editingPageTitle || slug,
         status: 'draft',
         body: '',
         _meta: {

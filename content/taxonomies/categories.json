@@ -1,0 +1,9 @@
+{
+  "id": "categories",
+  "label": "カテゴリ",
+  "items": [
+    { "id": "news", "label": "お知らせ" },
+    { "id": "event", "label": "イベント" },
+    { "id": "update", "label": "更新情報" }
+  ]
+}

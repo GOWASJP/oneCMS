@@ -1,0 +1,6 @@
+build/
+dist/
+changed/
+node_modules/
+.revisions/
+*.hbs

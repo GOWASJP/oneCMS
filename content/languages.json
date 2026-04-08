@@ -1,0 +1,7 @@
+{
+  "default": "ja",
+  "locales": [
+    { "code": "ja", "label": "日本語", "flag": "🇯🇵" },
+    { "code": "en", "label": "English", "flag": "🇺🇸" }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "news",
+  "label": "お知らせ",
+  "icon": "📢",
+  "slug": "news",
+  "order": "date_desc",
+  "hasCategory": true,
+  "hasTag": true,
+  "hasThumbnail": true,
+  "hasDate": true,
+  "pagination": 10,
+  "fields": [
+    { "key": "title", "label": "タイトル", "type": "text", "required": true },
+    { "key": "body", "label": "本文", "type": "richtext" },
+    { "key": "image", "label": "画像", "type": "image" },
+    { "key": "file", "label": "添付PDF", "type": "file" }
+  ]
+}

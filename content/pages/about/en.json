@@ -1,0 +1,11 @@
+{
+  "title": "About Us",
+  "body": "<p>About us page.</p>",
+  "status": "published",
+  "_meta": {
+    "status": "translated",
+    "translatedAt": "2025-04-08",
+    "basedOn": "ja",
+    "basedOnUpdated": "2025-04-08"
+  }
+}

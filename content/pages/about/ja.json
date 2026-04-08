@@ -1,0 +1,10 @@
+{
+  "title": "会社概要",
+  "body": "<p>会社概要のページです。</p>",
+  "status": "published",
+  "_meta": {
+    "createdAt": "2025-04-08",
+    "updatedAt": "2025-04-08",
+    "author": "管理者"
+  }
+}

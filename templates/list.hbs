@@ -1,0 +1,17 @@
+{{> breadcrumb}}
+<h1>{{type.label}}</h1>
+<div class="content-list">
+  {{#each items}}
+  <article>
+    <h2><a href="{{this.url}}">{{this.title}}</a></h2>
+    {{#if this.publishedAt}}
+    <time datetime="{{this.publishedAt}}">{{formatDate this.publishedAt "YYYY年MM月DD日"}}</time>
+    {{/if}}
+    {{#if this.image}}
+    <img src="{{this.image}}" alt="{{this.title}}">
+    {{/if}}
+    <p>{{truncate this.body 100}}</p>
+  </article>
+  {{/each}}
+</div>
+{{> pagination total=total current=current}}

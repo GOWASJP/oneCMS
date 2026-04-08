@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GOWAS CMS</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="bg-[#15171a] text-white min-h-screen antialiased" x-data="cms" x-cloak>
+    <!-- ログイン -->
+    <template x-if="!authorName">
+      <div class="flex items-center justify-center min-h-screen">
+        <div class="w-full max-w-xs">
+          <div class="text-center mb-8">
+            <div
+              class="w-10 h-10 bg-[#30cf43] rounded-lg mx-auto mb-4 flex items-center justify-center"
+            >
+              <i data-lucide="pencil" class="w-5 h-5 text-white"></i>
+            </div>
+            <h1 class="text-lg font-semibold">GOWAS CMS</h1>
+            <p class="text-sm text-[#7c8b9a] mt-1">担当者名を入力して開始</p>
+          </div>
+          <input
+            type="text"
+            x-model="authorInput"
+            @keydown.enter="setAuthor()"
+            placeholder="山田 太郎"
+            class="gh-input w-full mb-3"
+            autofocus
+          />
+          <button @click="setAuthor()" :disabled="!authorInput.trim()" class="gh-btn-green w-full">
+            開始する
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- メイン -->
+    <template x-if="authorName">
+      <div class="flex h-screen">
+        <!-- サイドバー -->
+        <aside class="gh-sidebar w-56 flex flex-col shrink-0">
+          <!-- サイト名 -->
+          <div class="px-5 py-4 border-b border-white/5">
+            <div class="flex items-center gap-2.5">
+              <div
+                class="w-8 h-8 bg-[#30cf43] rounded-md flex items-center justify-center text-sm font-bold"
+                x-text="(siteConfig.name || 'G')[0]"
+              ></div>
+              <span
+                class="text-[13px] font-semibold truncate"
+                x-text="siteConfig.name || 'GOWAS CMS'"
+              ></span>
+            </div>
+          </div>
+
+          <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
+            <button @click="selectFolder()" class="gh-nav-item w-full">
+              <i data-lucide="folder-open" class="w-[18px] h-[18px]"></i>
+              <span x-text="folderHandle ? 'フォルダ変更' : 'フォルダを選択'"></span>
+            </button>
+
+            <template x-if="folderHandle">
+              <div class="space-y-0.5">
+                <div class="gh-nav-section">ページ</div>
+                <template x-for="page in pages" :key="page.id">
+                  <button
+                    @click="openPage(page)"
+                    :class="currentPage?.id === page.id && !currentType ? 'gh-nav-active' : ''"
+                    class="gh-nav-item w-full"
+                  >
+                    <i data-lucide="file-text" class="w-[18px] h-[18px]"></i>
+                    <span x-text="page.title || page.id" class="truncate"></span>
+                  </button>
+                </template>
+
+                <div class="gh-nav-section">コンテンツ</div>
+                <template x-for="type in contentTypes" :key="type.id">
+                  <button
+                    @click="openContentType(type)"
+                    :class="currentType?.id === type.id ? 'gh-nav-active' : ''"
+                    class="gh-nav-item w-full"
+                  >
+                    <i data-lucide="layers" class="w-[18px] h-[18px]"></i>
+                    <span x-text="type.label" class="truncate"></span>
+                  </button>
+                </template>
+
+                <div class="h-px bg-white/5 my-3"></div>
+
+                <button
+                  @click="view = 'settings'; updateHash()"
+                  :class="view === 'settings' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
+                  <i data-lucide="settings" class="w-[18px] h-[18px]"></i>
+                  <span>設定</span>
+                </button>
+              </div>
+            </template>
+          </nav>
+
+          <div class="px-5 py-3 border-t border-white/5 flex items-center gap-2">
+            <div
+              class="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-semibold"
+              x-text="authorName[0]"
+            ></div>
+            <span class="text-xs text-[#7c8b9a] truncate" x-text="authorName"></span>
+          </div>
+        </aside>
+
+        <!-- メインコンテンツ -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-white text-[#15171a] rounded-tl-lg">
+          <!-- トップバー -->
+          <header
+            class="flex items-center justify-between px-8 h-[52px] shrink-0 border-b border-[#ebeef0]"
+          >
+            <div class="flex items-center gap-1.5 text-[13px] text-[#7c8b9a]">
+              <template x-if="currentType">
+                <span class="flex items-center gap-1.5">
+                  <span
+                    class="hover:text-[#15171a] cursor-pointer"
+                    @click="openContentType(currentType)"
+                    x-text="currentType.label"
+                  ></span>
+                  <template x-if="currentPage">
+                    <span class="flex items-center gap-1.5">
+                      <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                      <span
+                        class="text-[#15171a] font-medium"
+                        x-text="currentPage.title || '無題'"
+                      ></span>
+                    </span>
+                  </template>
+                </span>
+              </template>
+              <template x-if="!currentType && currentPage">
+                <span
+                  class="text-[#15171a] font-medium"
+                  x-text="currentPage.title || '無題'"
+                ></span>
+              </template>
+              <template x-if="view === 'settings'">
+                <span class="text-[#15171a] font-medium">設定</span>
+              </template>
+            </div>
+            <div class="flex items-center gap-3">
+              <select @change="switchLang($event.target.value)" class="gh-select-light">
+                <template
+                  x-for="locale in languages.locales || [{code:'ja', label:'日本語'}]"
+                  :key="locale.code"
+                >
+                  <option
+                    :value="locale.code"
+                    :selected="locale.code === currentLang"
+                    x-text="locale.flag + ' ' + locale.code.toUpperCase()"
+                  ></option>
+                </template>
+              </select>
+              <button @click="exportSite()" class="gh-btn-green text-[13px]">公開準備</button>
+            </div>
+          </header>
+
+          <!-- コンテンツエリア -->
+          <div class="flex-1 overflow-y-auto">
+            <!-- ウェルカム -->
+            <template x-if="view === 'welcome'">
+              <div class="flex items-center justify-center h-full">
+                <div class="text-center">
+                  <i
+                    data-lucide="layout-dashboard"
+                    class="w-10 h-10 mx-auto mb-3 text-[#ced4da]"
+                  ></i>
+                  <p
+                    class="text-sm text-[#7c8b9a]"
+                    x-text="folderHandle ? 'サイドバーからページを選択' : 'フォルダを選択して開始'"
+                  ></p>
+                </div>
+              </div>
+            </template>
+
+            <!-- ページ編集（Editor.js） -->
+            <template x-if="view === 'page-edit'">
+              <div class="gh-editor-container">
+                <div class="flex items-center gap-2 mb-4">
+                  <button @click="showPreview()" class="gh-btn-outline text-xs">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                    プレビュー
+                  </button>
+                  <button @click="showRevisions()" class="gh-btn-outline text-xs">
+                    <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                    履歴
+                  </button>
+                  <div class="flex-1"></div>
+                  <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
+                </div>
+
+                <!-- 翻訳ステータスバー -->
+                <template x-if="languages.locales.length > 1">
+                  <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#ebeef0]">
+                    <div class="flex items-center gap-1.5">
+                      <template x-for="ts in translationStatuses" :key="ts.code">
+                        <span
+                          class="gh-lang-badge cursor-pointer"
+                          :class="{
+                            'gh-lang-current': ts.code === currentLang,
+                            'gh-lang-translated': ts.status === 'translated' && ts.code !== currentLang,
+                            'gh-lang-draft': ts.status === 'draft' && ts.code !== currentLang,
+                            'gh-lang-missing': ts.status === 'missing' && ts.code !== currentLang,
+                          }"
+                          @click="switchLang(ts.code)"
+                          x-text="ts.flag + ' ' + ts.code.toUpperCase()"
+                        ></span>
+                      </template>
+                    </div>
+                    <template x-if="currentLang !== languages.default">
+                      <button
+                        @click="copyFromLang(languages.default)"
+                        class="gh-btn-outline text-xs"
+                      >
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                        <span x-text="languages.default.toUpperCase() + ' からコピー'"></span>
+                      </button>
+                    </template>
+                  </div>
+                </template>
+
+                <input
+                  type="text"
+                  x-model="editData.title"
+                  placeholder="タイトル..."
+                  class="gh-title-input"
+                />
+                <div id="editorjs" class="gh-editorjs"></div>
+              </div>
+            </template>
+
+            <!-- コンテンツ一覧 -->
+            <template x-if="view === 'content-list'">
+              <div class="px-8 py-6 max-w-4xl mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                  <h1 class="text-2xl font-bold" x-text="currentType?.label"></h1>
+                  <button @click="createContent()" class="gh-btn-green text-[13px]">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    新規作成
+                  </button>
+                </div>
+                <div class="space-y-1">
+                  <template x-for="item in contentItems" :key="item.id">
+                    <div @click="openContent(item)" class="gh-list-item">
+                      <div class="flex-1 min-w-0">
+                        <p
+                          class="font-medium text-[14px] truncate"
+                          x-text="item.title || '（無題）'"
+                        ></p>
+                        <p
+                          class="text-xs text-[#7c8b9a] mt-0.5"
+                          x-text="item.publishedAt || item._meta?.createdAt || ''"
+                        ></p>
+                      </div>
+                      <span
+                        class="gh-badge"
+                        :class="{
+                          'bg-[#30cf43]/10 text-[#30cf43]': item.status === 'published',
+                          'bg-[#ffc107]/10 text-[#e0a800]': item.status === 'draft',
+                          'bg-[#7c8b9a]/10 text-[#7c8b9a]': item.status === 'archived'
+                        }"
+                        x-text="item.status === 'published' ? '公開中' : item.status === 'draft' ? '下書き' : 'アーカイブ'"
+                      ></span>
+                    </div>
+                  </template>
+                  <template x-if="contentItems.length === 0">
+                    <div class="py-16 text-center text-sm text-[#ced4da]">
+                      コンテンツがありません
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <!-- コンテンツ編集 -->
+            <template x-if="view === 'content-edit'">
+              <div class="gh-editor-container">
+                <div class="flex items-center gap-2 mb-6">
+                  <button @click="view = 'content-list'" class="gh-btn-outline text-xs">
+                    <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                    戻る
+                  </button>
+                  <div class="flex-1"></div>
+                  <select x-model="editData.status" class="gh-select-light text-xs">
+                    <option value="draft">下書き</option>
+                    <option value="published">公開中</option>
+                    <option value="archived">アーカイブ</option>
+                  </select>
+                  <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
+                </div>
+
+                <template x-for="field in currentFields" :key="field.key">
+                  <div>
+                    <template
+                      x-if="!field.showIf || editData[field.showIf.field] === field.showIf.value"
+                    >
+                      <div class="mb-5">
+                        <label class="gh-label">
+                          <span x-text="field.label"></span>
+                          <span x-show="field.required" class="text-[#f50057]">*</span>
+                        </label>
+                        <template x-if="field.type === 'text'">
+                          <input
+                            type="text"
+                            x-model="editData[field.key]"
+                            class="gh-input-light w-full"
+                          />
+                        </template>
+                        <template x-if="field.type === 'textarea'">
+                          <textarea
+                            x-model="editData[field.key]"
+                            rows="4"
+                            class="gh-input-light w-full"
+                          ></textarea>
+                        </template>
+                        <template x-if="field.type === 'richtext'">
+                          <div id="editorjs" class="gh-editorjs"></div>
+                        </template>
+                        <template x-if="field.type === 'number'">
+                          <input
+                            type="number"
+                            x-model="editData[field.key]"
+                            class="gh-input-light w-full"
+                          />
+                        </template>
+                        <template x-if="field.type === 'url'">
+                          <input
+                            type="url"
+                            x-model="editData[field.key]"
+                            placeholder="https://"
+                            class="gh-input-light w-full"
+                          />
+                        </template>
+                        <template x-if="field.type === 'email'">
+                          <input
+                            type="email"
+                            x-model="editData[field.key]"
+                            class="gh-input-light w-full"
+                          />
+                        </template>
+                        <template x-if="field.type === 'date'">
+                          <input type="date" x-model="editData[field.key]" class="gh-input-light" />
+                        </template>
+                        <template x-if="field.type === 'datetime'">
+                          <input
+                            type="datetime-local"
+                            x-model="editData[field.key]"
+                            class="gh-input-light"
+                          />
+                        </template>
+                        <template x-if="field.type === 'select'">
+                          <select x-model="editData[field.key]" class="gh-select-light">
+                            <option value="">選択...</option>
+                            <template x-for="opt in (field.options || [])" :key="opt.value || opt">
+                              <option :value="opt.value || opt" x-text="opt.label || opt"></option>
+                            </template>
+                          </select>
+                        </template>
+                        <template x-if="field.type === 'checkbox' || field.type === 'toggle'">
+                          <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              x-model="editData[field.key]"
+                              class="w-4 h-4 rounded border-[#ced4da] accent-[#30cf43]"
+                            />
+                            <span
+                              class="text-sm"
+                              x-text="editData[field.key] ? 'ON' : 'OFF'"
+                            ></span>
+                          </label>
+                        </template>
+                        <template x-if="field.type === 'image'">
+                          <div>
+                            <template x-if="editData[field.key]">
+                              <img
+                                :src="editData[field.key]"
+                                class="max-h-40 rounded border border-[#ebeef0] mb-2"
+                              />
+                            </template>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              @change="handleImageUpload($event, field.key)"
+                              class="text-xs text-[#7c8b9a]"
+                            />
+                          </div>
+                        </template>
+                        <template x-if="field.type === 'file'">
+                          <div>
+                            <template x-if="editData[field.key]">
+                              <p
+                                class="text-xs text-[#7c8b9a] mb-1"
+                                x-text="editData[field.key]"
+                              ></p>
+                            </template>
+                            <input
+                              type="file"
+                              @change="handleFileUpload($event, field.key)"
+                              class="text-xs text-[#7c8b9a]"
+                            />
+                          </div>
+                        </template>
+                        <template x-if="field.type === 'color'">
+                          <input
+                            type="color"
+                            x-model="editData[field.key]"
+                            class="w-10 h-8 rounded border border-[#ebeef0] cursor-pointer"
+                          />
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
+
+            <!-- 公開準備完了 -->
+            <template x-if="view === 'export-result'">
+              <div class="px-8 py-12 max-w-md mx-auto text-center">
+                <div
+                  class="w-12 h-12 bg-[#30cf43]/10 rounded-full flex items-center justify-center mx-auto mb-4"
+                >
+                  <i data-lucide="circle-check" class="w-6 h-6 text-[#30cf43]"></i>
+                </div>
+                <h2 class="text-xl font-bold mb-6">更新ファイルの取り出し完了</h2>
+                <div
+                  class="text-left bg-[#f9fafb] border border-[#ebeef0] rounded-lg p-4 text-sm space-y-1 mb-6"
+                >
+                  <p>
+                    総ファイル数：
+                    <strong x-text="exportResult?.totalFiles"></strong>
+                  </p>
+                  <p>
+                    更新ファイル：
+                    <strong x-text="exportResult?.changedFiles"></strong>
+                  </p>
+                  <p>
+                    削除ファイル：
+                    <strong x-text="exportResult?.removedFiles"></strong>
+                  </p>
+                </div>
+                <div
+                  class="text-left bg-[#fff8e1] border border-[#ffe082] rounded-lg p-4 text-sm mb-6"
+                >
+                  <p class="font-semibold mb-2">アップロード手順</p>
+                  <ol class="list-decimal list-inside space-y-1 text-[#5d4037]">
+                    <li>FTPソフトを開く</li>
+                    <li>changed/ フォルダの中身をアップ</li>
+                    <li>完了後「完了」をクリック</li>
+                  </ol>
+                </div>
+                <button @click="view = 'welcome'" class="gh-btn-green">アップロード完了</button>
+              </div>
+            </template>
+
+            <!-- 設定 -->
+            <template x-if="view === 'settings'">
+              <div class="px-8 py-6 max-w-xl mx-auto">
+                <h1 class="text-2xl font-bold mb-6">設定</h1>
+                <div class="space-y-5">
+                  <div>
+                    <label class="gh-label">サイト名</label>
+                    <input type="text" x-model="siteConfig.name" class="gh-input-light w-full" />
+                  </div>
+                  <div>
+                    <label class="gh-label">サイトURL</label>
+                    <input type="url" x-model="siteConfig.url" class="gh-input-light w-full" />
+                  </div>
+                  <div>
+                    <label class="gh-label">説明</label>
+                    <textarea
+                      x-model="siteConfig.description"
+                      rows="3"
+                      class="gh-input-light w-full"
+                    ></textarea>
+                  </div>
+                  <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </main>
+
+        <!-- リビジョンパネル -->
+        <aside
+          x-show="showRevisionPanel"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="translate-x-full"
+          x-transition:enter-end="translate-x-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="translate-x-0"
+          x-transition:leave-end="translate-x-full"
+          class="w-80 bg-white text-[#15171a] border-l border-[#ebeef0] flex flex-col overflow-hidden"
+        >
+          <div class="flex items-center justify-between px-4 h-[52px] border-b border-[#ebeef0]">
+            <span class="text-sm font-semibold">履歴</span>
+            <button
+              @click="closePanel()"
+              class="text-[#7c8b9a] hover:text-[#15171a] p-1 rounded hover:bg-[#f1f3f5]"
+            >
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto">
+            <template x-for="(rev, idx) in revisions" :key="rev.filename">
+              <button
+                @click="selectRevision(rev)"
+                :class="selectedRevision?.filename === rev.filename ? 'bg-[#f1f3f5]' : 'hover:bg-[#f9fafb]'"
+                class="w-full text-left px-4 py-3 text-sm border-b border-[#ebeef0]"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium" x-text="rev.timestamp.replace('_', ' ')"></span>
+                  <template x-if="idx === 0">
+                    <span class="gh-badge bg-[#30cf43]/10 text-[#30cf43]">最新</span>
+                  </template>
+                </div>
+                <p class="text-[#7c8b9a] text-xs mt-0.5" x-text="rev.author"></p>
+              </button>
+            </template>
+            <template x-if="revisions.length === 0">
+              <div class="px-4 py-10 text-center text-xs text-[#ced4da]">履歴がありません</div>
+            </template>
+            <template x-if="revisionDiff">
+              <div class="p-4 border-t border-[#ebeef0]">
+                <p class="text-xs font-semibold text-[#7c8b9a] mb-2">変更内容</p>
+                <div
+                  class="text-xs bg-[#f9fafb] rounded p-2 revision-diff overflow-auto max-h-48"
+                  x-html="revisionDiff"
+                ></div>
+                <button
+                  @click="restoreRevision()"
+                  class="mt-3 w-full gh-btn-outline text-xs text-[#f50057] border-[#f50057]/30 hover:bg-[#f50057]/5"
+                >
+                  この版に戻す
+                </button>
+              </div>
+            </template>
+          </div>
+        </aside>
+
+        <!-- プレビューパネル -->
+        <aside
+          x-show="showPreviewPanel"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="translate-x-full"
+          x-transition:enter-end="translate-x-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="translate-x-0"
+          x-transition:leave-end="translate-x-full"
+          class="w-[480px] bg-white border-l border-[#ebeef0] flex flex-col overflow-hidden"
+        >
+          <div class="flex items-center justify-between px-4 h-[52px] border-b border-[#ebeef0]">
+            <span class="text-sm font-semibold text-[#15171a]">プレビュー</span>
+            <button
+              @click="closePanel()"
+              class="text-[#7c8b9a] hover:text-[#15171a] p-1 rounded hover:bg-[#f1f3f5]"
+            >
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <iframe
+              :srcdoc="previewHtml"
+              class="w-full h-full border-0"
+              sandbox="allow-same-origin"
+            ></iframe>
+          </div>
+        </aside>
+      </div>
+    </template>
+
+    <!-- トースト -->
+    <div
+      x-show="toast"
+      x-transition.opacity
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#15171a] text-white px-4 py-2.5 rounded-lg shadow-xl text-sm z-50"
+      x-text="toast"
+    ></div>
+
+    <!-- ローディング -->
+    <div
+      x-show="exporting"
+      class="fixed inset-0 bg-[#15171a]/50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg p-8 text-center">
+        <div
+          class="animate-spin w-6 h-6 border-2 border-[#30cf43] border-t-transparent rounded-full mx-auto mb-3"
+        ></div>
+        <p class="text-sm text-[#7c8b9a]">公開準備中...</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

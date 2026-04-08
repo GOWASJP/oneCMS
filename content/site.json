@@ -1,5 +1,10 @@
 {
   "name": "サンプルサイト",
   "url": "https://example.com",
-  "description": "GOWAS CMSで作成されたサイト"
+  "description": "ONE CMSで作成されたサイト",
+  "nav": [
+    { "label": "ホーム", "url": "/" },
+    { "label": "会社概要", "url": "/about/" },
+    { "label": "お知らせ", "url": "/news/" }
+  ]
 }

@@ -794,6 +794,39 @@
                   </div>
 
                   <div class="h-px bg-[#ebeef0] my-2"></div>
+                  <h2 class="text-lg font-bold">ナビゲーション</h2>
+                  <div class="space-y-2">
+                    <template x-for="(item, idx) in (siteConfig.nav || [])" :key="idx">
+                      <div class="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          x-model="item.label"
+                          placeholder="ラベル"
+                          class="gh-input-light flex-1 text-xs"
+                        />
+                        <input
+                          type="text"
+                          x-model="item.url"
+                          placeholder="/about/"
+                          class="gh-input-light flex-1 text-xs"
+                        />
+                        <button
+                          @click="siteConfig.nav.splice(idx,1)"
+                          class="text-[#dc2626] text-xs"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </template>
+                    <button
+                      @click="siteConfig.nav = [...(siteConfig.nav||[]), {label:'',url:''}]"
+                      class="gh-btn-outline text-xs"
+                    >
+                      + 項目追加
+                    </button>
+                  </div>
+
+                  <div class="h-px bg-[#ebeef0] my-2"></div>
                   <h2 class="text-lg font-bold">デザイン</h2>
 
                   <!-- カラーテーマ -->

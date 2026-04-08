@@ -365,6 +365,10 @@ Alpine.data('cms', () => {
         name: 'マイサイト',
         url: '',
         description: '',
+        nav: [
+          { label: 'ホーム', url: '/' },
+          { label: '会社概要', url: '/about/' },
+        ],
       })
 
       // languages.json

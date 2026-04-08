@@ -24,6 +24,14 @@ export const SiteConfigSchema = z.object({
       translatorApiKey: z.string().optional(),
     })
     .optional(),
+  nav: z
+    .array(
+      z.object({
+        label: z.string(),
+        url: z.string(),
+      }),
+    )
+    .optional(),
 })
 
 // ----- 多言語 -----

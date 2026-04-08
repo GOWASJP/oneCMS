@@ -920,13 +920,13 @@
                                 ></span>
                                 <div class="flex gap-0.5">
                                   <button
-                                    @click.prevent="moveMenuItem(idx, -1)"
+                                    @click.prevent.stop="moveMenuItem(idx, -1)"
                                     class="p-0.5 text-[#7c8b9a] hover:text-[#15171a]"
                                   >
                                     <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
                                   </button>
                                   <button
-                                    @click.prevent="moveMenuItem(idx, 1)"
+                                    @click.prevent.stop="moveMenuItem(idx, 1)"
                                     class="p-0.5 text-[#7c8b9a] hover:text-[#15171a]"
                                   >
                                     <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>

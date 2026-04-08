@@ -24,7 +24,8 @@
       "Bash(git remote:*)",
       "Bash(git push:*)",
       "Bash(grep -n \"addContentType\\\\|editContentType\\\\|newType\\\\|typeManagement\" /Users/kiminorifujii/Documents/Projects/GowasCms/index.html /Users/kiminorifujii/Documents/Projects/GowasCms/src/*.ts)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(cp:*)"
     ]
   }
 }

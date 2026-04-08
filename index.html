@@ -331,12 +331,50 @@
                   <select x-model="editData.status" class="gh-select-light text-xs">
                     <option value="draft">下書き</option>
                     <option value="published">公開中</option>
+                    <option value="preview">プレビュー</option>
                     <option value="archived">アーカイブ</option>
                   </select>
                   <button @click="deleteContent()" class="text-[#dc2626] text-xs hover:underline">
                     削除
                   </button>
                   <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
+                </div>
+
+                <!-- 投稿メタ情報 -->
+                <div class="flex flex-wrap gap-4 mb-5 pb-4 border-b border-[#ebeef0]">
+                  <template x-if="currentType?.hasDate">
+                    <div>
+                      <label class="gh-label">投稿日</label>
+                      <input
+                        type="date"
+                        x-model="editData.publishedAt"
+                        class="gh-input-light text-xs"
+                      />
+                    </div>
+                  </template>
+                  <template x-if="currentType?.hasThumbnail">
+                    <div>
+                      <label class="gh-label">サムネイル画像</label>
+                      <div class="flex items-center gap-2">
+                        <template x-if="editData.image">
+                          <img
+                            :src="editData.image"
+                            class="w-16 h-16 object-cover rounded border border-[#ebeef0]"
+                          />
+                        </template>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          @change="handleImageUpload($event, 'image')"
+                          class="text-xs text-[#7c8b9a]"
+                        />
+                      </div>
+                    </div>
+                  </template>
+                  <div>
+                    <label class="gh-label">スラッグ</label>
+                    <input type="text" x-model="editData.id" class="gh-input-light text-xs w-48" />
+                  </div>
                 </div>
 
                 <!-- カテゴリ・タグ選択 -->

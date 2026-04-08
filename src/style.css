@@ -5,8 +5,31 @@
 }
 
 /* ========================================
-   Ghost-inspired Design System
+   ONE CMS Design System (Ghost-inspired)
    ======================================== */
+
+/* --- Global UX --- */
+button,
+[role='button'],
+a,
+select,
+label[for],
+.cursor-pointer {
+  cursor: pointer;
+}
+*:focus-visible {
+  outline: 2px solid #30cf43;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* --- Sidebar --- */
 .gh-sidebar {
@@ -62,9 +85,15 @@
 .gh-btn-green:hover {
   opacity: 0.92;
 }
+.gh-btn-green:active {
+  transform: scale(0.97);
+}
 .gh-btn-green:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+.gh-btn-green:disabled:active {
+  transform: none;
 }
 
 .gh-btn-outline {
@@ -85,6 +114,9 @@
 .gh-btn-outline:hover {
   border-color: #c5c8cb;
   color: #15171a;
+}
+.gh-btn-outline:active {
+  transform: scale(0.97);
 }
 
 /* --- Inputs (dark bg) --- */
@@ -167,6 +199,9 @@
 }
 .gh-list-item:hover {
   background: #f9fafb;
+}
+.gh-list-item:active {
+  background: #f1f3f5;
 }
 
 /* --- Editor --- */

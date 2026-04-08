@@ -207,8 +207,20 @@ export class Exporter {
         ].join('\n'),
       )
     }
-    if (!this.handlebars.partials['footer']) {
-      this.handlebars.registerPartial('footer', '')
+    // テンプレートにない場合のデフォルトパーシャル
+    const defaults: Record<string, string> = {
+      footer:
+        '<footer class="site-footer"><div class="container"><p>&copy; {{site.name}}</p></div></footer>',
+      header:
+        '<header class="site-header"><div class="container"><a href="/" class="site-title">{{site.name}}</a>{{> nav}}</div></header>',
+      head: '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{page.title}}{{#if site.name}} | {{site.name}}{{/if}}</title>{{> seo}}{{> styles}}',
+      styles:
+        '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--font-body,system-ui,sans-serif);color:#1a1a1a;line-height:1.7}.container{max-width:1100px;margin:0 auto;padding:0 1.5em}.site-main{padding:2em 0;min-height:60vh}</style>',
+    }
+    for (const [name, tmpl] of Object.entries(defaults)) {
+      if (!this.handlebars.partials[name]) {
+        this.handlebars.registerPartial(name, tmpl)
+      }
     }
   }
 

@@ -533,6 +533,61 @@
                     </div>
                   </div>
 
+                  <div class="h-px bg-[#ebeef0] my-2"></div>
+                  <h2 class="text-lg font-bold">外部サービス連携</h2>
+
+                  <!-- フォームバックエンド -->
+                  <div>
+                    <label class="gh-label">フォームバックエンド</label>
+                    <div class="flex gap-2 mb-2">
+                      <template
+                        x-for="fb in [{id:'formrun',label:'Formrun'},{id:'web3forms',label:'Web3Forms'},{id:'gas',label:'GAS'},{id:'custom',label:'独自'}]"
+                        :key="fb.id"
+                      >
+                        <button
+                          @click="siteConfig.services = {...(siteConfig.services||{}), formBackend: fb.id}"
+                          class="px-3 py-1.5 rounded-md border text-xs transition-all"
+                          :class="(siteConfig.services?.formBackend || '') === fb.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                          x-text="fb.label"
+                        ></button>
+                      </template>
+                    </div>
+                    <input
+                      type="url"
+                      x-model="siteConfig.services.formUrl"
+                      placeholder="フォーム送信先URL"
+                      class="gh-input-light w-full"
+                    />
+                  </div>
+
+                  <!-- 自動翻訳 -->
+                  <div>
+                    <label class="gh-label">自動翻訳API</label>
+                    <div class="flex gap-2 mb-2">
+                      <template
+                        x-for="tr in [{id:'none',label:'なし'},{id:'deepl',label:'DeepL'},{id:'google',label:'Google翻訳'}]"
+                        :key="tr.id"
+                      >
+                        <button
+                          @click="siteConfig.services = {...(siteConfig.services||{}), translator: tr.id}"
+                          class="px-3 py-1.5 rounded-md border text-xs transition-all"
+                          :class="(siteConfig.services?.translator || 'none') === tr.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                          x-text="tr.label"
+                        ></button>
+                      </template>
+                    </div>
+                    <template
+                      x-if="siteConfig.services?.translator && siteConfig.services.translator !== 'none'"
+                    >
+                      <input
+                        type="text"
+                        x-model="siteConfig.services.translatorApiKey"
+                        placeholder="APIキー"
+                        class="gh-input-light w-full"
+                      />
+                    </template>
+                  </div>
+
                   <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
                 </div>
               </div>

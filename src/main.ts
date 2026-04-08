@@ -117,7 +117,7 @@ Alpine.data('cms', () => {
     toast: null,
 
     // データ
-    siteConfig: { name: '', url: '', description: '' },
+    siteConfig: { name: '', url: '', description: '', services: {}, theme: {} } as SiteConfig,
     languages: {
       default: 'ja',
       locales: [{ code: 'ja', label: '日本語', flag: '🇯🇵' }],
@@ -278,6 +278,8 @@ Alpine.data('cms', () => {
         name: '',
         url: '',
         description: '',
+        services: {},
+        theme: {},
       }
       this.languages =
         (await this.fs.readJson<Languages>('content/languages.json')) || this.languages

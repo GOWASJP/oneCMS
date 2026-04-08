@@ -363,8 +363,125 @@ export class Exporter {
       content: `User-agent: *\nAllow: /\n${siteConfig.url ? `Sitemap: ${siteConfig.url.replace(/\/$/, '')}/sitemap.xml` : ''}`,
     })
 
+    // 検索インデックス生成
+    const searchIndex = await this.buildSearchIndex(languages, contentTypes)
+    files.push({
+      path: 'search-index.json',
+      content: JSON.stringify(searchIndex),
+    })
+
+    // 検索ページHTML
+    files.push({
+      path: 'search/index.html',
+      content: this.generateSearchPage(siteConfig, defaultLang),
+    })
+
     return files
   }
+
+  /** 検索インデックスを生成 */
+  private async buildSearchIndex(
+    languages: Languages,
+    contentTypes: ContentType[],
+  ): Promise<Array<Record<string, string>>> {
+    const index: Array<Record<string, string>> = []
+    const defaultLang = languages.default || 'ja'
+
+    for (const locale of languages.locales) {
+      const lang = locale.code
+      const prefix = lang === defaultLang ? '' : `${lang}/`
+
+      // 固定ページ
+      const pages = await this.fs.readPages(lang)
+      for (const page of pages) {
+        if (page.status && page.status !== 'published') continue
+        index.push({
+          title: page.title,
+          body: stripHtmlTags(page.body || '').substring(0, 300),
+          url: `/${prefix}${page.id === 'index' ? '' : page.id + '/'}`,
+          lang,
+          type: 'page',
+          date: page._meta?.updatedAt || '',
+        })
+      }
+
+      // コンテンツタイプ
+      for (const type of contentTypes) {
+        const items = await this.fs.readContentList(type.id, lang)
+        for (const item of items) {
+          if (item.status && item.status !== 'published') continue
+          index.push({
+            title: item.title,
+            body: stripHtmlTags(item.body || '').substring(0, 300),
+            url: `/${prefix}${type.slug}/${item.id}/`,
+            lang,
+            type: type.id,
+            date: item.publishedAt || item._meta?.updatedAt || '',
+          })
+        }
+      }
+    }
+
+    return index
+  }
+
+  /** 検索ページHTMLを生成 */
+  private generateSearchPage(siteConfig: SiteConfig, lang: string): string {
+    return `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>検索 | ${siteConfig.name || ''}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;line-height:1.6;max-width:700px;margin:0 auto;padding:2em 1.5em}
+    h1{font-size:1.5em;margin-bottom:1em}
+    .search-box{width:100%;padding:10px 14px;border:2px solid #e5e7eb;border-radius:8px;font-size:16px;outline:none;transition:border-color .2s}
+    .search-box:focus{border-color:#2563eb}
+    .results{margin-top:1.5em}
+    .result{padding:1em 0;border-bottom:1px solid #f3f4f6}
+    .result h2{font-size:1.1em;margin-bottom:0.2em}
+    .result h2 a{color:#2563eb;text-decoration:none}
+    .result h2 a:hover{text-decoration:underline}
+    .result p{font-size:0.9em;color:#6b7280}
+    .result time{font-size:0.8em;color:#9ca3af}
+    .no-results{color:#9ca3af;text-align:center;padding:3em 0}
+    .count{font-size:0.85em;color:#9ca3af;margin-bottom:0.5em}
+  </style>
+</head>
+<body>
+  <h1>検索</h1>
+  <input type="search" class="search-box" placeholder="キーワードを入力..." autofocus id="q">
+  <div class="results" id="results"></div>
+  <script>
+    let index=[];
+    fetch('/search-index.json').then(r=>r.json()).then(d=>{index=d});
+    const q=document.getElementById('q');
+    const r=document.getElementById('results');
+    q.addEventListener('input',()=>{
+      const t=q.value.trim().toLowerCase();
+      if(!t){r.innerHTML='';return}
+      const matches=index.filter(i=>(i.title+i.body).toLowerCase().includes(t));
+      if(!matches.length){r.innerHTML='<div class="no-results">見つかりませんでした</div>';return}
+      r.innerHTML='<div class="count">'+matches.length+'件</div>'+matches.map(m=>
+        '<div class="result"><h2><a href="'+m.url+'">'+hl(m.title,t)+'</a></h2>'
+        +(m.date?'<time>'+m.date+'</time>':'')
+        +'<p>'+hl(m.body.substring(0,150),t)+'</p></div>'
+      ).join('');
+    });
+    function hl(s,t){return s.replace(new RegExp('('+t.replace(/[.*+?^\${}()|[\\]\\\\]/g,'\\\\$&')+')','gi'),'<mark>$1</mark>')}
+  </script>
+</body>
+</html>`
+  }
+}
+
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function wrapHtml(title: string, site: SiteConfig, lang: string, content: string): string {

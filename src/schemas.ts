@@ -6,6 +6,24 @@ export const SiteConfigSchema = z.object({
   name: z.string(),
   url: z.string(),
   description: z.string(),
+  theme: z
+    .object({
+      id: z.string().optional(),
+      primary: z.string().optional(),
+      secondary: z.string().optional(),
+      fontId: z.string().optional(),
+      fontFamily: z.string().optional(),
+      fontCdn: z.string().optional(),
+    })
+    .optional(),
+  services: z
+    .object({
+      formBackend: z.string().optional(),
+      formUrl: z.string().optional(),
+      translator: z.string().optional(),
+      translatorApiKey: z.string().optional(),
+    })
+    .optional(),
 })
 
 // ----- 多言語 -----

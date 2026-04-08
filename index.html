@@ -90,7 +90,7 @@
                       <span x-text="type.label" class="truncate"></span>
                     </button>
                     <button
-                      @click="openTypeEditor(type)"
+                      @click.stop="openTypeEditor(type)"
                       class="opacity-0 group-hover:opacity-100 p-1 mr-1 rounded hover:bg-white/10 transition-opacity"
                       title="編集"
                     >

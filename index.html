@@ -675,12 +675,11 @@
                   <template x-if="currentType?.hasThumbnail">
                     <div>
                       <label class="gh-label">サムネイル</label>
-                      <template x-if="editData.image">
-                        <img
-                          :src="editData.image"
-                          class="w-full aspect-video object-cover rounded border border-[#ebeef0] mb-2"
-                        />
-                      </template>
+                      <img
+                        x-show="editData.image"
+                        :src="editData.image"
+                        class="w-full aspect-video object-cover rounded border border-[#ebeef0] mb-2"
+                      />
                       <input
                         type="file"
                         accept="image/*"

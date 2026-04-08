@@ -896,45 +896,50 @@
                           ドラッグで並び替え。項目をクリックして展開・編集。
                         </p>
 
-                        <div class="space-y-1.5 mb-6 min-h-[120px]">
+                        <div class="space-y-1.5 mb-6 min-h-[120px]" x-data="{ dragIdx: null }">
                           <template x-for="(item, idx) in currentMenu.items" :key="item.id">
-                            <details
-                              class="border border-[#ebeef0] rounded-md bg-white group"
+                            <div
+                              class="border border-[#ebeef0] rounded-md bg-white transition-opacity"
+                              :class="dragIdx === idx ? 'opacity-50' : ''"
                               :style="'margin-left:' + (item.parent ? '32px' : '0')"
+                              draggable="true"
+                              @dragstart="dragIdx = idx; $event.dataTransfer.effectAllowed = 'move'"
+                              @dragover.prevent="$event.dataTransfer.dropEffect = 'move'"
+                              @drop.prevent="if(dragIdx !== null && dragIdx !== idx){ currentMenu.items.splice(idx, 0, currentMenu.items.splice(dragIdx, 1)[0]) }; dragIdx = null"
+                              @dragend="dragIdx = null"
+                              x-data="{ open: false }"
                             >
-                              <!-- ヘッダー（WordPress風：ラベル + タイプ + 並び替えボタン） -->
-                              <summary
-                                class="flex items-center gap-2 px-3 py-2.5 text-sm select-none"
-                              >
+                              <!-- ヘッダー -->
+                              <div class="flex items-center gap-2 px-3 py-2.5 text-sm">
                                 <i
                                   data-lucide="grip-vertical"
-                                  class="w-3.5 h-3.5 text-[#ced4da] shrink-0"
+                                  class="w-3.5 h-3.5 text-[#ced4da] shrink-0 cursor-grab"
                                 ></i>
                                 <span
-                                  class="flex-1 font-medium truncate"
+                                  class="flex-1 font-medium truncate cursor-pointer"
+                                  @click="open = !open"
                                   x-text="item.label || '（無題）'"
                                 ></span>
                                 <span
-                                  class="text-[10px] text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded"
+                                  class="text-[10px] text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded shrink-0"
                                   x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
                                 ></span>
-                                <div class="flex gap-0.5">
-                                  <button
-                                    @click.prevent.stop="moveMenuItem(idx, -1)"
-                                    class="p-0.5 text-[#7c8b9a] hover:text-[#15171a]"
-                                  >
-                                    <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
-                                  </button>
-                                  <button
-                                    @click.prevent.stop="moveMenuItem(idx, 1)"
-                                    class="p-0.5 text-[#7c8b9a] hover:text-[#15171a]"
-                                  >
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                                  </button>
-                                </div>
-                              </summary>
+                                <button
+                                  @click="open = !open"
+                                  class="p-1 text-[#7c8b9a] hover:text-[#15171a] hover:bg-[#f1f3f5] rounded shrink-0"
+                                >
+                                  <i
+                                    data-lucide="chevron-down"
+                                    class="w-3.5 h-3.5 transition-transform"
+                                    :class="open && 'rotate-180'"
+                                  ></i>
+                                </button>
+                              </div>
                               <!-- 展開時の編集エリア -->
-                              <div class="px-3 pb-3 pt-1 border-t border-[#ebeef0] space-y-2">
+                              <div
+                                x-show="open"
+                                class="px-3 pb-3 pt-1 border-t border-[#ebeef0] space-y-2"
+                              >
                                 <div>
                                   <label class="text-[10px] text-[#7c8b9a]">
                                     ナビゲーションラベル
@@ -945,29 +950,27 @@
                                     class="gh-input-light w-full text-xs"
                                   />
                                 </div>
-                                <!-- カスタムリンクのみURL編集 -->
                                 <template x-if="item.type === 'custom'">
-                                  <div>
-                                    <label class="text-[10px] text-[#7c8b9a]">URL</label>
-                                    <input
-                                      type="url"
-                                      x-model="item.url"
-                                      placeholder="https://"
-                                      class="gh-input-light w-full text-xs"
-                                    />
+                                  <div class="space-y-2">
+                                    <div>
+                                      <label class="text-[10px] text-[#7c8b9a]">URL</label>
+                                      <input
+                                        type="url"
+                                        x-model="item.url"
+                                        placeholder="https://"
+                                        class="gh-input-light w-full text-xs"
+                                      />
+                                    </div>
+                                    <label class="flex items-center gap-2 text-xs">
+                                      <input
+                                        type="checkbox"
+                                        :checked="item.target === '_blank'"
+                                        @change="item.target = $event.target.checked ? '_blank' : ''"
+                                        class="accent-[#30cf43]"
+                                      />
+                                      リンクを新しいタブで開く
+                                    </label>
                                   </div>
-                                </template>
-                                <!-- カスタムリンクのみ: 新しいタブ -->
-                                <template x-if="item.type === 'custom'">
-                                  <label class="flex items-center gap-2 text-xs">
-                                    <input
-                                      type="checkbox"
-                                      :checked="item.target === '_blank'"
-                                      @change="item.target = $event.target.checked ? '_blank' : ''"
-                                      class="accent-[#30cf43]"
-                                    />
-                                    リンクを新しいタブで開く
-                                  </label>
                                 </template>
                                 <div class="flex items-center justify-between pt-1">
                                   <span
@@ -982,7 +985,7 @@
                                   </button>
                                 </div>
                               </div>
-                            </details>
+                            </div>
                           </template>
                           <template x-if="!currentMenu.items.length">
                             <div

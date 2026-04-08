@@ -921,16 +921,20 @@
                                     placeholder="ラベル"
                                     class="gh-input-light text-sm flex-1"
                                   />
-                                  <span
-                                    class="text-[10px] text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded shrink-0"
-                                    x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
-                                  ></span>
                                   <button
                                     @click="removeMenuItem(idx)"
                                     class="text-[#dc2626] text-[11px] hover:underline shrink-0"
                                   >
                                     削除
                                   </button>
+                                </div>
+                                <!-- 2行目: タイプ表示 + カスタムリンク追加情報 -->
+                                <div class="flex items-center gap-2 pl-6">
+                                  <span
+                                    class="text-[10px] text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded"
+                                    x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
+                                  ></span>
+                                  <span class="text-[10px] text-[#ced4da]" x-text="item.url"></span>
                                 </div>
                                 <!-- カスタムリンクのみ: URL + 新しいタブ -->
                                 <template x-if="item.type === 'custom'">

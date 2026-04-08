@@ -896,10 +896,7 @@
                           ドラッグで並び替え。項目をクリックして展開・編集。
                         </p>
 
-                        <div
-                          class="space-y-1.5 mb-6 min-h-[120px]"
-                          x-data="{ dragIdx: null, openIdx: -1 }"
-                        >
+                        <div class="space-y-2 mb-6 min-h-[120px]" x-data="{ dragIdx: null }">
                           <template x-for="(item, idx) in currentMenu.items" :key="item.id">
                             <div
                               class="border border-[#ebeef0] rounded-md bg-white transition-opacity"
@@ -911,81 +908,59 @@
                               @drop.prevent="if(dragIdx !== null && dragIdx !== idx){ currentMenu.items.splice(idx, 0, currentMenu.items.splice(dragIdx, 1)[0]) }; dragIdx = null"
                               @dragend="dragIdx = null"
                             >
-                              <!-- ヘッダー -->
-                              <div class="flex items-center gap-2 px-3 py-2.5 text-sm">
-                                <i
-                                  data-lucide="grip-vertical"
-                                  class="w-3.5 h-3.5 text-[#ced4da] shrink-0 cursor-grab"
-                                ></i>
-                                <span
-                                  class="flex-1 font-medium truncate cursor-pointer"
-                                  @click="openIdx = openIdx === idx ? -1 : idx"
-                                  x-text="item.label || '（無題）'"
-                                ></span>
-                                <span
-                                  class="text-[10px] text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded shrink-0"
-                                  x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
-                                ></span>
-                                <button
-                                  @click="openIdx = openIdx === idx ? -1 : idx"
-                                  class="p-1 text-[#7c8b9a] hover:text-[#15171a] hover:bg-[#f1f3f5] rounded shrink-0"
-                                >
+                              <div class="px-3 py-3 space-y-2">
+                                <!-- 1行目: グリップ + ラベル + タイプ + 削除 -->
+                                <div class="flex items-center gap-2">
                                   <i
-                                    data-lucide="chevron-down"
-                                    class="w-3.5 h-3.5 transition-transform"
-                                    :class="openIdx === idx && 'rotate-180'"
+                                    data-lucide="grip-vertical"
+                                    class="w-4 h-4 text-[#ced4da] shrink-0 cursor-grab"
                                   ></i>
-                                </button>
-                              </div>
-                              <!-- 展開時の編集エリア -->
-                              <div
-                                x-show="openIdx === idx"
-                                class="px-3 pb-3 pt-1 border-t border-[#ebeef0] space-y-2"
-                              >
-                                <div>
-                                  <label class="text-[10px] text-[#7c8b9a]">
-                                    ナビゲーションラベル
-                                  </label>
                                   <input
                                     type="text"
                                     x-model="item.label"
-                                    class="gh-input-light w-full text-xs"
+                                    placeholder="ラベル"
+                                    class="gh-input-light text-sm flex-1"
                                   />
+                                  <span
+                                    class="text-[10px] text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded shrink-0"
+                                    x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
+                                  ></span>
+                                  <button
+                                    @click="removeMenuItem(idx)"
+                                    class="text-[#dc2626] text-[11px] hover:underline shrink-0"
+                                  >
+                                    削除
+                                  </button>
                                 </div>
+                                <!-- カスタムリンクのみ: URL + 新しいタブ -->
                                 <template x-if="item.type === 'custom'">
-                                  <div class="space-y-2">
-                                    <div>
-                                      <label class="text-[10px] text-[#7c8b9a]">URL</label>
-                                      <input
-                                        type="url"
-                                        x-model="item.url"
-                                        placeholder="https://"
-                                        class="gh-input-light w-full text-xs"
-                                      />
-                                    </div>
-                                    <label class="flex items-center gap-2 text-xs">
+                                  <div class="flex items-center gap-3 pl-6">
+                                    <input
+                                      type="url"
+                                      x-model="item.url"
+                                      placeholder="https://"
+                                      class="gh-input-light text-xs flex-1"
+                                    />
+                                    <label
+                                      class="flex items-center gap-1.5 text-[11px] text-[#7c8b9a] shrink-0"
+                                    >
                                       <input
                                         type="checkbox"
                                         :checked="item.target === '_blank'"
                                         @change="item.target = $event.target.checked ? '_blank' : ''"
                                         class="accent-[#30cf43]"
                                       />
-                                      リンクを新しいタブで開く
+                                      新しいタブ
                                     </label>
                                   </div>
                                 </template>
-                                <div class="flex items-center justify-between pt-1">
-                                  <span
-                                    class="text-[10px] text-[#7c8b9a]"
-                                    x-text="item.type !== 'custom' ? '元: ' + (item.object || item.url) : ''"
-                                  ></span>
-                                  <button
-                                    @click="removeMenuItem(idx)"
-                                    class="text-[#dc2626] text-[11px] hover:underline"
-                                  >
-                                    削除
-                                  </button>
-                                </div>
+                                <!-- ページ/投稿/カテゴリ: 元のオブジェクト表示 -->
+                                <template x-if="item.type !== 'custom'">
+                                  <div
+                                    class="pl-6 text-[10px] text-[#ced4da]"
+                                    x-text="'元: ' + (item.object || item.url)"
+                                  ></div>
+                                </template>
                               </div>
                             </div>
                           </template>

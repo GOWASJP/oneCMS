@@ -89,6 +89,7 @@ interface CmsComponent {
   initEditor(bodyData: string | EditorData): void
   getEditorHtml(): Promise<string>
   handleImageUpload(event: Event, fieldKey: string): Promise<void>
+  handleFileUpload(event: Event, fieldKey: string): Promise<void>
   savePage(): Promise<void>
   saveSiteConfig(): Promise<void>
   showRevisions(): Promise<void>
@@ -101,6 +102,29 @@ interface CmsComponent {
   copyFromLang(sourceLang: string): Promise<void>
   getTranslationStatus(): Promise<Array<{ code: string; flag: string; status: string }>>
   refreshTranslationStatus(): Promise<void>
+  // コンテンツタイプ管理
+  showTypeEditor: boolean
+  editingType: ContentType | null
+  openTypeEditor(type?: ContentType): void
+  saveType(): Promise<void>
+  deleteType(): Promise<void>
+  addFieldToType(): void
+  removeFieldFromType(idx: number): void
+  // タクソノミー管理
+  showTaxonomyEditor: boolean
+  taxonomyData: {
+    categories: Array<{ id: string; label: string }>
+    tags: Array<{ id: string; label: string }>
+  }
+  loadTaxonomies(): Promise<void>
+  saveTaxonomies(): Promise<void>
+  // 言語設定
+  showLangEditor: boolean
+  langEditorData: Languages
+  loadLangEditor(): void
+  saveLangConfig(): Promise<void>
+  addLangLocale(): void
+  removeLangLocale(idx: number): void
   translationStatuses: Array<{ code: string; flag: string; status: string }>
 }
 
@@ -132,6 +156,18 @@ Alpine.data('cms', () => {
 
     // 翻訳ステータス
     translationStatuses: [],
+
+    // コンテンツタイプ管理
+    showTypeEditor: false,
+    editingType: null,
+
+    // タクソノミー管理
+    showTaxonomyEditor: false,
+    taxonomyData: { categories: [], tags: [] },
+
+    // 言語設定
+    showLangEditor: false,
+    langEditorData: { default: 'ja', locales: [] },
 
     // エディタ
     editor: null,
@@ -473,6 +509,22 @@ Alpine.data('cms', () => {
       }
     },
 
+    async handleFileUpload(event: Event, fieldKey: string) {
+      const input = event.target as HTMLInputElement
+      const file = input.files?.[0]
+      if (!file || !this.fs) return
+      try {
+        const buffer = await file.arrayBuffer()
+        const path = `assets/files/${file.name}`
+        await this.fs.writeBlob(path, new Blob([buffer]))
+        this.editData[fieldKey] = `/${path}`
+        this.showToast(`${file.name} をアップロードしました`)
+      } catch (e) {
+        console.error('ファイルアップロードエラー:', e)
+        this.showToast('ファイルのアップロードに失敗しました')
+      }
+    },
+
     // --- 保存（リビジョン自動作成付き） ---
 
     async savePage() {
@@ -734,6 +786,109 @@ Alpine.data('cms', () => {
 
     async refreshTranslationStatus() {
       this.translationStatuses = await this.getTranslationStatus()
+    },
+
+    // --- コンテンツタイプ管理 ---
+
+    openTypeEditor(type?: ContentType) {
+      this.editingType = type
+        ? JSON.parse(JSON.stringify(type))
+        : { id: '', label: '', slug: '', fields: [], pagination: 10 }
+      this.showTypeEditor = true
+    },
+
+    addFieldToType() {
+      if (!this.editingType) return
+      this.editingType.fields.push({ key: '', label: '', type: 'text' } as any)
+    },
+
+    removeFieldFromType(idx: number) {
+      if (!this.editingType) return
+      this.editingType.fields.splice(idx, 1)
+    },
+
+    async saveType() {
+      if (!this.fs || !this.editingType) return
+      const t = this.editingType
+      if (!t.id) {
+        t.id = t.slug || t.label.toLowerCase().replace(/\s+/g, '-')
+      }
+      if (!t.slug) t.slug = t.id
+      await this.fs.writeJson(`content/_types/${t.id}.json`, t)
+      this.contentTypes = await this.fs.readContentTypes()
+      this.showTypeEditor = false
+      this.showToast(`${t.label} を保存しました`)
+    },
+
+    async deleteType() {
+      if (!this.fs || !this.editingType?.id) return
+      const dir = await this.fs.getDir('content/_types')
+      if (dir) {
+        try {
+          await dir.removeEntry(`${this.editingType.id}.json`)
+        } catch {
+          /* skip */
+        }
+      }
+      this.contentTypes = await this.fs.readContentTypes()
+      this.showTypeEditor = false
+      this.showToast('削除しました')
+    },
+
+    // --- タクソノミー管理 ---
+
+    async loadTaxonomies() {
+      if (!this.fs) return
+      const cats = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
+        'content/taxonomies/categories.json',
+      )
+      const tags = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
+        'content/taxonomies/tags.json',
+      )
+      this.taxonomyData = {
+        categories: cats?.items || [],
+        tags: tags?.items || [],
+      }
+      this.showTaxonomyEditor = true
+    },
+
+    async saveTaxonomies() {
+      if (!this.fs) return
+      await this.fs.writeJson('content/taxonomies/categories.json', {
+        id: 'categories',
+        label: 'カテゴリ',
+        items: this.taxonomyData.categories,
+      })
+      await this.fs.writeJson('content/taxonomies/tags.json', {
+        id: 'tags',
+        label: 'タグ',
+        items: this.taxonomyData.tags,
+      })
+      this.showTaxonomyEditor = false
+      this.showToast('カテゴリ・タグを保存しました')
+    },
+
+    // --- 言語設定 ---
+
+    loadLangEditor() {
+      this.langEditorData = JSON.parse(JSON.stringify(this.languages))
+      this.showLangEditor = true
+    },
+
+    addLangLocale() {
+      this.langEditorData.locales.push({ code: '', label: '', flag: '' })
+    },
+
+    removeLangLocale(idx: number) {
+      this.langEditorData.locales.splice(idx, 1)
+    },
+
+    async saveLangConfig() {
+      if (!this.fs) return
+      await this.fs.writeJson('content/languages.json', this.langEditorData)
+      this.languages = JSON.parse(JSON.stringify(this.langEditorData))
+      this.showLangEditor = false
+      this.showToast('言語設定を保存しました')
     },
   }
 

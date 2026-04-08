@@ -88,6 +88,19 @@ export class Exporter {
       },
     )
 
+    // meta description（手動設定 or 本文から自動生成）
+    hbs.registerHelper('autoDescription', function (page: Record<string, unknown>) {
+      const desc =
+        (page.description as string) ||
+        stripHtmlTags((page.body as string) || '')
+          .substring(0, 120)
+          .trim()
+      if (!desc) return ''
+      return new Handlebars.SafeString(
+        `<meta name="description" content="${desc}">\n<meta property="og:description" content="${desc}">`,
+      )
+    })
+
     // テーマCSS変数
     hbs.registerHelper('themeStyles', function (site: Record<string, unknown>) {
       const theme = (site as any)?.theme || {}
@@ -181,9 +194,12 @@ export class Exporter {
         'seo',
         [
           '{{themeStyles site}}',
-          '{{#if page.description}}<meta property="og:description" content="{{page.description}}">{{/if}}',
+          '{{autoDescription page}}',
           '<meta property="og:title" content="{{page.title}}">',
           '<meta property="og:type" content="website">',
+          '{{#if page.image}}<meta property="og:image" content="{{page.image}}">{{/if}}',
+          '<meta name="twitter:card" content="{{#if page.image}}summary_large_image{{else}}summary{{/if}}">',
+          '<meta name="twitter:title" content="{{page.title}}">',
           '{{#if site.url}}<link rel="canonical" href="{{site.url}}">{{/if}}',
           '{{breadcrumbJsonLd breadcrumb site.url}}',
           '{{articleJsonLd page site}}',

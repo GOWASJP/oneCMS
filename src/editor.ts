@@ -133,8 +133,20 @@ export function editorJsonToHtml(data: EditorData): string {
 
         case 'list': {
           const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
-          const items = (block.data.items as string[]).map((i: string) => `<li>${i}</li>`).join('')
-          return `<${tag}>${items}</${tag}>`
+          const renderItems = (items: any[]): string => {
+            return items
+              .map((i) => {
+                // v2形式: {content, items} / v1形式: string
+                const text = typeof i === 'string' ? i : i.content || ''
+                const nested =
+                  typeof i === 'object' && i.items?.length
+                    ? `<${tag}>${renderItems(i.items)}</${tag}>`
+                    : ''
+                return `<li>${text}${nested}</li>`
+              })
+              .join('')
+          }
+          return `<${tag}>${renderItems(block.data.items)}</${tag}>`
         }
 
         case 'image': {

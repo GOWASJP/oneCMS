@@ -160,6 +160,7 @@ interface CmsComponent {
   copyFromLang(sourceLang: string): Promise<void>
   getTranslationStatus(): Promise<Array<{ code: string; flag: string; status: string }>>
   refreshTranslationStatus(): Promise<void>
+  langStatusIconSvg(ts: { code: string; status: string }): string
   availableCategories: Array<{ id: string; label: string }>
   availableTags: Array<{ id: string; label: string }>
   // カスタムモーダル
@@ -513,7 +514,7 @@ Alpine.data('cms', () => {
       if (this.view === 'field-groups') return 'フィールド'
       if (this.view === 'taxonomy-categories') return 'カテゴリ'
       if (this.view === 'taxonomy-tags') return 'タグ'
-      if (this.view === 'export-result') return '公開準備 完了'
+      if (this.view === 'export-result') return '書き出し 完了'
       return APP_NAME
     },
 
@@ -1223,7 +1224,7 @@ Alpine.data('cms', () => {
       this.showPreviewPanel = false
     },
 
-    // --- 公開準備（書き出し + 差分抽出） ---
+    // --- 書き出し（静的HTML生成 + 差分抽出） ---
 
     async exportSite() {
       if (!this.fs || !this.exporter || !this.diffEngine || this.exporting) return
@@ -1376,6 +1377,12 @@ Alpine.data('cms', () => {
 
     async refreshTranslationStatus() {
       this.translationStatuses = await this.getTranslationStatus()
+    },
+
+    /** 翻訳ステータス用アイコンを static SVG 文字列で返す（Lucide 変換を介さないため Alpine 再レンダリングで増殖しない） */
+    langStatusIconSvg(ts: { code: string; status: string }): string {
+      const status = ts.code === this.currentLang ? 'current' : ts.status
+      return LANG_STATUS_ICONS[status] || ''
     },
 
     // --- コンテンツタイプ管理 ---
@@ -1874,6 +1881,18 @@ Alpine.data('cms', () => {
 })
 
 Alpine.start()
+
+/** 翻訳ステータスバッジ用の static SVG（Lucide のアイコンデータから抽出したパス） */
+const LANG_STATUS_ICONS: Record<string, string> = {
+  current:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
+  translated:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  draft:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  missing:
+    '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>',
+}
 
 /** html[data-theme] 属性を適切に設定してテーマを反映 */
 function applyTheme(mode: ThemeMode): void {

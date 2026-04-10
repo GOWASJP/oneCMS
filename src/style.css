@@ -262,6 +262,22 @@ label[for],
   opacity: 0.85;
 }
 
+/* --- Editor sticky header --- */
+.gh-editor-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  border-bottom: 1px solid #ebeef0;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding: 0.75rem 2rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* --- Editor.js --- */
 .gh-editorjs {
   min-height: 360px;

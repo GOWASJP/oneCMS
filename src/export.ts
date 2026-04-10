@@ -272,8 +272,18 @@ export class Exporter {
 
         const breadcrumb = [{ label: siteConfig.name || 'Home', url: '/' }, { label: page.title }]
 
-        const pagePath = page.id === 'index' ? '' : `${page.id}/`
-        const ctx = { page, site, lang, breadcrumb, locales, defaultLang, pagePath }
+        const pageSlug = page.slug || page.id
+        const pagePath = pageSlug === 'index' ? '' : `${pageSlug}/`
+        const ctx = {
+          page,
+          pageType: 'page' as const,
+          site,
+          lang,
+          breadcrumb,
+          locales,
+          defaultLang,
+          pagePath,
+        }
 
         const pageHtml = pageTemplate
           ? pageTemplate(ctx)
@@ -284,7 +294,7 @@ export class Exporter {
           : wrapHtml(page.title, siteConfig, lang, pageHtml)
 
         const filePath =
-          page.id === 'index' ? `${prefix}index.html` : `${prefix}${page.id}/index.html`
+          pageSlug === 'index' ? `${prefix}index.html` : `${prefix}${pageSlug}/index.html`
 
         files.push({ path: filePath, content: fullHtml })
         step++
@@ -303,7 +313,7 @@ export class Exporter {
           const start = (p - 1) * perPage
           const pageItems = published.slice(start, start + perPage).map((item) => ({
             ...item,
-            url: `/${prefix}${type.slug}/${item.id}/`,
+            url: `/${prefix}${type.slug}/${item.slug || item.id}/`,
           }))
 
           const paginationPages = []
@@ -356,9 +366,11 @@ export class Exporter {
 
         // 詳細ページ書き出し
         for (const item of published) {
-          const detailPagePath = `${type.slug}/${item.id}/`
+          const itemSlug = item.slug || item.id
+          const detailPagePath = `${type.slug}/${itemSlug}/`
           const detailCtx = {
             page: item,
+            type,
             site,
             lang,
             breadcrumb: [
@@ -380,7 +392,7 @@ export class Exporter {
             : wrapHtml(item.title, siteConfig, lang, detailHtml)
 
           files.push({
-            path: `${prefix}${type.slug}/${item.id}/index.html`,
+            path: `${prefix}${type.slug}/${itemSlug}/index.html`,
             content: fullHtml,
           })
         }
@@ -443,7 +455,7 @@ export class Exporter {
         index.push({
           title: page.title,
           body: stripHtmlTags(page.body || '').substring(0, 300),
-          url: `/${prefix}${page.id === 'index' ? '' : page.id + '/'}`,
+          url: `/${prefix}${(page.slug || page.id) === 'index' ? '' : (page.slug || page.id) + '/'}`,
           lang,
           type: 'page',
           date: page._meta?.updatedAt || '',
@@ -458,7 +470,7 @@ export class Exporter {
           index.push({
             title: item.title,
             body: stripHtmlTags(item.body || '').substring(0, 300),
-            url: `/${prefix}${type.slug}/${item.id}/`,
+            url: `/${prefix}${type.slug}/${item.slug || item.id}/`,
             lang,
             type: type.id,
             date: item.publishedAt || item._meta?.updatedAt || '',

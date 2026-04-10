@@ -67,6 +67,7 @@ export const ContentDataSchema = z
   .object({
     id: z.string(),
     title: z.string(),
+    slug: z.string().optional(),
     body: z.string().optional(),
     status: ContentStatusSchema.optional(),
     publishedAt: z.string().optional(),
@@ -74,6 +75,7 @@ export const ContentDataSchema = z
     tags: z.array(z.string()).optional(),
     image: z.string().optional(),
     description: z.string().optional(),
+    fieldGroupIds: z.array(z.string()).optional(),
     _meta: ContentMetaSchema.optional(),
     _revision: z
       .object({
@@ -117,6 +119,12 @@ export const ShowIfConditionSchema = z.object({
   value: z.unknown(),
 })
 
+export const SubFieldSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  type: z.enum(['text', 'textarea', 'number', 'url', 'email', 'date', 'image', 'select']),
+})
+
 export const FieldDefinitionSchema = z.object({
   key: z.string(),
   label: z.string(),
@@ -126,6 +134,15 @@ export const FieldDefinitionSchema = z.object({
     .array(z.union([z.object({ value: z.string(), label: z.string() }), z.string()]))
     .optional(),
   showIf: ShowIfConditionSchema.optional(),
+  subFields: z.array(SubFieldSchema).optional(),
+})
+
+// ----- フィールドグループ -----
+
+export const FieldGroupSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  fields: z.array(FieldDefinitionSchema),
 })
 
 // ----- コンテンツタイプ -----
@@ -140,8 +157,10 @@ export const ContentTypeSchema = z.object({
   hasTag: z.boolean().optional(),
   hasThumbnail: z.boolean().optional(),
   hasDate: z.boolean().optional(),
+  hasBody: z.boolean().optional(),
   pagination: z.number().optional(),
-  fields: z.array(FieldDefinitionSchema),
+  fields: z.array(FieldDefinitionSchema).optional(), // 後方互換
+  fieldGroupIds: z.array(z.string()).optional(),
 })
 
 // ----- 書き出し -----

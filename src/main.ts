@@ -19,6 +19,7 @@ import {
   PATH_SITE_CONFIG,
   PATH_LANGUAGES,
   PATH_MENUS,
+  PATH_PAGES_CONFIG,
   PATH_TAXONOMIES_CATEGORIES,
   PATH_TAXONOMIES_TAGS,
   PATH_ASSETS_FILES,
@@ -29,6 +30,7 @@ import type {
   ContentData,
   ContentType,
   FieldDefinition,
+  FieldGroup,
   RevisionEntry,
   ExportResult,
 } from './types.ts'
@@ -98,6 +100,13 @@ interface CmsComponent {
   showPageCreator: boolean
   editingPageId: string
   editingPageTitle: string
+  loadPageList(): Promise<void>
+  // ページ設定
+  pagesConfig: { hasBody?: boolean; fieldGroupIds?: string[] }
+  showPagesConfigEditor: boolean
+  editingPagesConfig: { hasBody?: boolean; fieldGroupIds?: string[] } | null
+  openPagesConfigEditor(): void
+  savePagesConfig(): Promise<void>
   openPage(page: ContentData): Promise<void>
   openContentType(type: ContentType): Promise<void>
   openContent(item: ContentData): Promise<void>
@@ -152,8 +161,18 @@ interface CmsComponent {
   openTypeEditor(type?: ContentType): void
   saveType(): Promise<void>
   deleteType(): Promise<void>
-  addFieldToType(): void
-  removeFieldFromType(idx: number): void
+  // フィールドグループ管理
+  fieldGroups: FieldGroup[]
+  currentFieldGroup: FieldGroup | null
+  loadFieldGroupEditor(): Promise<void>
+  openFieldGroup(group: FieldGroup): void
+  createFieldGroup(): void
+  addFieldToGroup(): void
+  removeFieldFromGroup(idx: number): void
+  saveFieldGroup(): Promise<void>
+  deleteFieldGroup(): Promise<void>
+  resolveFields(fieldGroupIds?: string[], fallbackFields?: FieldDefinition[]): FieldDefinition[]
+  getFieldTemplateCode(type?: ContentType): string
   // タクソノミー管理
   showTaxonomyEditor: boolean
   taxonomyData: {
@@ -161,7 +180,9 @@ interface CmsComponent {
     tags: Array<{ id: string; label: string }>
   }
   loadTaxonomies(): Promise<void>
+  loadTaxonomy(type: 'categories' | 'tags'): Promise<void>
   saveTaxonomies(): Promise<void>
+  currentTaxonomyType: 'categories' | 'tags'
   // 言語設定
   showLangEditor: boolean
   langEditorData: Languages
@@ -170,6 +191,13 @@ interface CmsComponent {
   addLangLocale(): void
   removeLangLocale(idx: number): void
   translationStatuses: Array<{ code: string; flag: string; status: string }>
+  // テンプレートエディタ
+  templateFiles: Array<{ name: string; path: string; isComponent: boolean }>
+  currentTemplateFile: string
+  templateCode: string
+  loadTemplateEditor(): Promise<void>
+  openTemplateFile(path: string): Promise<void>
+  saveTemplateFile(): Promise<void>
 }
 
 Alpine.data('cms', () => {
@@ -209,6 +237,18 @@ Alpine.data('cms', () => {
     modalShowInput: false,
     modalResolve: null as ((value: string | boolean | null) => void) | null,
 
+    // フィールドグループ管理
+    fieldGroups: [] as FieldGroup[],
+    currentFieldGroup: null as FieldGroup | null,
+
+    // ページ設定
+    pagesConfig: { hasBody: true, fieldGroupIds: [] } as {
+      hasBody?: boolean
+      fieldGroupIds?: string[]
+    },
+    showPagesConfigEditor: false,
+    editingPagesConfig: null as { hasBody?: boolean; fieldGroupIds?: string[] } | null,
+
     // メニュー管理
     menuData: { menus: [] } as any,
     currentMenuId: '',
@@ -225,6 +265,7 @@ Alpine.data('cms', () => {
 
     // タクソノミー管理
     showTaxonomyEditor: false,
+    currentTaxonomyType: 'categories' as 'categories' | 'tags',
     taxonomyData: {
       categories: [] as Array<{ id: string; label: string }>,
       tags: [] as Array<{ id: string; label: string }>,
@@ -235,6 +276,11 @@ Alpine.data('cms', () => {
     // 言語設定
     showLangEditor: false,
     langEditorData: { default: 'ja', locales: [] },
+
+    // テンプレートエディタ
+    templateFiles: [] as Array<{ name: string; path: string; isComponent: boolean }>,
+    currentTemplateFile: '',
+    templateCode: '',
 
     // エディタ
     editor: null,
@@ -281,7 +327,9 @@ Alpine.data('cms', () => {
     /** URLハッシュを現在のビュー状態で更新 */
     updateHash() {
       let hash = ''
-      if (this.view === 'page-edit' && this.currentPage) {
+      if (this.view === 'page-list') {
+        hash = '#/pages'
+      } else if (this.view === 'page-edit' && this.currentPage) {
         hash = `#/pages/${this.currentPage.id}`
       } else if (this.view === 'content-list' && this.currentType) {
         hash = `#/content/${this.currentType.id}`
@@ -291,6 +339,14 @@ Alpine.data('cms', () => {
         hash = '#/settings'
       } else if (this.view === 'menus') {
         hash = '#/menus'
+      } else if (this.view === 'templates') {
+        hash = '#/templates'
+      } else if (this.view === 'field-groups') {
+        hash = '#/field-groups'
+      } else if (this.view === 'taxonomy-categories') {
+        hash = '#/categories'
+      } else if (this.view === 'taxonomy-tags') {
+        hash = '#/tags'
       }
       if (hash) {
         history.replaceState(null, '', hash)
@@ -306,11 +362,21 @@ Alpine.data('cms', () => {
 
       if (parts[0] === 'settings') {
         this.view = 'settings'
+      } else if (parts[0] === 'templates') {
+        await this.loadTemplateEditor()
+      } else if (parts[0] === 'field-groups') {
+        await this.loadFieldGroupEditor()
+      } else if (parts[0] === 'categories') {
+        await this.loadTaxonomy('categories')
+      } else if (parts[0] === 'tags') {
+        await this.loadTaxonomy('tags')
       } else if (parts[0] === 'menus') {
         await this.loadMenus()
       } else if (parts[0] === 'pages' && parts[1]) {
         const page = this.pages.find((p) => p.id === parts[1])
         if (page) await this.openPage(page)
+      } else if (parts[0] === 'pages') {
+        await this.loadPageList()
       } else if (parts[0] === 'content' && parts[1]) {
         const type = this.contentTypes.find((t) => t.id === parts[1])
         if (type) {
@@ -329,7 +395,12 @@ Alpine.data('cms', () => {
       if (this.view === 'content-edit' && this.currentPage)
         return this.currentPage.title || '新規作成'
       if (this.view === 'content-list' && this.currentType) return this.currentType.label
+      if (this.view === 'page-list') return 'ページ'
       if (this.view === 'settings') return 'サイト設定'
+      if (this.view === 'templates') return 'テンプレート'
+      if (this.view === 'field-groups') return 'フィールド'
+      if (this.view === 'taxonomy-categories') return 'カテゴリ'
+      if (this.view === 'taxonomy-tags') return 'タグ'
       if (this.view === 'export-result') return '公開準備 完了'
       return APP_NAME
     },
@@ -429,6 +500,10 @@ Alpine.data('cms', () => {
       this.languages = (await this.fs.readJson<Languages>(PATH_LANGUAGES)) || this.languages
       this.currentLang = this.languages.default || 'ja'
       this.contentTypes = await this.fs.readContentTypes()
+      this.fieldGroups = await this.fs.readFieldGroups()
+      this.pagesConfig = (await this.fs.readJson<{ hasBody?: boolean; fieldGroupIds?: string[] }>(
+        PATH_PAGES_CONFIG,
+      )) || { hasBody: true, fieldGroupIds: [] }
       this.pages = await this.fs.readPages(this.currentLang)
       // カテゴリ・タグ読み込み
       const cats = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
@@ -541,24 +616,52 @@ Alpine.data('cms', () => {
       }
       this.currentPage = page
       this.currentType = null
-      this.currentFields = []
+      this.currentFields = this.resolveFields(this.pagesConfig?.fieldGroupIds, [])
       this.showRevisionPanel = false
       this.showPreviewPanel = false
       this.view = 'page-edit'
       this.editData = { ...page }
-      this.initEditor('')
+      if (this.pagesConfig?.hasBody !== false) {
+        this.initEditor('')
+      }
       this.updateHash()
+    },
+
+    async loadPageList() {
+      if (!this.fs) return
+      this.pages = await this.fs.readPages(this.currentLang)
+      this.currentPage = null
+      this.currentType = null
+      this.view = 'page-list'
+      this.updateHash()
+    },
+
+    openPagesConfigEditor() {
+      this.editingPagesConfig = JSON.parse(JSON.stringify(this.pagesConfig))
+      if (!this.editingPagesConfig!.fieldGroupIds) this.editingPagesConfig!.fieldGroupIds = []
+      this.showPagesConfigEditor = true
+    },
+
+    async savePagesConfig() {
+      if (!this.fs || !this.editingPagesConfig) return
+      await this.fs.writeJson(PATH_PAGES_CONFIG, this.editingPagesConfig)
+      this.pagesConfig = JSON.parse(JSON.stringify(this.editingPagesConfig))
+      this.showPagesConfigEditor = false
+      this.editingPagesConfig = null
+      this.showToast('ページ設定を保存しました')
     },
 
     async openPage(page: ContentData) {
       this.currentPage = page
       this.currentType = null
-      this.currentFields = []
+      this.currentFields = this.resolveFields(this.pagesConfig?.fieldGroupIds, [])
       this.showRevisionPanel = false
       this.showPreviewPanel = false
       this.view = 'page-edit'
-      this.editData = { ...page }
-      this.initEditor((page as any)._editorJson || page.body || '')
+      this.editData = { slug: '', ...page }
+      if (this.pagesConfig?.hasBody !== false) {
+        this.initEditor((page as any)._editorJson || page.body || '')
+      }
       this.updateHash()
       this.refreshTranslationStatus()
     },
@@ -578,15 +681,20 @@ Alpine.data('cms', () => {
 
     async openContent(item: ContentData) {
       this.currentPage = item
-      this.currentFields = this.currentType?.fields || []
+      this.currentFields = this.resolveFields(
+        this.currentType?.fieldGroupIds,
+        this.currentType?.fields,
+      )
       this.showRevisionPanel = false
       this.showPreviewPanel = false
       this.view = 'content-edit'
-      this.editData = { ...item }
+      this.editData = { slug: '', category: '', tags: [], ...item }
       // Alpine template x-if の入れ子展開を待つ
       setTimeout(() => {
-        const hasRichtext = this.currentFields.some((f) => f.type === 'richtext')
-        if (hasRichtext) {
+        const hasBody =
+          this.currentType?.hasBody ||
+          this.currentFields.some((f) => f.type === 'richtext' && f.key === 'body')
+        if (hasBody) {
           this.initEditor((item as any)._editorJson || item.body || '')
         }
       }, 100)
@@ -600,7 +708,10 @@ Alpine.data('cms', () => {
       const item: ContentData = {
         id,
         title: '',
+        slug: '',
         status: 'draft',
+        category: '',
+        tags: [],
         publishedAt: now.toISOString().split('T')[0],
         body: '',
         _meta: {
@@ -610,12 +721,17 @@ Alpine.data('cms', () => {
         },
       }
       this.currentPage = item
-      this.currentFields = this.currentType?.fields || []
+      this.currentFields = this.resolveFields(
+        this.currentType?.fieldGroupIds,
+        this.currentType?.fields,
+      )
       this.editData = { ...item }
       this.view = 'content-edit'
       setTimeout(() => {
-        const hasRichtext = this.currentFields.some((f) => f.type === 'richtext')
-        if (hasRichtext) {
+        const hasBody =
+          this.currentType?.hasBody ||
+          this.currentFields.some((f) => f.type === 'richtext' && f.key === 'body')
+        if (hasBody) {
           this.initEditor('')
         }
       }, 100)
@@ -721,7 +837,8 @@ Alpine.data('cms', () => {
         author: this.authorName,
       }
 
-      const pageId = this.editData.id || this.currentPage?.id || ''
+      // IDはフォルダ名で固定（スラッグ変更で複製されないように元のIDを使う）
+      const pageId = this.currentPage?.id || this.editData.id || ''
       const typePath = this.currentType ? this.currentType.id : 'pages'
 
       if (this.currentType) {
@@ -1023,20 +1140,9 @@ Alpine.data('cms', () => {
             label: '',
             slug: '',
             pagination: 10,
-            fields: [
-              { key: 'title', label: 'タイトル', type: 'text', required: true },
-              { key: 'body', label: '本文', type: 'richtext' },
-            ],
+            fieldGroupIds: [] as string[],
           }
-      // showIf をフラット化し、UI用プロパティを付与
-      raw.fields = raw.fields.map((f: any) => ({
-        ...f,
-        _expanded: false,
-        showIf_field: f.showIf?.field || '',
-        showIf_value:
-          f.showIf?.value !== undefined && f.showIf?.value !== null ? String(f.showIf.value) : '',
-        options: f.options || [],
-      }))
+      if (!raw.fieldGroupIds) raw.fieldGroupIds = []
       this.editingType = raw
       this.showTypeEditor = true
     },
@@ -1056,7 +1162,215 @@ Alpine.data('cms', () => {
 
     removeFieldFromType(idx: number) {
       if (!this.editingType) return
-      this.editingType.fields.splice(idx, 1)
+      ;(this.editingType.fields || []).splice(idx, 1)
+    },
+
+    // --- フィールドグループ管理 ---
+
+    /** フィールドグループIDからフィールド定義を解決 */
+    resolveFields(fieldGroupIds?: string[], fallbackFields?: FieldDefinition[]): FieldDefinition[] {
+      if (fieldGroupIds?.length) {
+        return fieldGroupIds.flatMap(
+          (id) => this.fieldGroups.find((g) => g.id === id)?.fields || [],
+        )
+      }
+      return fallbackFields || []
+    },
+
+    async loadFieldGroupEditor() {
+      if (!this.fs) return
+      this.fieldGroups = await this.fs.readFieldGroups()
+      this.currentFieldGroup = null
+      this.view = 'field-groups'
+      this.updateHash()
+    },
+
+    openFieldGroup(group: FieldGroup) {
+      this.currentFieldGroup = JSON.parse(JSON.stringify(group))
+      // UI用プロパティ付与
+      this.currentFieldGroup!.fields = this.currentFieldGroup!.fields.map((f: any) => ({
+        ...f,
+        _expanded: false,
+        showIf_field: f.showIf?.field || '',
+        showIf_value:
+          f.showIf?.value !== undefined && f.showIf?.value !== null ? String(f.showIf.value) : '',
+        options: f.options || [],
+      }))
+    },
+
+    createFieldGroup() {
+      this.currentFieldGroup = {
+        id: '',
+        label: '',
+        fields: [],
+      }
+    },
+
+    addFieldToGroup() {
+      if (!this.currentFieldGroup) return
+      this.currentFieldGroup.fields.push({
+        key: '',
+        label: '',
+        type: 'text',
+        _expanded: false,
+        showIf_field: '',
+        showIf_value: '',
+        options: [],
+      } as any)
+    },
+
+    removeFieldFromGroup(idx: number) {
+      if (!this.currentFieldGroup) return
+      this.currentFieldGroup.fields.splice(idx, 1)
+    },
+
+    async saveFieldGroup() {
+      if (!this.fs || !this.currentFieldGroup) return
+      const g = this.currentFieldGroup
+      if (!g.label.trim()) {
+        this.showToast('ラベルを入力してください')
+        return
+      }
+      if (!g.id) {
+        g.id = g.label
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+      }
+      // UI用プロパティを除去
+      const cleanedFields = g.fields.map((f: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _expanded, showIf_field, showIf_value, showIf: _showIf, ...rest } = f
+        const field: any = { ...rest }
+        if (showIf_field?.trim()) {
+          let val: unknown = showIf_value
+          if (showIf_value === 'true') val = true
+          else if (showIf_value === 'false') val = false
+          field.showIf = { field: showIf_field.trim(), value: val }
+        }
+        if (!field.required) delete field.required
+        if (!field.options || field.options.length === 0) delete field.options
+        if (!field.subFields || field.subFields.length === 0) delete field.subFields
+        return field
+      })
+      await this.fs.writeJson(`content/_fieldGroups/${g.id}.json`, {
+        id: g.id,
+        label: g.label,
+        fields: cleanedFields,
+      })
+      this.fieldGroups = await this.fs.readFieldGroups()
+      this.showToast(`${g.label} を保存しました`)
+    },
+
+    async deleteFieldGroup() {
+      if (!this.currentFieldGroup?.id) return
+      if (!(await this.showConfirm(`「${this.currentFieldGroup.label}」を削除しますか？`))) return
+      const dir = await this.fs!.getDir('content/_fieldGroups')
+      if (dir) {
+        try {
+          await dir.removeEntry(`${this.currentFieldGroup.id}.json`)
+        } catch {
+          /* skip */
+        }
+      }
+      this.fieldGroups = await this.fs!.readFieldGroups()
+      this.currentFieldGroup = null
+      this.showToast('削除しました')
+    },
+
+    /** カスタムフィールドのテンプレートコードを生成 */
+    getFieldTemplateCode(typeArg?: ContentType): string {
+      const type = typeArg || this.editingType
+      if (!type) return ''
+      const lines: string[] = []
+
+      // 一覧ページ用
+      lines.push('{{!-- 一覧ページ (list.hbs) --}}')
+      lines.push(`{{#each items}}`)
+      lines.push(`<article>`)
+      lines.push(`  <a href="{{url}}">`)
+      lines.push(`    <h2>{{page.title}}</h2>`)
+      for (const f of type.fields) {
+        if (f.key === 'title' || f.key === 'body') continue
+        if (f.type === 'image') {
+          lines.push(`    {{#if page.${f.key}}}<img src="{{page.${f.key}}}" alt="">{{/if}}`)
+        } else if (f.type === 'date' || f.type === 'datetime') {
+          lines.push(`    <time>{{page.${f.key}}}</time>`)
+        } else if (
+          [
+            'text',
+            'textarea',
+            'number',
+            'url',
+            'email',
+            'year',
+            'color',
+            'select',
+            'radio',
+          ].includes(f.type)
+        ) {
+          lines.push(`    <span>{{page.${f.key}}}</span>`)
+        }
+      }
+      lines.push(`  </a>`)
+      lines.push(`</article>`)
+      lines.push(`{{/each}}`)
+
+      lines.push('')
+      lines.push('{{!-- 詳細ページ (detail.hbs) --}}')
+      lines.push(`<h1>{{page.title}}</h1>`)
+      for (const f of type.fields) {
+        if (f.key === 'title') continue
+        if (f.key === 'body') {
+          lines.push(`{{{page.body}}}`)
+        } else if (f.type === 'image') {
+          lines.push(
+            `{{#if page.${f.key}}}<img src="{{page.${f.key}}}" alt="{{page.title}}">{{/if}}`,
+          )
+        } else if (f.type === 'imagelist') {
+          lines.push(`{{#each page.${f.key}}}`)
+          lines.push(`  <img src="{{this}}" alt="">`)
+          lines.push(`{{/each}}`)
+        } else if (f.type === 'file') {
+          lines.push(`{{#if page.${f.key}}}<a href="{{page.${f.key}}}">ダウンロード</a>{{/if}}`)
+        } else if (f.type === 'richtext') {
+          lines.push(`{{{page.${f.key}}}}`)
+        } else if (f.type === 'date' || f.type === 'datetime') {
+          lines.push(`<time>{{page.${f.key}}}</time>`)
+        } else if (f.type === 'daterange') {
+          lines.push(`<span>{{page.${f.key}_from}} 〜 {{page.${f.key}_to}}</span>`)
+        } else if (f.type === 'url') {
+          lines.push(
+            `{{#if page.${f.key}}}<a href="{{page.${f.key}}}">{{page.${f.key}}}</a>{{/if}}`,
+          )
+        } else if (f.type === 'multiselect') {
+          lines.push(`{{#each page.${f.key}}}`)
+          lines.push(`  <span>{{this}}</span>`)
+          lines.push(`{{/each}}`)
+        } else if (f.type === 'repeater') {
+          lines.push(`{{#each page.${f.key}}}`)
+          if ((f as any).subFields?.length) {
+            for (const sf of (f as any).subFields) {
+              if (sf.type === 'image') {
+                lines.push(`  {{#if this.${sf.key}}}<img src="{{this.${sf.key}}}" alt="">{{/if}}`)
+              } else {
+                lines.push(`  <span>{{this.${sf.key}}}</span>`)
+              }
+            }
+          } else {
+            lines.push(`  <span>{{this}}</span>`)
+          }
+          lines.push(`{{/each}}`)
+        } else if (f.type === 'checkbox' || f.type === 'toggle') {
+          lines.push(`{{#if page.${f.key}}}<span>${f.label}: ON</span>{{/if}}`)
+        } else if (f.type === 'hidden') {
+          // skip
+        } else {
+          lines.push(`<span>{{page.${f.key}}}</span>`)
+        }
+      }
+      return lines.join('\n')
     },
 
     async saveType() {
@@ -1076,25 +1390,14 @@ Alpine.data('cms', () => {
             .replace(/-+/g, '-')
       }
       if (!t.slug) t.slug = t.id
-      // UI用プロパティを除去し、showIfオブジェクトを再構成
-      const cleanedFields = t.fields.map((f: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { _expanded, showIf_field, showIf_value, showIf: _showIf, ...rest } = f
-        const field: any = { ...rest }
-        if (showIf_field?.trim()) {
-          let val: unknown = showIf_value
-          if (showIf_value === 'true') val = true
-          else if (showIf_value === 'false') val = false
-          field.showIf = { field: showIf_field.trim(), value: val }
-        }
-        if (!field.required) delete field.required
-        if (!field.options || field.options.length === 0) delete field.options
-        return field
-      })
-      const saveData = { ...t, fields: cleanedFields }
+      // fieldGroupIds で保存（旧 fields は除去）
+      const saveData: any = { ...t }
+      delete saveData.fields
+      if (!saveData.fieldGroupIds?.length) delete saveData.fieldGroupIds
       await this.fs.writeJson(`content/_types/${t.id}.json`, saveData)
       this.contentTypes = await this.fs.readContentTypes()
       this.showTypeEditor = false
+      this.editingType = null
       this.showToast(`${t.label} を保存しました`)
     },
 
@@ -1122,6 +1425,7 @@ Alpine.data('cms', () => {
       }
       this.contentTypes = await this.fs.readContentTypes()
       this.showTypeEditor = false
+      this.editingType = null
       this.currentType = null
       this.view = 'welcome'
       this.showToast('削除しました')
@@ -1244,7 +1548,13 @@ Alpine.data('cms', () => {
         categories: cats?.items || [],
         tags: tags?.items || [],
       }
-      this.showTaxonomyEditor = true
+    },
+
+    async loadTaxonomy(type: 'categories' | 'tags') {
+      await this.loadTaxonomies()
+      this.currentTaxonomyType = type
+      this.view = `taxonomy-${type}`
+      this.updateHash()
     },
 
     async saveTaxonomies() {
@@ -1259,7 +1569,6 @@ Alpine.data('cms', () => {
         label: 'タグ',
         items: this.taxonomyData.tags,
       })
-      this.showTaxonomyEditor = false
       this.availableCategories = this.taxonomyData.categories
       this.availableTags = this.taxonomyData.tags
       this.showToast('カテゴリ・タグを保存しました')
@@ -1286,6 +1595,30 @@ Alpine.data('cms', () => {
       this.languages = JSON.parse(JSON.stringify(this.langEditorData))
       this.showLangEditor = false
       this.showToast('言語設定を保存しました')
+    },
+
+    // --- テンプレートエディタ ---
+
+    async loadTemplateEditor() {
+      if (!this.fs) return
+      this.templateFiles = await this.fs.readTemplateFiles()
+      this.currentTemplateFile = ''
+      this.templateCode = ''
+      this.view = 'templates'
+      this.updateHash()
+    },
+
+    async openTemplateFile(path: string) {
+      if (!this.fs) return
+      const text = await this.fs.readText(path)
+      this.currentTemplateFile = path
+      this.templateCode = text || ''
+    },
+
+    async saveTemplateFile() {
+      if (!this.fs || !this.currentTemplateFile) return
+      await this.fs.writeText(this.currentTemplateFile, this.templateCode)
+      this.showToast('テンプレートを保存しました')
     },
   }
 

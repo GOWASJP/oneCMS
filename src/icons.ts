@@ -5,6 +5,8 @@
 export {
   // サイドバー
   FolderOpen,
+  FolderTree,
+  Columns3,
   FileText,
   Settings,
   PlusCircle,

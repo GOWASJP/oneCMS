@@ -63,19 +63,13 @@
             <template x-if="folderHandle">
               <div class="space-y-0.5">
                 <div class="gh-nav-section">ページ</div>
-                <template x-for="page in pages" :key="page.id">
-                  <button
-                    @click="openPage(page)"
-                    :class="currentPage?.id === page.id && !currentType ? 'gh-nav-active' : ''"
-                    class="gh-nav-item w-full"
-                  >
-                    <i data-lucide="file-text" class="w-[18px] h-[18px]"></i>
-                    <span x-text="page.title || page.id" class="truncate"></span>
-                  </button>
-                </template>
-                <button @click="createPage()" class="gh-nav-item w-full text-[#505a66]">
-                  <i data-lucide="plus" class="w-[18px] h-[18px]"></i>
-                  <span>ページ追加</span>
+                <button
+                  @click="loadPageList()"
+                  :class="view === 'page-list' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
+                  <i data-lucide="file-text" class="w-[18px] h-[18px]"></i>
+                  <span>ページ一覧</span>
                 </button>
 
                 <div class="gh-nav-section">投稿タイプ</div>
@@ -104,15 +98,45 @@
                   <i data-lucide="menu" class="w-[18px] h-[18px]"></i>
                   <span>メニュー</span>
                 </button>
-                <button @click="loadTaxonomies()" class="gh-nav-item w-full">
+                <button
+                  @click="loadTaxonomy('categories')"
+                  :class="view === 'taxonomy-categories' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
+                  <i data-lucide="folder-tree" class="w-[18px] h-[18px]"></i>
+                  <span>カテゴリ</span>
+                </button>
+                <button
+                  @click="loadTaxonomy('tags')"
+                  :class="view === 'taxonomy-tags' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
                   <i data-lucide="tag" class="w-[18px] h-[18px]"></i>
-                  <span>カテゴリ・タグ</span>
+                  <span>タグ</span>
+                </button>
+                <button
+                  @click="loadFieldGroupEditor()"
+                  :class="view === 'field-groups' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
+                  <i data-lucide="columns-3" class="w-[18px] h-[18px]"></i>
+                  <span>フィールド</span>
                 </button>
 
                 <button @click="loadLangEditor()" class="gh-nav-item w-full">
                   <i data-lucide="languages" class="w-[18px] h-[18px]"></i>
                   <span>言語設定</span>
                 </button>
+                <template x-if="location.hostname === 'localhost'">
+                  <button
+                    @click="loadTemplateEditor()"
+                    :class="view === 'templates' ? 'gh-nav-active' : ''"
+                    class="gh-nav-item w-full"
+                  >
+                    <i data-lucide="code" class="w-[18px] h-[18px]"></i>
+                    <span>テンプレート</span>
+                  </button>
+                </template>
                 <button
                   @click="view = 'settings'; updateHash()"
                   :class="view === 'settings' ? 'gh-nav-active' : ''"
@@ -160,13 +184,45 @@
                 </span>
               </template>
               <template x-if="!currentType && currentPage">
-                <span
-                  class="text-[#15171a] font-medium"
-                  x-text="currentPage.title || '無題'"
-                ></span>
+                <span class="flex items-center gap-1.5">
+                  <span class="hover:text-[#15171a] cursor-pointer" @click="loadPageList()">
+                    ページ
+                  </span>
+                  <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                  <span
+                    class="text-[#15171a] font-medium"
+                    x-text="currentPage.title || '無題'"
+                  ></span>
+                </span>
+              </template>
+              <template x-if="view === 'page-list'">
+                <span class="text-[#15171a] font-medium">ページ</span>
               </template>
               <template x-if="view === 'settings'">
                 <span class="text-[#15171a] font-medium">設定</span>
+              </template>
+              <template x-if="view === 'taxonomy-categories'">
+                <span class="text-[#15171a] font-medium">カテゴリ</span>
+              </template>
+              <template x-if="view === 'taxonomy-tags'">
+                <span class="text-[#15171a] font-medium">タグ</span>
+              </template>
+              <template x-if="view === 'field-groups'">
+                <span class="text-[#15171a] font-medium">フィールド</span>
+              </template>
+              <template x-if="view === 'templates'">
+                <span class="flex items-center gap-1.5">
+                  <span class="text-[#15171a] font-medium">テンプレート</span>
+                  <template x-if="currentTemplateFile">
+                    <span class="flex items-center gap-1.5">
+                      <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                      <span
+                        class="text-[#15171a]"
+                        x-text="currentTemplateFile.split('/').pop()"
+                      ></span>
+                    </span>
+                  </template>
+                </span>
               </template>
             </div>
             <div class="flex items-center gap-3">
@@ -210,8 +266,15 @@
                 <!-- 左: エディタ本体 -->
                 <div class="flex-1 overflow-y-auto">
                   <div class="gh-editor-container">
-                    <!-- ヘッダー -->
-                    <div class="flex items-center gap-2 mb-6">
+                    <!-- ヘッダー（sticky） -->
+                    <div class="gh-editor-header">
+                      <button
+                        @click="currentPage = null; loadPageList()"
+                        class="gh-btn-outline text-xs"
+                      >
+                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                        戻る
+                      </button>
                       <button @click="showPreview()" class="gh-btn-outline text-xs">
                         <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                         プレビュー
@@ -231,7 +294,88 @@
                       placeholder="タイトル..."
                       class="gh-title-input"
                     />
-                    <div id="editorjs" class="gh-editorjs"></div>
+                    <!-- 本文エディタ（hasBodyがtrueの時のみ） -->
+                    <template x-if="pagesConfig?.hasBody !== false">
+                      <div id="editorjs" class="gh-editorjs mb-5"></div>
+                    </template>
+
+                    <!-- カスタムフィールド -->
+                    <template
+                      x-for="field in currentFields.filter(f => f.key !== 'title' && f.key !== 'body')"
+                      :key="field.key"
+                    >
+                      <div>
+                        <template
+                          x-if="!field.showIf || editData[field.showIf.field] === field.showIf.value"
+                        >
+                          <div class="mb-5">
+                            <label class="gh-label">
+                              <span x-text="field.label"></span>
+                              <span x-show="field.required" class="text-[#f50057]">*</span>
+                            </label>
+                            <template x-if="field.type === 'text'">
+                              <input
+                                type="text"
+                                x-model="editData[field.key]"
+                                class="gh-input-light w-full"
+                              />
+                            </template>
+                            <template x-if="field.type === 'textarea'">
+                              <textarea
+                                x-model="editData[field.key]"
+                                rows="4"
+                                class="gh-input-light w-full"
+                              ></textarea>
+                            </template>
+                            <template x-if="field.type === 'number'">
+                              <input
+                                type="number"
+                                x-model="editData[field.key]"
+                                class="gh-input-light w-full"
+                              />
+                            </template>
+                            <template x-if="field.type === 'url'">
+                              <input
+                                type="url"
+                                x-model="editData[field.key]"
+                                placeholder="https://"
+                                class="gh-input-light w-full"
+                              />
+                            </template>
+                            <template x-if="field.type === 'email'">
+                              <input
+                                type="email"
+                                x-model="editData[field.key]"
+                                class="gh-input-light w-full"
+                              />
+                            </template>
+                            <template x-if="field.type === 'date'">
+                              <input
+                                type="date"
+                                x-model="editData[field.key]"
+                                class="gh-input-light"
+                              />
+                            </template>
+                            <template x-if="field.type === 'image'">
+                              <div>
+                                <template x-if="editData[field.key]">
+                                  <img
+                                    :src="editData[field.key]"
+                                    class="max-h-40 rounded border border-[#ebeef0] mb-2"
+                                  />
+                                </template>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  @change="handleImageUpload($event, field.key)"
+                                  class="text-xs text-[#7c8b9a]"
+                                />
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
                   </div>
                 </div>
 
@@ -275,9 +419,14 @@
                     <label class="gh-label">スラッグ</label>
                     <input
                       type="text"
-                      x-model="editData.id"
+                      x-model="editData.slug"
+                      :placeholder="editData.id"
                       class="gh-input-light text-xs w-full"
                     />
+                    <p
+                      class="text-[10px] text-[#7c8b9a] mt-0.5"
+                      x-text="'ID: ' + (currentPage?.id || editData.id)"
+                    ></p>
                   </div>
 
                   <div class="h-px bg-[#ebeef0]"></div>
@@ -293,58 +442,103 @@
               </div>
             </template>
 
+            <!-- ページ一覧 -->
+            <template x-if="view === 'page-list'">
+              <div class="flex-1 overflow-y-auto">
+                <div class="px-8 py-0">
+                  <div class="gh-editor-header">
+                    <h2 class="text-sm font-bold">ページ</h2>
+                    <button
+                      @click="openPagesConfigEditor()"
+                      class="gh-btn-outline text-xs ml-2"
+                      title="ページ設定"
+                    >
+                      <i data-lucide="settings" class="w-3 h-3"></i>
+                    </button>
+                    <div class="flex-1"></div>
+                    <button @click="createPage()" class="gh-btn-green text-[13px]">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                      新規作成
+                    </button>
+                  </div>
+                  <div class="space-y-1">
+                    <template x-for="page in pages" :key="page.id">
+                      <div @click="openPage(page)" class="gh-list-item">
+                        <div class="flex-1 min-w-0">
+                          <p
+                            class="font-medium text-[14px] truncate"
+                            x-text="page.title || '（無題）'"
+                          ></p>
+                          <p class="text-xs text-[#7c8b9a] mt-0.5" x-text="page.id"></p>
+                        </div>
+                        <span
+                          class="gh-badge"
+                          :class="{
+                            'bg-[#30cf43]/10 text-[#30cf43]': page.status === 'published' || !page.status,
+                            'bg-[#ffc107]/10 text-[#e0a800]': page.status === 'draft',
+                            'bg-[#7c8b9a]/10 text-[#7c8b9a]': page.status === 'archived'
+                          }"
+                          x-text="page.status === 'draft' ? '下書き' : page.status === 'archived' ? 'アーカイブ' : '公開中'"
+                        ></span>
+                      </div>
+                    </template>
+                    <template x-if="pages.length === 0">
+                      <div class="py-16 text-center text-sm text-[#ced4da]">ページがありません</div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+
             <!-- コンテンツ一覧 -->
             <template x-if="view === 'content-list'">
-              <div class="px-8 py-6 max-w-4xl mx-auto">
-                <div class="flex items-center justify-between mb-6">
-                  <div class="flex items-center gap-3">
-                    <h1 class="text-2xl font-bold" x-text="currentType?.label"></h1>
+              <div class="flex-1 overflow-y-auto">
+                <div class="px-8 py-0">
+                  <div class="gh-editor-header">
+                    <h2 class="text-sm font-bold" x-text="currentType?.label"></h2>
                     <button
                       @click="openTypeEditor(currentType)"
-                      class="gh-btn-outline text-xs"
+                      class="gh-btn-outline text-xs ml-2"
                       title="タイプ設定"
                     >
                       <i data-lucide="settings" class="w-3 h-3"></i>
-                      設定
                     </button>
-                    <button @click="deleteType()" class="text-[#dc2626] text-xs hover:underline">
-                      削除
+                    <div class="flex-1"></div>
+                    <button @click="createContent()" class="gh-btn-green text-[13px]">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                      新規作成
                     </button>
                   </div>
-                  <button @click="createContent()" class="gh-btn-green text-[13px]">
-                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                    新規作成
-                  </button>
-                </div>
-                <div class="space-y-1">
-                  <template x-for="item in contentItems" :key="item.id">
-                    <div @click="openContent(item)" class="gh-list-item">
-                      <div class="flex-1 min-w-0">
-                        <p
-                          class="font-medium text-[14px] truncate"
-                          x-text="item.title || '（無題）'"
-                        ></p>
-                        <p
-                          class="text-xs text-[#7c8b9a] mt-0.5"
-                          x-text="item.publishedAt || item._meta?.createdAt || ''"
-                        ></p>
+                  <div class="space-y-1">
+                    <template x-for="item in contentItems" :key="item.id">
+                      <div @click="openContent(item)" class="gh-list-item">
+                        <div class="flex-1 min-w-0">
+                          <p
+                            class="font-medium text-[14px] truncate"
+                            x-text="item.title || '（無題）'"
+                          ></p>
+                          <p
+                            class="text-xs text-[#7c8b9a] mt-0.5"
+                            x-text="item.publishedAt || item._meta?.createdAt || ''"
+                          ></p>
+                        </div>
+                        <span
+                          class="gh-badge"
+                          :class="{
+                            'bg-[#30cf43]/10 text-[#30cf43]': item.status === 'published',
+                            'bg-[#ffc107]/10 text-[#e0a800]': item.status === 'draft',
+                            'bg-[#7c8b9a]/10 text-[#7c8b9a]': item.status === 'archived'
+                          }"
+                          x-text="item.status === 'published' ? '公開中' : item.status === 'draft' ? '下書き' : 'アーカイブ'"
+                        ></span>
                       </div>
-                      <span
-                        class="gh-badge"
-                        :class="{
-                          'bg-[#30cf43]/10 text-[#30cf43]': item.status === 'published',
-                          'bg-[#ffc107]/10 text-[#e0a800]': item.status === 'draft',
-                          'bg-[#7c8b9a]/10 text-[#7c8b9a]': item.status === 'archived'
-                        }"
-                        x-text="item.status === 'published' ? '公開中' : item.status === 'draft' ? '下書き' : 'アーカイブ'"
-                      ></span>
-                    </div>
-                  </template>
-                  <template x-if="contentItems.length === 0">
-                    <div class="py-16 text-center text-sm text-[#ced4da]">
-                      コンテンツがありません
-                    </div>
-                  </template>
+                    </template>
+                    <template x-if="contentItems.length === 0">
+                      <div class="py-16 text-center text-sm text-[#ced4da]">
+                        コンテンツがありません
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
             </template>
@@ -356,9 +550,7 @@
                 <div class="flex-1 overflow-y-auto">
                   <div class="gh-editor-container">
                     <!-- ヘッダー（sticky） -->
-                    <div
-                      class="sticky top-0 z-10 bg-white border-b border-[#ebeef0] -mx-8 px-8 py-3 mb-6 flex items-center gap-2"
-                    >
+                    <div class="gh-editor-header">
                       <button
                         @click="view = 'content-list'; updateHash()"
                         class="gh-btn-outline text-xs"
@@ -369,6 +561,10 @@
                       <button @click="showPreview()" class="gh-btn-outline text-xs">
                         <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                         プレビュー
+                      </button>
+                      <button @click="showRevisions()" class="gh-btn-outline text-xs">
+                        <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                        履歴
                       </button>
                       <div class="flex-1"></div>
                       <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
@@ -381,8 +577,16 @@
                       class="gh-title-input"
                     />
 
+                    <!-- 本文（hasBodyがtrueの時のみ表示） -->
+                    <template x-if="currentType?.hasBody">
+                      <div class="mb-5">
+                        <label class="gh-label">本文</label>
+                        <div id="editorjs" class="gh-editorjs"></div>
+                      </div>
+                    </template>
+
                     <template
-                      x-for="field in currentFields.filter(f => f.key !== 'title')"
+                      x-for="field in currentFields.filter(f => f.key !== 'title' && f.key !== 'body')"
                       :key="field.key"
                     >
                       <div>
@@ -622,30 +826,101 @@
                             <!-- repeater -->
                             <template x-if="field.type === 'repeater'">
                               <div class="space-y-2">
-                                <template
-                                  x-for="(row, idx) in (editData[field.key] || [])"
-                                  :key="idx"
-                                >
-                                  <div class="flex gap-2 items-center">
-                                    <input
-                                      type="text"
-                                      x-model="editData[field.key][idx]"
-                                      class="gh-input-light flex-1"
-                                    />
-                                    <button
-                                      @click="editData[field.key].splice(idx,1)"
-                                      class="text-[#dc2626] text-xs"
+                                <!-- サブフィールドありの場合 -->
+                                <template x-if="field.subFields && field.subFields.length">
+                                  <div class="space-y-2">
+                                    <template
+                                      x-for="(row, idx) in (editData[field.key] || [])"
+                                      :key="idx"
                                     >
-                                      削除
+                                      <div
+                                        class="border border-[#ebeef0] rounded p-3 space-y-2 relative"
+                                      >
+                                        <button
+                                          @click="editData[field.key].splice(idx,1)"
+                                          class="absolute top-1 right-1 text-[#dc2626] text-xs px-1 hover:bg-red-50 rounded"
+                                        >
+                                          &times;
+                                        </button>
+                                        <template x-for="sf in field.subFields" :key="sf.key">
+                                          <div>
+                                            <label
+                                              class="text-xs text-[#7c8b9a]"
+                                              x-text="sf.label"
+                                            ></label>
+                                            <template x-if="sf.type === 'textarea'">
+                                              <textarea
+                                                x-model="editData[field.key][idx][sf.key]"
+                                                rows="2"
+                                                class="gh-input-light w-full text-sm"
+                                              ></textarea>
+                                            </template>
+                                            <template x-if="sf.type === 'image'">
+                                              <div>
+                                                <template x-if="editData[field.key][idx][sf.key]">
+                                                  <img
+                                                    :src="editData[field.key][idx][sf.key]"
+                                                    class="max-h-20 rounded border border-[#ebeef0] mb-1"
+                                                  />
+                                                </template>
+                                                <input
+                                                  type="file"
+                                                  accept="image/*"
+                                                  @change="handleImageUpload($event, '__tmp').then(() => { editData[field.key][idx][sf.key] = editData.__tmp; delete editData.__tmp })"
+                                                  class="text-xs text-[#7c8b9a]"
+                                                />
+                                              </div>
+                                            </template>
+                                            <template
+                                              x-if="!['textarea','image'].includes(sf.type)"
+                                            >
+                                              <input
+                                                :type="sf.type === 'number' ? 'number' : sf.type === 'url' ? 'url' : sf.type === 'email' ? 'email' : sf.type === 'date' ? 'date' : 'text'"
+                                                x-model="editData[field.key][idx][sf.key]"
+                                                class="gh-input-light w-full text-sm"
+                                              />
+                                            </template>
+                                          </div>
+                                        </template>
+                                      </div>
+                                    </template>
+                                    <button
+                                      @click="const empty = {}; field.subFields.forEach(sf => empty[sf.key] = ''); editData[field.key] = [...(editData[field.key]||[]), empty]"
+                                      class="gh-btn-outline text-xs"
+                                    >
+                                      + 追加
                                     </button>
                                   </div>
                                 </template>
-                                <button
-                                  @click="editData[field.key] = [...(editData[field.key]||[]), '']"
-                                  class="gh-btn-outline text-xs"
-                                >
-                                  + 追加
-                                </button>
+                                <!-- サブフィールドなし（従来の文字列リスト） -->
+                                <template x-if="!field.subFields || !field.subFields.length">
+                                  <div class="space-y-2">
+                                    <template
+                                      x-for="(row, idx) in (editData[field.key] || [])"
+                                      :key="idx"
+                                    >
+                                      <div class="flex gap-2 items-center">
+                                        <input
+                                          type="text"
+                                          x-model="editData[field.key][idx]"
+                                          class="gh-input-light flex-1"
+                                        />
+                                        <button
+                                          @click="editData[field.key].splice(idx,1)"
+                                          class="text-[#dc2626] text-xs"
+                                        >
+                                          削除
+                                        </button>
+                                      </div>
+                                    </template>
+                                    <button
+                                      @click="editData[field.key] = [...(editData[field.key]||[]), '']"
+                                      class="gh-btn-outline text-xs"
+                                    >
+                                      + 追加
+                                    </button>
+                                  </div>
+                                </template>
                               </div>
                             </template>
                             <!-- group -->
@@ -707,9 +982,14 @@
                     <label class="gh-label">スラッグ</label>
                     <input
                       type="text"
-                      x-model="editData.id"
+                      x-model="editData.slug"
+                      :placeholder="editData.id"
                       class="gh-input-light text-xs w-full"
                     />
+                    <p
+                      class="text-[10px] text-[#7c8b9a] mt-0.5"
+                      x-text="'ID: ' + (currentPage?.id || editData.id)"
+                    ></p>
                   </div>
 
                   <!-- サムネイル -->
@@ -731,34 +1011,34 @@
                   </template>
 
                   <!-- カテゴリ -->
-                  <template x-if="currentType?.hasCategory && availableCategories.length">
-                    <div>
-                      <label class="gh-label">カテゴリ</label>
-                      <select x-model="editData.category" class="gh-select-light text-xs w-full">
-                        <option value="">未分類</option>
-                        <template x-for="cat in availableCategories" :key="cat.id">
-                          <option :value="cat.label" x-text="cat.label"></option>
-                        </template>
-                      </select>
-                    </div>
-                  </template>
+                  <div x-show="currentType?.hasCategory && availableCategories.length">
+                    <label class="gh-label">カテゴリ</label>
+                    <select
+                      x-model="editData.category"
+                      x-effect="$nextTick(() => { if ($el.value !== (editData.category || '')) $el.value = editData.category || '' })"
+                      class="gh-select-light text-xs w-full"
+                    >
+                      <option value="">未分類</option>
+                      <template x-for="cat in availableCategories" :key="cat.id">
+                        <option :value="cat.label" x-text="cat.label"></option>
+                      </template>
+                    </select>
+                  </div>
 
                   <!-- タグ -->
-                  <template x-if="currentType?.hasTag && availableTags.length">
-                    <div>
-                      <label class="gh-label">タグ</label>
-                      <div class="flex flex-wrap gap-1">
-                        <template x-for="tag in availableTags" :key="tag.id">
-                          <button
-                            @click="editData.tags = editData.tags || []; editData.tags.includes(tag.label) ? editData.tags = editData.tags.filter(t => t !== tag.label) : editData.tags.push(tag.label)"
-                            class="px-2 py-0.5 rounded border text-[11px] transition-all"
-                            :class="(editData.tags||[]).includes(tag.label) ? 'bg-[#30cf43]/10 border-[#30cf43] text-[#30cf43]' : 'border-[#dfe1e3] text-[#7c8b9a] hover:border-[#ced4da]'"
-                            x-text="tag.label"
-                          ></button>
-                        </template>
-                      </div>
+                  <div x-show="currentType?.hasTag && availableTags.length">
+                    <label class="gh-label">タグ</label>
+                    <div class="flex flex-wrap gap-1">
+                      <template x-for="tag in availableTags" :key="tag.id">
+                        <button
+                          @click="editData.tags = editData.tags || []; editData.tags.includes(tag.label) ? editData.tags = editData.tags.filter(t => t !== tag.label) : editData.tags.push(tag.label)"
+                          class="px-2 py-0.5 rounded border text-[11px] transition-all"
+                          :class="(editData.tags||[]).includes(tag.label) ? 'bg-[#30cf43]/10 border-[#30cf43] text-[#30cf43]' : 'border-[#dfe1e3] text-[#7c8b9a] hover:border-[#ced4da]'"
+                          x-text="tag.label"
+                        ></button>
+                      </template>
                     </div>
-                  </template>
+                  </div>
 
                   <div class="h-px bg-[#ebeef0]"></div>
 
@@ -814,79 +1094,75 @@
 
             <!-- メニュー管理 -->
             <template x-if="view === 'menus'">
-              <div class="px-8 py-6 max-w-6xl mx-auto">
-                <div class="flex items-center justify-between mb-6">
-                  <h1 class="text-2xl font-bold">メニュー</h1>
-                  <button @click="addMenu()" class="gh-btn-green text-[13px]">
-                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                    新規メニュー
-                  </button>
-                </div>
+              <div class="flex h-full">
+                <!-- 左: メニュー一覧 + 項目追加 -->
+                <div
+                  class="w-56 shrink-0 border-r border-[#ebeef0] overflow-y-auto bg-[#f9fafb] flex flex-col"
+                >
+                  <div class="p-3 flex-1">
+                    <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                      メニュー
+                    </h3>
+                    <div class="space-y-0.5 mb-4">
+                      <template x-for="m in menuData.menus" :key="m.id">
+                        <button
+                          @click="selectMenu(m.id)"
+                          :class="currentMenuId === m.id ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                          class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
+                          x-text="m.name"
+                        ></button>
+                      </template>
+                    </div>
 
-                <!-- メニュー選択タブ -->
-                <div class="flex gap-1 border-b border-[#ebeef0] mb-6">
-                  <template x-for="m in menuData.menus" :key="m.id">
-                    <button
-                      @click="selectMenu(m.id)"
-                      class="px-4 py-2 text-sm border-b-2 transition-colors"
-                      :class="currentMenuId === m.id ? 'border-[#30cf43] text-[#15171a] font-semibold' : 'border-transparent text-[#7c8b9a] hover:text-[#15171a]'"
-                      x-text="m.name"
-                    ></button>
-                  </template>
-                </div>
-
-                <template x-if="currentMenu">
-                  <div>
-                    <!-- 2カラム: 左=追加パネル / 右=メニュー構造 -->
-                    <div class="flex flex-col md:flex-row gap-6">
-                      <!-- 左カラム: 項目追加 -->
-                      <div class="w-full md:w-64 shrink-0 space-y-3">
-                        <!-- 固定ページ -->
+                    <!-- 項目追加パネル（メニュー選択時） -->
+                    <template x-if="currentMenu">
+                      <div class="space-y-2">
+                        <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-1">
+                          項目追加
+                        </h3>
                         <details class="border border-[#ebeef0] rounded-md" open>
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
                           >
                             固定ページ
                           </summary>
-                          <div class="p-2 space-y-0.5 max-h-40 overflow-y-auto">
+                          <div class="p-2 space-y-0.5 max-h-32 overflow-y-auto">
                             <template x-for="p in pages" :key="p.id">
                               <button
                                 @click="addMenuItem('page', p.title || p.id, '/' + (p.id === 'index' ? '' : p.id + '/'), p.id)"
-                                class="block w-full text-left px-2 py-2.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
                                 x-text="p.title || p.id"
                               ></button>
                             </template>
                           </div>
                         </details>
-                        <!-- 投稿タイプ -->
                         <details class="border border-[#ebeef0] rounded-md">
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
                           >
                             投稿タイプ
                           </summary>
-                          <div class="p-2 space-y-0.5 max-h-40 overflow-y-auto">
+                          <div class="p-2 space-y-0.5 max-h-32 overflow-y-auto">
                             <template x-for="t in contentTypes" :key="t.id">
                               <button
                                 @click="addMenuItem('post_type', t.label, '/' + t.slug + '/', t.id)"
-                                class="block w-full text-left px-2 py-2.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
                                 x-text="t.label"
                               ></button>
                             </template>
                           </div>
                         </details>
-                        <!-- カテゴリ -->
                         <details class="border border-[#ebeef0] rounded-md">
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
                           >
                             カテゴリ
                           </summary>
-                          <div class="p-2 space-y-0.5 max-h-40 overflow-y-auto">
+                          <div class="p-2 space-y-0.5 max-h-32 overflow-y-auto">
                             <template x-for="cat in availableCategories" :key="cat.id">
                               <button
                                 @click="addMenuItem('category', cat.label, '', cat.id)"
-                                class="block w-full text-left px-2 py-2.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
                                 x-text="cat.label"
                               ></button>
                             </template>
@@ -895,10 +1171,9 @@
                             </template>
                           </div>
                         </details>
-                        <!-- カスタムリンク -->
                         <details class="border border-[#ebeef0] rounded-md">
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-[#f9fafb] rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
                           >
                             カスタムリンク
                           </summary>
@@ -912,10 +1187,37 @@
                           </div>
                         </details>
                       </div>
+                    </template>
+                  </div>
+                  <div class="p-3 border-t border-[#ebeef0]">
+                    <button @click="addMenu()" class="gh-btn-green text-xs w-full">
+                      <i data-lucide="plus" class="w-3 h-3"></i>
+                      新規メニュー
+                    </button>
+                  </div>
+                </div>
 
-                      <!-- 右カラム: メニュー構造（WordPress風） -->
-                      <div class="flex-1">
-                        <div class="mb-4">
+                <!-- 右: メニューエディタ -->
+                <div class="flex-1 overflow-y-auto">
+                  <template x-if="currentMenu">
+                    <div class="px-8 py-0">
+                      <div class="gh-editor-header">
+                        <h2
+                          class="text-sm font-bold"
+                          x-text="currentMenu.name || '新規メニュー'"
+                        ></h2>
+                        <div class="flex-1"></div>
+                        <button
+                          @click="deleteMenu()"
+                          class="text-[#dc2626] text-xs hover:underline mr-2"
+                        >
+                          削除
+                        </button>
+                        <button @click="saveMenus()" class="gh-btn-green text-[13px]">保存</button>
+                      </div>
+
+                      <div class="space-y-4">
+                        <div>
                           <label class="gh-label">メニュー名</label>
                           <input
                             type="text"
@@ -924,180 +1226,676 @@
                           />
                         </div>
 
-                        <h3 class="text-xs font-semibold text-[#7c8b9a] mb-2">メニュー構造</h3>
-                        <p class="text-xs text-[#ced4da] mb-3">
-                          ドラッグまたは矢印ボタンで並び替え。
-                        </p>
+                        <div>
+                          <h3 class="text-sm font-bold mb-2">メニュー構造</h3>
+                          <p class="text-xs text-[#ced4da] mb-3">
+                            ドラッグまたは矢印ボタンで並び替え。
+                          </p>
 
-                        <div
-                          class="space-y-2 mb-6 min-h-[120px]"
-                          x-data="{ dragIdx: null, dropIdx: null }"
-                        >
-                          <template x-for="(item, idx) in currentMenu.items" :key="item.id">
-                            <div
-                              class="border rounded-md bg-white transition-all"
-                              :class="{
-                                'opacity-50': dragIdx === idx,
-                                'border-[#30cf43] border-t-2': dropIdx === idx && dragIdx !== idx,
-                                'border-[#ebeef0]': dropIdx !== idx || dragIdx === idx
-                              }"
-                              :style="'margin-left:' + (item.parent ? '32px' : '0')"
-                              draggable="true"
-                              @dragstart="dragIdx = idx; $event.dataTransfer.effectAllowed = 'move'"
-                              @dragover.prevent="dropIdx = idx; $event.dataTransfer.dropEffect = 'move'"
-                              @dragleave="if(dropIdx === idx) dropIdx = null"
-                              @drop.prevent="if(dragIdx !== null && dragIdx !== idx){ currentMenu.items.splice(idx, 0, currentMenu.items.splice(dragIdx, 1)[0]) }; dragIdx = null; dropIdx = null"
-                              @dragend="dragIdx = null; dropIdx = null"
-                            >
-                              <div class="px-3 py-3 space-y-2">
-                                <!-- 1行目: グリップ + 移動 + ラベル + 削除 -->
-                                <div class="flex items-center gap-2">
-                                  <i
-                                    data-lucide="grip-vertical"
-                                    class="w-4 h-4 text-[#ced4da] shrink-0 cursor-grab"
-                                    aria-hidden="true"
-                                  ></i>
-                                  <div
-                                    class="flex flex-col shrink-0"
-                                    draggable="false"
-                                    @mousedown.stop
-                                  >
-                                    <button
-                                      @click.stop="moveMenuItem(idx, -1)"
-                                      :disabled="idx === 0"
-                                      class="p-1 text-[#7c8b9a] hover:text-[#15171a] disabled:opacity-30 disabled:cursor-not-allowed"
-                                      :aria-label="'「' + item.label + '」を上へ移動'"
+                          <div
+                            class="space-y-2 min-h-[120px]"
+                            x-data="{ dragIdx: null, dropIdx: null }"
+                          >
+                            <template x-for="(item, idx) in currentMenu.items" :key="item.id">
+                              <div
+                                class="border rounded-md bg-white transition-all"
+                                :class="{ 'opacity-50': dragIdx === idx, 'border-[#30cf43] border-t-2': dropIdx === idx && dragIdx !== idx, 'border-[#ebeef0]': dropIdx !== idx || dragIdx === idx }"
+                                :style="'margin-left:' + (item.parent ? '32px' : '0')"
+                                draggable="true"
+                                @dragstart="dragIdx = idx; $event.dataTransfer.effectAllowed = 'move'"
+                                @dragover.prevent="dropIdx = idx; $event.dataTransfer.dropEffect = 'move'"
+                                @dragleave="if(dropIdx === idx) dropIdx = null"
+                                @drop.prevent="if(dragIdx !== null && dragIdx !== idx){ currentMenu.items.splice(idx, 0, currentMenu.items.splice(dragIdx, 1)[0]) }; dragIdx = null; dropIdx = null"
+                                @dragend="dragIdx = null; dropIdx = null"
+                              >
+                                <div class="px-3 py-3 space-y-2">
+                                  <div class="flex items-center gap-2">
+                                    <i
+                                      data-lucide="grip-vertical"
+                                      class="w-4 h-4 text-[#ced4da] shrink-0 cursor-grab"
+                                      aria-hidden="true"
+                                    ></i>
+                                    <div
+                                      class="flex flex-col shrink-0"
+                                      draggable="false"
+                                      @mousedown.stop
                                     >
-                                      <i
-                                        data-lucide="chevron-up"
-                                        class="w-3.5 h-3.5 pointer-events-none"
-                                      ></i>
-                                    </button>
+                                      <button
+                                        @click.stop="moveMenuItem(idx, -1)"
+                                        :disabled="idx === 0"
+                                        class="p-1 text-[#7c8b9a] hover:text-[#15171a] disabled:opacity-30 disabled:cursor-not-allowed"
+                                      >
+                                        <i
+                                          data-lucide="chevron-up"
+                                          class="w-3.5 h-3.5 pointer-events-none"
+                                        ></i>
+                                      </button>
+                                      <button
+                                        @click.stop="moveMenuItem(idx, 1)"
+                                        :disabled="idx === currentMenu.items.length - 1"
+                                        class="p-1 text-[#7c8b9a] hover:text-[#15171a] disabled:opacity-30 disabled:cursor-not-allowed"
+                                      >
+                                        <i
+                                          data-lucide="chevron-down"
+                                          class="w-3.5 h-3.5 pointer-events-none"
+                                        ></i>
+                                      </button>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      x-model="item.label"
+                                      placeholder="ラベル"
+                                      class="gh-input-light text-sm flex-1"
+                                    />
                                     <button
-                                      @click.stop="moveMenuItem(idx, 1)"
-                                      :disabled="idx === currentMenu.items.length - 1"
-                                      class="p-1 text-[#7c8b9a] hover:text-[#15171a] disabled:opacity-30 disabled:cursor-not-allowed"
-                                      :aria-label="'「' + item.label + '」を下へ移動'"
+                                      @click="removeMenuItem(idx)"
+                                      class="text-[#dc2626] text-xs hover:underline shrink-0 px-2 py-1.5 -mr-2 rounded hover:bg-red-50"
                                     >
-                                      <i
-                                        data-lucide="chevron-down"
-                                        class="w-3.5 h-3.5 pointer-events-none"
-                                      ></i>
+                                      削除
                                     </button>
                                   </div>
-                                  <label class="sr-only" :for="'menu-label-' + item.id">
-                                    ラベル
-                                  </label>
-                                  <input
-                                    :id="'menu-label-' + item.id"
-                                    type="text"
-                                    x-model="item.label"
-                                    placeholder="ラベル"
-                                    class="gh-input-light text-sm flex-1"
-                                  />
+                                  <div class="flex items-center gap-2 pl-6">
+                                    <span
+                                      class="text-xs text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded"
+                                      x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
+                                    ></span>
+                                    <span class="text-xs text-[#ced4da]" x-text="item.url"></span>
+                                  </div>
+                                  <template x-if="item.type === 'custom'">
+                                    <div class="flex items-center gap-3 pl-6">
+                                      <input
+                                        type="url"
+                                        x-model="item.url"
+                                        placeholder="https://"
+                                        class="gh-input-light text-xs flex-1"
+                                      />
+                                      <label
+                                        class="flex items-center gap-1.5 text-xs text-[#7c8b9a] shrink-0"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          :checked="item.target === '_blank'"
+                                          @change="item.target = $event.target.checked ? '_blank' : ''"
+                                          class="accent-[#30cf43]"
+                                        />
+                                        新しいタブ
+                                      </label>
+                                    </div>
+                                  </template>
+                                </div>
+                              </div>
+                            </template>
+                            <template x-if="!currentMenu.items.length">
+                              <div
+                                class="py-12 text-center text-sm text-[#ced4da] border border-dashed border-[#ebeef0] rounded-md"
+                              >
+                                左のパネルから項目を追加してください
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+
+                        <!-- テンプレートコード -->
+                        <div class="border-t border-[#ebeef0] pt-4">
+                          <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                          <p class="text-xs text-[#7c8b9a] mb-3">
+                            テンプレートに以下のコードを貼り付けてこのメニューを表示できます。
+                          </p>
+                          <div
+                            class="bg-[#f9fafb] border border-[#ebeef0] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
+                            @click="navigator.clipboard.writeText($el.querySelector('pre').textContent); showToast('コピーしました')"
+                          >
+                            <pre
+                              class="font-mono text-xs text-[#15171a] select-all m-0"
+                              x-text="'{{#each site.menus.' + currentMenuId + '}}\n  <a href=&quot;{{url}}&quot;{{#if target}} target=&quot;{{target}}&quot;{{/if}}>\n    {{label}}\n  </a>\n{{/each}}'"
+                            ></pre>
+                            <span
+                              class="absolute top-2 right-2 text-[#7c8b9a] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                            >
+                              クリックでコピー
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <template x-if="!currentMenu">
+                    <div class="flex-1 flex items-center justify-center h-full">
+                      <p class="text-sm text-[#7c8b9a]">メニューを選択または新規作成</p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <!-- カテゴリ管理 -->
+            <template x-if="view === 'taxonomy-categories'">
+              <div class="flex-1 overflow-y-auto">
+                <div class="px-8 py-0">
+                  <div class="gh-editor-header">
+                    <h2 class="text-sm font-bold">カテゴリ</h2>
+                    <div class="flex-1"></div>
+                    <button @click="saveTaxonomies()" class="gh-btn-green text-[13px]">保存</button>
+                  </div>
+                  <p class="text-xs text-[#7c8b9a] mb-4">
+                    記事に割り当てるカテゴリを管理します。スラッグはURLに使用されます。
+                  </p>
+                  <div class="space-y-2">
+                    <template x-for="(cat, idx) in taxonomyData.categories" :key="cat.id">
+                      <div class="flex gap-3 items-center border border-[#ebeef0] rounded p-3">
+                        <div class="flex-1">
+                          <label class="text-xs text-[#7c8b9a]">名前</label>
+                          <input
+                            type="text"
+                            x-model="cat.label"
+                            placeholder="カテゴリ名"
+                            class="gh-input-light w-full"
+                          />
+                        </div>
+                        <div class="w-48">
+                          <label class="text-xs text-[#7c8b9a]">スラッグ</label>
+                          <input
+                            type="text"
+                            x-model="cat.slug"
+                            :placeholder="cat.label"
+                            class="gh-input-light w-full"
+                          />
+                        </div>
+                        <button
+                          @click="taxonomyData.categories.splice(idx,1)"
+                          class="text-[#dc2626] text-xs hover:underline px-2 pt-4"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                  <button
+                    @click="taxonomyData.categories.push({id:Date.now().toString(), label:'', slug:''})"
+                    class="gh-btn-outline text-xs mt-3"
+                  >
+                    + カテゴリ追加
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- タグ管理 -->
+            <template x-if="view === 'taxonomy-tags'">
+              <div class="flex-1 overflow-y-auto">
+                <div class="px-8 py-0">
+                  <div class="gh-editor-header">
+                    <h2 class="text-sm font-bold">タグ</h2>
+                    <div class="flex-1"></div>
+                    <button @click="saveTaxonomies()" class="gh-btn-green text-[13px]">保存</button>
+                  </div>
+                  <p class="text-xs text-[#7c8b9a] mb-4">
+                    記事に割り当てるタグを管理します。スラッグはURLに使用されます。
+                  </p>
+                  <div class="space-y-2">
+                    <template x-for="(tag, idx) in taxonomyData.tags" :key="tag.id">
+                      <div class="flex gap-3 items-center border border-[#ebeef0] rounded p-3">
+                        <div class="flex-1">
+                          <label class="text-xs text-[#7c8b9a]">名前</label>
+                          <input
+                            type="text"
+                            x-model="tag.label"
+                            placeholder="タグ名"
+                            class="gh-input-light w-full"
+                          />
+                        </div>
+                        <div class="w-48">
+                          <label class="text-xs text-[#7c8b9a]">スラッグ</label>
+                          <input
+                            type="text"
+                            x-model="tag.slug"
+                            :placeholder="tag.label"
+                            class="gh-input-light w-full"
+                          />
+                        </div>
+                        <button
+                          @click="taxonomyData.tags.splice(idx,1)"
+                          class="text-[#dc2626] text-xs hover:underline px-2 pt-4"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                  <button
+                    @click="taxonomyData.tags.push({id:Date.now().toString(), label:'', slug:''})"
+                    class="gh-btn-outline text-xs mt-3"
+                  >
+                    + タグ追加
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- フィールドグループ管理 -->
+            <template x-if="view === 'field-groups'">
+              <div class="flex h-full">
+                <!-- 左: グループ一覧 -->
+                <div
+                  class="w-56 shrink-0 border-r border-[#ebeef0] overflow-y-auto bg-[#f9fafb] flex flex-col"
+                >
+                  <div class="p-3 flex-1">
+                    <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                      フィールドグループ
+                    </h3>
+                    <div class="space-y-0.5">
+                      <template x-for="g in fieldGroups" :key="g.id">
+                        <button
+                          @click="openFieldGroup(g)"
+                          :class="currentFieldGroup?.id === g.id ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                          class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
+                          x-text="g.label"
+                        ></button>
+                      </template>
+                    </div>
+                  </div>
+                  <div class="p-3 border-t border-[#ebeef0]">
+                    <button @click="createFieldGroup()" class="gh-btn-green text-xs w-full">
+                      <i data-lucide="plus" class="w-3 h-3"></i>
+                      新規グループ
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 右: フィールド定義エディタ -->
+                <div class="flex-1 overflow-y-auto">
+                  <template x-if="currentFieldGroup">
+                    <div class="px-8 py-0">
+                      <div class="gh-editor-header">
+                        <h2
+                          class="text-sm font-bold"
+                          x-text="currentFieldGroup.id ? currentFieldGroup.label : '新規フィールドグループ'"
+                        ></h2>
+                        <div class="flex-1"></div>
+                        <button
+                          x-show="currentFieldGroup.id"
+                          @click="deleteFieldGroup()"
+                          class="text-[#dc2626] text-xs hover:underline mr-2"
+                        >
+                          削除
+                        </button>
+                        <button @click="saveFieldGroup()" class="gh-btn-green text-[13px]">
+                          保存
+                        </button>
+                      </div>
+
+                      <div class="space-y-4">
+                        <!-- グループ基本情報 -->
+                        <div class="flex gap-4">
+                          <div class="flex-1">
+                            <label class="gh-label">グループ名</label>
+                            <input
+                              type="text"
+                              x-model="currentFieldGroup.label"
+                              class="gh-input-light w-full"
+                            />
+                          </div>
+                          <div class="w-48" x-show="!currentFieldGroup.id">
+                            <label class="gh-label">ID（自動生成可）</label>
+                            <input
+                              type="text"
+                              x-model="currentFieldGroup.id"
+                              class="gh-input-light w-full"
+                              placeholder="自動"
+                            />
+                          </div>
+                        </div>
+
+                        <!-- フィールド定義 -->
+                        <div>
+                          <h3 class="text-sm font-bold mb-2">フィールド</h3>
+                          <div class="space-y-2">
+                            <template x-for="(f, idx) in currentFieldGroup.fields" :key="idx">
+                              <div class="border border-[#ebeef0] rounded p-2 space-y-2">
+                                <div class="flex gap-2 items-end">
+                                  <div class="flex-1">
+                                    <label class="text-xs text-[#7c8b9a]">キー</label>
+                                    <input
+                                      type="text"
+                                      x-model="f.key"
+                                      class="gh-input-light w-full text-xs"
+                                    />
+                                  </div>
+                                  <div class="flex-1">
+                                    <label class="text-xs text-[#7c8b9a]">ラベル</label>
+                                    <input
+                                      type="text"
+                                      x-model="f.label"
+                                      class="gh-input-light w-full text-xs"
+                                    />
+                                  </div>
+                                  <div class="w-28">
+                                    <label class="text-xs text-[#7c8b9a]">タイプ</label>
+                                    <select
+                                      x-model="f.type"
+                                      x-effect="$nextTick(() => { if ($el.value !== f.type) $el.value = f.type })"
+                                      class="gh-select-light w-full text-xs"
+                                    >
+                                      <template
+                                        x-for="ft in ['text','textarea','richtext','number','url','email','date','datetime','daterange','image','imagelist','file','select','multiselect','radio','checkbox','toggle','relation','repeater','group','year','color','hidden']"
+                                        :key="ft"
+                                      >
+                                        <option :value="ft" x-text="ft"></option>
+                                      </template>
+                                    </select>
+                                  </div>
                                   <button
-                                    @click="removeMenuItem(idx)"
-                                    class="text-[#dc2626] text-xs hover:underline shrink-0 px-2 py-1.5 -mr-2 rounded hover:bg-red-50"
-                                    :aria-label="'「' + item.label + '」を削除'"
+                                    @click="removeFieldFromGroup(idx)"
+                                    class="text-[#dc2626] text-xs pb-1"
                                   >
                                     削除
                                   </button>
                                 </div>
-                                <!-- 2行目: タイプ表示 + URL -->
-                                <div class="flex items-center gap-2 pl-6">
-                                  <span
-                                    class="text-xs text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded"
-                                    x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
-                                  ></span>
-                                  <span class="text-xs text-[#ced4da]" x-text="item.url"></span>
-                                </div>
-                                <!-- カスタムリンクのみ: URL + 新しいタブ -->
-                                <template x-if="item.type === 'custom'">
-                                  <div class="flex items-center gap-3 pl-6">
-                                    <label class="sr-only" :for="'menu-url-' + item.id">URL</label>
+                                <!-- required + 詳細 -->
+                                <div class="flex items-center gap-4">
+                                  <label class="flex items-center gap-1.5 text-xs cursor-pointer">
                                     <input
-                                      :id="'menu-url-' + item.id"
-                                      type="url"
-                                      x-model="item.url"
-                                      placeholder="https://"
-                                      class="gh-input-light text-xs flex-1"
+                                      type="checkbox"
+                                      x-model="f.required"
+                                      class="accent-[#30cf43]"
                                     />
-                                    <label
-                                      class="flex items-center gap-1.5 text-xs text-[#7c8b9a] shrink-0"
+                                    必須
+                                  </label>
+                                  <button
+                                    @click="f._expanded = !f._expanded"
+                                    type="button"
+                                    class="text-xs text-[#7c8b9a] hover:text-[#15171a] ml-auto"
+                                  >
+                                    <span x-text="f._expanded ? '詳細を閉じる' : '詳細設定'"></span>
+                                  </button>
+                                </div>
+                                <!-- 展開式詳細 -->
+                                <template x-if="f._expanded">
+                                  <div class="space-y-3 pt-2 border-t border-[#ebeef0]">
+                                    <template
+                                      x-if="['select','multiselect','radio'].includes(f.type)"
                                     >
-                                      <input
-                                        type="checkbox"
-                                        :checked="item.target === '_blank'"
-                                        @change="item.target = $event.target.checked ? '_blank' : ''"
-                                        class="accent-[#30cf43]"
-                                      />
-                                      新しいタブ
-                                    </label>
+                                      <div>
+                                        <label class="text-xs text-[#7c8b9a] font-medium">
+                                          選択肢
+                                        </label>
+                                        <div class="space-y-1 mt-1">
+                                          <template
+                                            x-for="(opt, oi) in (f.options || [])"
+                                            :key="oi"
+                                          >
+                                            <div class="flex gap-1 items-center">
+                                              <input
+                                                type="text"
+                                                :value="opt"
+                                                @input="f.options[oi] = $event.target.value"
+                                                placeholder="値"
+                                                class="gh-input-light flex-1 text-xs"
+                                              />
+                                              <button
+                                                @click="f.options.splice(oi, 1)"
+                                                type="button"
+                                                class="text-[#dc2626] text-xs px-1"
+                                              >
+                                                &times;
+                                              </button>
+                                            </div>
+                                          </template>
+                                        </div>
+                                        <button
+                                          @click="f.options = [...(f.options||[]), '']"
+                                          type="button"
+                                          class="text-xs text-[#30cf43] hover:underline mt-1"
+                                        >
+                                          + 選択肢追加
+                                        </button>
+                                      </div>
+                                    </template>
+                                    <template x-if="f.type === 'repeater'">
+                                      <div>
+                                        <label class="text-xs text-[#7c8b9a] font-medium">
+                                          サブフィールド
+                                        </label>
+                                        <div class="space-y-1 mt-1">
+                                          <template
+                                            x-for="(sf, si) in (f.subFields || [])"
+                                            :key="si"
+                                          >
+                                            <div class="flex gap-1 items-end">
+                                              <div class="flex-1">
+                                                <input
+                                                  type="text"
+                                                  :value="sf.key"
+                                                  @input="f.subFields[si].key = $event.target.value"
+                                                  placeholder="キー"
+                                                  class="gh-input-light w-full text-xs"
+                                                />
+                                              </div>
+                                              <div class="flex-1">
+                                                <input
+                                                  type="text"
+                                                  :value="sf.label"
+                                                  @input="f.subFields[si].label = $event.target.value"
+                                                  placeholder="ラベル"
+                                                  class="gh-input-light w-full text-xs"
+                                                />
+                                              </div>
+                                              <div class="w-20">
+                                                <select
+                                                  x-model="sf.type"
+                                                  class="gh-select-light w-full text-xs"
+                                                >
+                                                  <template
+                                                    x-for="st in ['text','textarea','number','url','email','date','image','select']"
+                                                    :key="st"
+                                                  >
+                                                    <option :value="st" x-text="st"></option>
+                                                  </template>
+                                                </select>
+                                              </div>
+                                              <button
+                                                @click="f.subFields.splice(si, 1)"
+                                                type="button"
+                                                class="text-[#dc2626] text-xs px-1"
+                                              >
+                                                &times;
+                                              </button>
+                                            </div>
+                                          </template>
+                                        </div>
+                                        <button
+                                          @click="f.subFields = [...(f.subFields||[]), {key:'', label:'', type:'text'}]"
+                                          type="button"
+                                          class="text-xs text-[#30cf43] hover:underline mt-1"
+                                        >
+                                          + サブフィールド追加
+                                        </button>
+                                      </div>
+                                    </template>
+                                    <div>
+                                      <label class="text-xs text-[#7c8b9a] font-medium">
+                                        条件表示 (showIf)
+                                      </label>
+                                      <div class="flex gap-2 mt-1">
+                                        <input
+                                          type="text"
+                                          x-model="f.showIf_field"
+                                          placeholder="フィールドキー"
+                                          class="gh-input-light flex-1 text-xs"
+                                        />
+                                        <input
+                                          type="text"
+                                          x-model="f.showIf_value"
+                                          placeholder="値"
+                                          class="gh-input-light flex-1 text-xs"
+                                        />
+                                      </div>
+                                      <p class="text-[10px] text-[#7c8b9a] mt-0.5">
+                                        指定フィールドが指定値のときのみ表示
+                                      </p>
+                                    </div>
                                   </div>
                                 </template>
                               </div>
-                            </div>
-                          </template>
-                          <template x-if="!currentMenu.items.length">
+                            </template>
+                          </div>
+                          <button @click="addFieldToGroup()" class="gh-btn-outline text-xs mt-2">
+                            + フィールド追加
+                          </button>
+                        </div>
+
+                        <!-- テンプレートコード -->
+                        <template x-if="currentFieldGroup.id && currentFieldGroup.fields?.length">
+                          <div class="border-t border-[#ebeef0] pt-4">
+                            <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                            <p class="text-xs text-[#7c8b9a] mb-3">
+                              テンプレートファイルに貼り付けてフィールドを表示できます。
+                            </p>
                             <div
-                              class="py-12 text-center text-sm text-[#ced4da] border border-dashed border-[#ebeef0] rounded-md"
+                              class="bg-[#f9fafb] border border-[#ebeef0] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
+                              @click="navigator.clipboard.writeText($el.querySelector('pre').textContent); showToast('コピーしました')"
                             >
-                              左のパネルから項目を追加してください
+                              <pre
+                                class="font-mono text-xs text-[#15171a] select-all m-0 whitespace-pre"
+                                x-text="getFieldTemplateCode({...currentFieldGroup, slug: currentFieldGroup.id})"
+                              ></pre>
+                              <span
+                                class="absolute top-2 right-2 text-[#7c8b9a] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                              >
+                                クリックでコピー
+                              </span>
                             </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                  <template x-if="!currentFieldGroup">
+                    <div class="flex-1 flex items-center justify-center h-full">
+                      <p class="text-sm text-[#7c8b9a]">フィールドグループを選択または新規作成</p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <!-- テンプレートエディタ -->
+            <template x-if="view === 'templates'">
+              <div class="flex h-full">
+                <!-- 左: ファイル一覧 -->
+                <div class="w-56 shrink-0 border-r border-[#ebeef0] overflow-y-auto bg-[#f9fafb]">
+                  <div class="p-3">
+                    <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                      テンプレート
+                    </h3>
+                    <div class="space-y-0.5">
+                      <template
+                        x-for="f in templateFiles.filter(f => !f.isComponent)"
+                        :key="f.path"
+                      >
+                        <button
+                          @click="openTemplateFile(f.path)"
+                          :class="currentTemplateFile === f.path ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                          class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
+                          x-text="f.name"
+                        ></button>
+                      </template>
+                    </div>
+                    <template x-if="templateFiles.some(f => f.isComponent)">
+                      <div class="mt-3">
+                        <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                          コンポーネント
+                        </h3>
+                        <div class="space-y-0.5">
+                          <template
+                            x-for="f in templateFiles.filter(f => f.isComponent)"
+                            :key="f.path"
+                          >
+                            <button
+                              @click="openTemplateFile(f.path)"
+                              :class="currentTemplateFile === f.path ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                              class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
+                              x-text="f.name"
+                            ></button>
                           </template>
                         </div>
                       </div>
-                    </div>
+                    </template>
+                  </div>
+                </div>
 
-                    <!-- テンプレートコード -->
-                    <div class="border-t border-[#ebeef0] pt-4 mb-6">
-                      <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
-                      <p class="text-xs text-[#7c8b9a] mb-3">
-                        テンプレートに以下のコードを貼り付けてこのメニューを表示できます。
-                      </p>
-                      <div
-                        class="bg-[#f9fafb] border border-[#ebeef0] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
-                        @click="navigator.clipboard.writeText($el.querySelector('pre').textContent); showToast('コピーしました')"
-                      >
-                        <pre
-                          class="font-mono text-xs text-[#15171a] select-all m-0"
-                          x-text="'{{#each site.menus.' + currentMenuId + '}}\n  <a href=&quot;{{url}}&quot;{{#if target}} target=&quot;{{target}}&quot;{{/if}}>\n    {{label}}\n  </a>\n{{/each}}'"
-                        ></pre>
-                        <span
-                          class="absolute top-2 right-2 text-[#7c8b9a] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                        >
-                          クリックでコピー
-                        </span>
+                <!-- 右: コードエディタ -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                  <template x-if="currentTemplateFile">
+                    <div class="flex-1 flex flex-col">
+                      <div class="gh-editor-header">
+                        <span class="text-sm font-medium" x-text="currentTemplateFile"></span>
+                        <div class="flex-1"></div>
+                        <!-- サンプル挿入 -->
+                        <template x-if="contentTypes.length">
+                          <div class="relative" x-data="{ showSampleMenu: false }">
+                            <button
+                              @click="showSampleMenu = !showSampleMenu"
+                              class="gh-btn-outline text-xs"
+                            >
+                              <i data-lucide="code" class="w-3 h-3"></i>
+                              サンプル挿入
+                            </button>
+                            <div
+                              x-show="showSampleMenu"
+                              @click.outside="showSampleMenu = false"
+                              class="absolute right-0 top-full mt-1 bg-white border border-[#ebeef0] rounded-md shadow-lg py-1 z-20 min-w-[160px]"
+                            >
+                              <template x-for="type in contentTypes" :key="type.id">
+                                <button
+                                  @click="
+                                    const ta = document.getElementById('template-editor');
+                                    const pos = ta.selectionStart;
+                                    const before = templateCode.substring(0, pos);
+                                    const after = templateCode.substring(pos);
+                                    const sample = getFieldTemplateCode(type);
+                                    templateCode = before + sample + after;
+                                    showSampleMenu = false;
+                                    $nextTick(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = pos + sample.length });
+                                  "
+                                  class="block w-full text-left px-3 py-1.5 text-xs hover:bg-[#f1f3f5]"
+                                  x-text="type.label"
+                                ></button>
+                              </template>
+                            </div>
+                          </div>
+                        </template>
+                        <button @click="saveTemplateFile()" class="gh-btn-green text-[13px]">
+                          保存
+                        </button>
                       </div>
+                      <textarea
+                        id="template-editor"
+                        x-model="templateCode"
+                        class="flex-1 w-full p-4 font-mono text-sm leading-relaxed resize-none border-0 outline-none bg-[#fafafa] text-[#15171a]"
+                        spellcheck="false"
+                        @keydown.ctrl.s.prevent="saveTemplateFile()"
+                        @keydown.meta.s.prevent="saveTemplateFile()"
+                      ></textarea>
                     </div>
-
-                    <!-- アクション -->
-                    <div class="flex justify-between items-center">
-                      <button
-                        @click="deleteMenu()"
-                        class="text-[#dc2626] text-xs border border-[#dc2626]/30 rounded px-3 py-2 hover:bg-red-50 transition-colors"
-                      >
-                        このメニューを削除
-                      </button>
-                      <button @click="saveMenus()" class="gh-btn-green text-[13px]">
-                        メニューを保存
-                      </button>
+                  </template>
+                  <template x-if="!currentTemplateFile">
+                    <div class="flex-1 flex items-center justify-center">
+                      <p class="text-sm text-[#7c8b9a]">左のファイル一覧からテンプレートを選択</p>
                     </div>
-                  </div>
-                </template>
-
-                <template x-if="!menuData.menus.length">
-                  <div class="py-16 text-center text-sm text-[#ced4da]">
-                    メニューがありません。「新規メニュー」から作成してください。
-                  </div>
-                </template>
+                  </template>
+                </div>
               </div>
             </template>
 
             <!-- 設定 -->
             <template x-if="view === 'settings'">
-              <div class="px-8 py-6 max-w-5xl mx-auto">
-                <h1 class="text-2xl font-bold mb-6">設定</h1>
+              <div class="px-8 py-0 max-w-5xl mx-auto">
+                <div class="gh-editor-header">
+                  <h1 class="text-lg font-bold">設定</h1>
+                  <div class="flex-1"></div>
+                  <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
+                </div>
                 <div class="space-y-5">
                   <div>
                     <label class="gh-label">サイト名</label>
@@ -1222,8 +2020,6 @@
                       />
                     </template>
                   </div>
-
-                  <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
                 </div>
               </div>
             </template>
@@ -1241,13 +2037,22 @@
           x-transition:leave-end="translate-x-full"
           class="w-80 bg-white text-[#15171a] border-l border-[#ebeef0] flex flex-col overflow-hidden"
         >
-          <div class="flex items-center justify-between px-4 h-[52px] border-b border-[#ebeef0]">
+          <div
+            class="flex items-center justify-between px-4 h-[52px] border-b border-[#ebeef0] shrink-0 relative z-10"
+          >
             <span class="text-sm font-semibold">履歴</span>
             <button
-              @click="closePanel()"
-              class="text-[#7c8b9a] hover:text-[#15171a] p-1 rounded hover:bg-[#f1f3f5]"
+              @click.stop="closePanel()"
+              class="w-8 h-8 flex items-center justify-center text-[#7c8b9a] hover:text-[#15171a] rounded hover:bg-[#f1f3f5]"
             >
-              <i data-lucide="x" class="w-4 h-4"></i>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
           </div>
           <div class="flex-1 overflow-y-auto">
@@ -1364,13 +2169,86 @@
       </div>
     </div>
 
+    <!-- ページ設定モーダル -->
+    <template x-if="showPagesConfigEditor && editingPagesConfig">
+      <div
+        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        @click.self="showPagesConfigEditor=false; editingPagesConfig=null"
+      >
+        <div
+          class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+        >
+          <h2 class="text-lg font-bold mb-4">ページ設定</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="flex items-center gap-1.5 text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  x-model="editingPagesConfig.hasBody"
+                  class="accent-[#30cf43]"
+                />
+                本文エディタを表示
+              </label>
+              <p class="text-[10px] text-[#7c8b9a] mt-0.5 ml-6">
+                すべてのページでEditor.jsの本文エディタを有効にします
+              </p>
+            </div>
+            <div class="h-px bg-[#ebeef0] my-2"></div>
+            <h3 class="text-sm font-bold mb-2">フィールドグループ</h3>
+            <template x-if="fieldGroups.length">
+              <div class="space-y-1">
+                <template x-for="g in fieldGroups" :key="g.id">
+                  <label
+                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#f1f3f5] cursor-pointer text-xs"
+                  >
+                    <input
+                      type="checkbox"
+                      :value="g.id"
+                      :checked="(editingPagesConfig.fieldGroupIds || []).includes(g.id)"
+                      @change="
+                        if (!editingPagesConfig.fieldGroupIds) editingPagesConfig.fieldGroupIds = [];
+                        if ($event.target.checked) {
+                          editingPagesConfig.fieldGroupIds.push(g.id);
+                        } else {
+                          editingPagesConfig.fieldGroupIds = editingPagesConfig.fieldGroupIds.filter(id => id !== g.id);
+                        }
+                      "
+                      class="accent-[#30cf43]"
+                    />
+                    <span x-text="g.label"></span>
+                    <span
+                      class="text-[#7c8b9a] ml-auto"
+                      x-text="g.fields.length + ' フィールド'"
+                    ></span>
+                  </label>
+                </template>
+              </div>
+            </template>
+            <template x-if="!fieldGroups.length">
+              <p class="text-xs text-[#7c8b9a]">
+                フィールドグループがありません。サイドバーの「フィールド」から作成してください。
+              </p>
+            </template>
+          </div>
+          <div class="flex justify-end gap-2 mt-6">
+            <button
+              @click="showPagesConfigEditor=false; editingPagesConfig=null"
+              class="gh-btn-outline text-xs"
+            >
+              キャンセル
+            </button>
+            <button @click="savePagesConfig()" class="gh-btn-green text-xs">保存</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <!-- コンテンツタイプ編集モーダル -->
-    <div
-      x-show="showTypeEditor && editingType"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      @click.self="showTypeEditor=false"
-    >
-      <template x-if="editingType">
+    <template x-if="showTypeEditor && editingType">
+      <div
+        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        @click.self="showTypeEditor=false; editingType=null"
+      >
         <div
           class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
         >
@@ -1398,6 +2276,10 @@
             </div>
             <div class="flex flex-wrap gap-4 mt-1">
               <label class="flex items-center gap-1.5 text-xs cursor-pointer">
+                <input type="checkbox" x-model="editingType.hasBody" class="accent-[#30cf43]" />
+                本文
+              </label>
+              <label class="flex items-center gap-1.5 text-xs cursor-pointer">
                 <input type="checkbox" x-model="editingType.hasDate" class="accent-[#30cf43]" />
                 投稿日
               </label>
@@ -1419,141 +2301,43 @@
               </label>
             </div>
             <div class="h-px bg-[#ebeef0] my-2"></div>
-            <h3 class="text-sm font-bold">フィールド定義</h3>
-            <template x-for="(f, idx) in editingType?.fields || []" :key="idx">
-              <div class="border border-[#ebeef0] rounded p-2 space-y-2">
-                <!-- 1段目: key, label, type, required, 削除 -->
-                <div class="flex gap-2 items-end">
-                  <div class="flex-1">
-                    <label class="text-xs text-[#7c8b9a]">キー</label>
-                    <input type="text" x-model="f.key" class="gh-input-light w-full text-xs" />
-                  </div>
-                  <div class="flex-1">
-                    <label class="text-xs text-[#7c8b9a]">ラベル</label>
-                    <input type="text" x-model="f.label" class="gh-input-light w-full text-xs" />
-                  </div>
-                  <div class="w-28">
-                    <label class="text-xs text-[#7c8b9a]">タイプ</label>
-                    <select x-model="f.type" class="gh-select-light w-full text-xs">
-                      <template
-                        x-for="ft in ['text','textarea','richtext','number','url','email','date','datetime','daterange','image','imagelist','file','select','multiselect','radio','checkbox','toggle','relation','repeater','group','year','color','hidden']"
-                        :key="ft"
-                      >
-                        <option :value="ft" x-text="ft"></option>
-                      </template>
-                    </select>
-                  </div>
-                  <button @click="removeFieldFromType(idx)" class="text-[#dc2626] text-xs pb-1">
-                    削除
-                  </button>
-                </div>
-                <!-- 2段目: required + 詳細設定トグル -->
-                <div class="flex items-center gap-4">
-                  <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                    <input type="checkbox" x-model="f.required" class="accent-[#30cf43]" />
-                    必須
-                  </label>
-                  <button
-                    @click="f._expanded = !f._expanded"
-                    type="button"
-                    class="text-xs text-[#7c8b9a] hover:text-[#15171a] ml-auto flex items-center gap-1"
+            <h3 class="text-sm font-bold mb-2">フィールドグループ</h3>
+            <template x-if="fieldGroups.length">
+              <div class="space-y-1">
+                <template x-for="g in fieldGroups" :key="g.id">
+                  <label
+                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#f1f3f5] cursor-pointer text-xs"
                   >
-                    <span x-text="f._expanded ? '詳細を閉じる' : '詳細設定'"></span>
-                    <svg
-                      x-show="!f._expanded"
-                      class="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                    <svg
-                      x-show="f._expanded"
-                      class="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 15l7-7 7 7"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <!-- 3段目: 展開式詳細 -->
-                <template x-if="f._expanded">
-                  <div class="space-y-3 pt-2 border-t border-[#ebeef0]">
-                    <!-- 選択肢エディタ (select/multiselect/radio) -->
-                    <template x-if="['select','multiselect','radio'].includes(f.type)">
-                      <div>
-                        <label class="text-xs text-[#7c8b9a] font-medium">選択肢</label>
-                        <div class="space-y-1 mt-1">
-                          <template x-for="(opt, oi) in (f.options || [])" :key="oi">
-                            <div class="flex gap-1 items-center">
-                              <input
-                                type="text"
-                                :value="opt"
-                                @input="f.options[oi] = $event.target.value"
-                                placeholder="値を入力"
-                                class="gh-input-light flex-1 text-xs"
-                              />
-                              <button
-                                @click="f.options.splice(oi, 1)"
-                                type="button"
-                                class="text-[#dc2626] text-xs px-1 hover:bg-red-50 rounded"
-                              >
-                                &times;
-                              </button>
-                            </div>
-                          </template>
-                        </div>
-                        <button
-                          @click="f.options = [...(f.options||[]), '']"
-                          type="button"
-                          class="text-xs text-[#30cf43] hover:underline mt-1"
-                        >
-                          + 選択肢追加
-                        </button>
-                      </div>
-                    </template>
-                    <!-- showIf 条件表示 -->
-                    <div>
-                      <label class="text-xs text-[#7c8b9a] font-medium">条件表示 (showIf)</label>
-                      <div class="flex gap-2 mt-1">
-                        <input
-                          type="text"
-                          x-model="f.showIf_field"
-                          placeholder="フィールドキー"
-                          class="gh-input-light flex-1 text-xs"
-                        />
-                        <input
-                          type="text"
-                          x-model="f.showIf_value"
-                          placeholder="値"
-                          class="gh-input-light flex-1 text-xs"
-                        />
-                      </div>
-                      <p class="text-[10px] text-[#7c8b9a] mt-0.5">
-                        指定フィールドが指定値のときのみ表示
-                      </p>
-                    </div>
-                  </div>
+                    <input
+                      type="checkbox"
+                      :value="g.id"
+                      :checked="(editingType?.fieldGroupIds || []).includes(g.id)"
+                      @change="
+                        if (!editingType.fieldGroupIds) editingType.fieldGroupIds = [];
+                        if ($event.target.checked) {
+                          editingType.fieldGroupIds.push(g.id);
+                        } else {
+                          editingType.fieldGroupIds = editingType.fieldGroupIds.filter(id => id !== g.id);
+                        }
+                      "
+                      class="accent-[#30cf43]"
+                    />
+                    <span x-text="g.label"></span>
+                    <span
+                      class="text-[#7c8b9a] ml-auto"
+                      x-text="g.fields.length + ' フィールド'"
+                    ></span>
+                  </label>
                 </template>
               </div>
             </template>
-            <button @click="addFieldToType()" class="gh-btn-outline text-xs">
-              + フィールド追加
-            </button>
+            <template x-if="!fieldGroups.length">
+              <p class="text-xs text-[#7c8b9a]">
+                フィールドグループがありません。サイドバーの「フィールド」から作成してください。
+              </p>
+            </template>
           </div>
+
           <div class="flex justify-between mt-6">
             <button
               x-show="editingType?.id"
@@ -1563,68 +2347,20 @@
               削除
             </button>
             <div class="flex gap-2 ml-auto">
-              <button @click="showTypeEditor=false" class="gh-btn-outline text-xs">
+              <button
+                @click="showTypeEditor=false; editingType=null"
+                class="gh-btn-outline text-xs"
+              >
                 キャンセル
               </button>
               <button @click="saveType()" class="gh-btn-green text-xs">保存</button>
             </div>
           </div>
         </div>
-      </template>
-    </div>
-
-    <!-- タクソノミー管理モーダル -->
-    <div
-      x-show="showTaxonomyEditor"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      @click.self="showTaxonomyEditor=false"
-    >
-      <div
-        class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
-      >
-        <h2 class="text-lg font-bold mb-4">カテゴリ・タグ管理</h2>
-        <h3 class="text-sm font-bold mb-2">カテゴリ</h3>
-        <div class="space-y-1 mb-3">
-          <template x-for="(cat, idx) in taxonomyData.categories" :key="cat.id">
-            <div class="flex gap-2 items-center">
-              <input type="text" x-model="cat.label" class="gh-input-light flex-1 text-sm" />
-              <button @click="taxonomyData.categories.splice(idx,1)" class="text-[#dc2626] text-xs">
-                削除
-              </button>
-            </div>
-          </template>
-          <button
-            @click="taxonomyData.categories.push({id:Date.now().toString(),label:''})"
-            class="gh-btn-outline text-xs"
-          >
-            + カテゴリ追加
-          </button>
-        </div>
-        <h3 class="text-sm font-bold mb-2">タグ</h3>
-        <div class="space-y-1 mb-3">
-          <template x-for="(tag, idx) in taxonomyData.tags" :key="tag.id">
-            <div class="flex gap-2 items-center">
-              <input type="text" x-model="tag.label" class="gh-input-light flex-1 text-sm" />
-              <button @click="taxonomyData.tags.splice(idx,1)" class="text-[#dc2626] text-xs">
-                削除
-              </button>
-            </div>
-          </template>
-          <button
-            @click="taxonomyData.tags.push({id:Date.now().toString(),label:''})"
-            class="gh-btn-outline text-xs"
-          >
-            + タグ追加
-          </button>
-        </div>
-        <div class="flex justify-end gap-2 mt-4">
-          <button @click="showTaxonomyEditor=false" class="gh-btn-outline text-xs">
-            キャンセル
-          </button>
-          <button @click="saveTaxonomies()" class="gh-btn-green text-xs">保存</button>
-        </div>
       </div>
-    </div>
+    </template>
+
+    <!-- タクソノミー管理モーダル（廃止 → ビュー化済み） -->
 
     <!-- 言語設定モーダル -->
     <div

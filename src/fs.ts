@@ -1,5 +1,5 @@
-import type { ContentData, ContentType } from './types.ts'
-import { ContentTypeSchema, ContentDataSchema } from './schemas.ts'
+import type { ContentData, ContentType, FieldGroup } from './types.ts'
+import { ContentTypeSchema, ContentDataSchema, FieldGroupSchema } from './schemas.ts'
 
 /**
  * FileSystemDirectoryHandle の非同期イテレーターから全エントリを収集する。
@@ -225,5 +225,59 @@ export class FileSystem {
     data: ContentData,
   ): Promise<void> {
     await this.writeJson(`content/${typeId}/${contentId}/${lang}.json`, data)
+  }
+
+  /** フィールドグループ一覧を読み込み */
+  async readFieldGroups(): Promise<FieldGroup[]> {
+    const dir = await this.getDir('content/_fieldGroups')
+    if (!dir) return []
+    const entries = await collectEntries(dir)
+    const groups: FieldGroup[] = []
+    for (const [name, handle] of entries) {
+      if (handle.kind === 'file' && name.endsWith('.json')) {
+        try {
+          const file = await (handle as FileSystemFileHandle).getFile()
+          const text = await file.text()
+          const parsed = FieldGroupSchema.safeParse(JSON.parse(text))
+          if (parsed.success) groups.push(parsed.data)
+        } catch {
+          // skip
+        }
+      }
+    }
+    return groups.sort((a, b) => a.label.localeCompare(b.label))
+  }
+
+  /** テンプレートファイル一覧を取得 */
+  async readTemplateFiles(): Promise<Array<{ name: string; path: string; isComponent: boolean }>> {
+    const files: Array<{ name: string; path: string; isComponent: boolean }> = []
+    const dir = await this.getDir('templates')
+    if (!dir) return files
+
+    const entries = await collectEntries(dir)
+    for (const [name, handle] of entries) {
+      if (handle.kind === 'file' && name.endsWith('.hbs')) {
+        files.push({ name, path: `templates/${name}`, isComponent: false })
+      } else if (handle.kind === 'directory' && name === '_components') {
+        const compDir = handle as FileSystemDirectoryHandle
+        const compEntries = await collectEntries(compDir)
+        for (const [cname, chandle] of compEntries) {
+          if (chandle.kind === 'file' && cname.endsWith('.hbs')) {
+            files.push({
+              name: cname,
+              path: `templates/_components/${cname}`,
+              isComponent: true,
+            })
+          }
+        }
+      }
+    }
+
+    // ルートファイルを先に、コンポーネントを後に
+    files.sort((a, b) => {
+      if (a.isComponent !== b.isComponent) return a.isComponent ? 1 : -1
+      return a.name.localeCompare(b.name)
+    })
+    return files
   }
 }

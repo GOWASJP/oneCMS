@@ -10,6 +10,9 @@ export const APP_VERSION = '1.0.0'
 export const STORAGE_DB_NAME = 'one-cms'
 export const STORAGE_HANDLE_KEY = 'rootFolder'
 export const STORAGE_AUTHOR_KEY = 'one-cms-author'
+export const STORAGE_THEME_KEY = 'one-cms-theme'
+
+export type ThemeMode = 'light' | 'dark' | 'system'
 
 // --- リビジョン ---
 export const MAX_REVISIONS = 20

@@ -1,3 +1,10 @@
+// Inter フォントを self-host（Latin サブセットのみでバンドルサイズを抑制）
+// 日本語は font-family スタックのシステムフォント（Hiragino / Yu Gothic / Noto Sans JP）にフォールバック
+import '@fontsource/inter/latin-400.css'
+import '@fontsource/inter/latin-500.css'
+import '@fontsource/inter/latin-600.css'
+import '@fontsource/inter/latin-700.css'
+
 import Alpine from 'alpinejs'
 import EditorJS from '@editorjs/editorjs'
 import { createIcons } from 'lucide'
@@ -15,6 +22,7 @@ import { createEditor, editorJsonToHtml, htmlToEditorJson, type EditorData } fro
 import {
   APP_NAME,
   STORAGE_AUTHOR_KEY,
+  STORAGE_THEME_KEY,
   TOAST_DURATION,
   AUTOSAVE_DEBOUNCE_MS,
   PATH_SITE_CONFIG,
@@ -24,6 +32,7 @@ import {
   PATH_TAXONOMIES_CATEGORIES,
   PATH_TAXONOMIES_TAGS,
   PATH_ASSETS_FILES,
+  type ThemeMode,
 } from './constants.ts'
 import type {
   SiteConfig,
@@ -89,6 +98,10 @@ interface CmsComponent {
 
   // ファビコンプレビュー用（管理画面内で表示するための Blob URL）
   faviconBlobUrl: string
+
+  // テーマ
+  themeMode: ThemeMode
+  setThemeMode(mode: ThemeMode): void
   markDirty(): void
   scheduleAutoSave(): void
   autoSave(): Promise<void>
@@ -323,6 +336,9 @@ Alpine.data('cms', () => {
     // ファビコンプレビュー用 Blob URL
     faviconBlobUrl: '',
 
+    // テーマ（light / dark / system）
+    themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
+
     // FS / エンジン
     fs: null,
     exporter: null,
@@ -335,6 +351,14 @@ Alpine.data('cms', () => {
 
     /** Alpine init — ページ読み込み時に前回のフォルダを自動復元 */
     async init() {
+      // テーマ適用（localStorage に保存されたモード、または prefers-color-scheme）
+      applyTheme(this.themeMode)
+      // system モード時はOSのテーマ変更に追随
+      const mql = window.matchMedia('(prefers-color-scheme: dark)')
+      mql.addEventListener('change', () => {
+        if (this.themeMode === 'system') applyTheme('system')
+      })
+
       // 離脱警告: 未保存変更がある場合は確認ダイアログを出す
       window.addEventListener('beforeunload', (e: BeforeUnloadEvent) => {
         if (this.isDirty) {
@@ -498,6 +522,12 @@ Alpine.data('cms', () => {
       if (!name) return
       this.authorName = name
       localStorage.setItem(STORAGE_AUTHOR_KEY, name)
+    },
+
+    setThemeMode(mode: ThemeMode) {
+      this.themeMode = mode
+      localStorage.setItem(STORAGE_THEME_KEY, mode)
+      applyTheme(mode)
     },
 
     showToast(message: string, duration = TOAST_DURATION) {
@@ -1844,6 +1874,23 @@ Alpine.data('cms', () => {
 })
 
 Alpine.start()
+
+/** html[data-theme] 属性を適切に設定してテーマを反映 */
+function applyTheme(mode: ThemeMode): void {
+  const effective =
+    mode === 'system'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : mode
+  document.documentElement.setAttribute('data-theme', effective)
+}
+
+// Alpine 初期化前にフラッシュを避けるため、即座にテーマを適用する
+;(function preApplyTheme() {
+  const saved = (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode | null) || 'system'
+  applyTheme(saved)
+})()
 
 /** ファビコンを Blob URL として読み込み、管理画面タブと設定プレビューの両方を更新 */
 let currentFaviconBlobUrl: string | null = null

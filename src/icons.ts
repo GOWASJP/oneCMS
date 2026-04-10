@@ -78,4 +78,9 @@ export {
   RefreshCw,
   History,
   Languages,
+
+  // テーマ
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide'

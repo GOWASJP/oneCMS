@@ -18,7 +18,7 @@
   "settings.siteName": "サイト名",
   "settings.siteUrl": "サイトURL",
   "settings.description": "説明",
-  "export.button": "公開準備",
+  "export.button": "書き出し",
   "export.changed": "更新ファイルの取り出し",
   "login.prompt": "ご担当者名を入力してください",
   "login.start": "開始する"

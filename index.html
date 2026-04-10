@@ -6,19 +6,23 @@
     <title>ONE CMS</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
-  <body class="bg-[#15171a] text-white min-h-screen antialiased" x-data="cms" x-cloak>
+  <body
+    class="bg-[var(--ds-bg-page)] text-[var(--ds-text-body)] min-h-screen antialiased"
+    x-data="cms"
+    x-cloak
+  >
     <!-- ログイン -->
     <template x-if="!authorName">
       <div class="flex items-center justify-center min-h-screen">
         <div class="w-full max-w-xs">
           <div class="text-center mb-8">
             <div
-              class="w-10 h-10 bg-[#30cf43] rounded-lg mx-auto mb-4 flex items-center justify-center"
+              class="w-10 h-10 bg-[var(--ds-primary-600)] rounded-lg mx-auto mb-4 flex items-center justify-center"
             >
               <i data-lucide="pencil" class="w-5 h-5 text-white"></i>
             </div>
             <h1 class="text-lg font-semibold">ONE CMS</h1>
-            <p class="text-sm text-[#7c8b9a] mt-1">担当者名を入力して開始</p>
+            <p class="text-sm text-[var(--ds-text-muted)] mt-1">担当者名を入力して開始</p>
           </div>
           <input
             type="text"
@@ -41,14 +45,14 @@
         <!-- サイドバー -->
         <aside class="gh-sidebar w-56 flex flex-col shrink-0">
           <!-- サイト名 -->
-          <div class="px-5 py-4 border-b border-white/5">
+          <div class="px-5 py-4 border-b border-[var(--ds-border-subtle)]">
             <div class="flex items-center gap-2.5">
               <div
-                class="w-8 h-8 bg-[#30cf43] rounded-md flex items-center justify-center text-sm font-bold"
+                class="w-8 h-8 bg-[var(--ds-primary-600)] text-white rounded-md flex items-center justify-center text-sm font-bold"
                 x-text="(siteConfig.name || 'G')[0]"
               ></div>
               <span
-                class="text-[13px] font-semibold truncate"
+                class="text-[13px] font-semibold truncate text-[var(--ds-text-heading)]"
                 x-text="siteConfig.name || 'ONE CMS'"
               ></span>
             </div>
@@ -83,12 +87,15 @@
                     <span x-text="type.label" class="truncate"></span>
                   </button>
                 </template>
-                <button @click="openTypeEditor()" class="gh-nav-item w-full text-[#505a66]">
+                <button
+                  @click="openTypeEditor()"
+                  class="gh-nav-item w-full text-[var(--ds-text-subtle)]"
+                >
                   <i data-lucide="plus" class="w-[18px] h-[18px]"></i>
                   <span>タイプ追加</span>
                 </button>
 
-                <div class="h-px bg-white/5 my-3"></div>
+                <div class="h-px bg-[var(--ds-border-default)] my-3"></div>
 
                 <button
                   @click="loadMenus()"
@@ -149,26 +156,31 @@
             </template>
           </nav>
 
-          <div class="px-5 py-3 border-t border-white/5 flex items-center gap-2">
+          <div class="px-5 py-3 border-t border-[var(--ds-border-subtle)] flex items-center gap-2">
             <div
-              class="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-semibold"
+              class="w-6 h-6 rounded-full bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] flex items-center justify-center text-[10px] font-semibold"
               x-text="authorName[0]"
             ></div>
-            <span class="text-xs text-[#7c8b9a] truncate" x-text="authorName"></span>
+            <span
+              class="text-xs text-[var(--ds-text-body)] font-medium truncate"
+              x-text="authorName"
+            ></span>
           </div>
         </aside>
 
         <!-- メインコンテンツ -->
-        <main class="flex-1 flex flex-col overflow-hidden bg-white text-[#15171a] rounded-tl-lg">
+        <main
+          class="flex-1 flex flex-col overflow-hidden bg-[var(--ds-bg-page)] text-[var(--ds-text-body)]"
+        >
           <!-- トップバー -->
           <header
-            class="flex items-center justify-between px-8 h-[52px] shrink-0 border-b border-[#ebeef0]"
+            class="flex items-center justify-between px-8 h-[52px] shrink-0 border-b border-[var(--ds-border-default)]"
           >
-            <div class="flex items-center gap-1.5 text-[13px] text-[#7c8b9a]">
+            <div class="flex items-center gap-1.5 text-[13px] text-[var(--ds-text-muted)]">
               <template x-if="currentType">
                 <span class="flex items-center gap-1.5">
                   <span
-                    class="hover:text-[#15171a] cursor-pointer"
+                    class="hover:text-[var(--ds-text-heading)] cursor-pointer"
                     @click="openContentType(currentType)"
                     x-text="currentType.label"
                   ></span>
@@ -176,7 +188,7 @@
                     <span class="flex items-center gap-1.5">
                       <i data-lucide="chevron-right" class="w-3 h-3"></i>
                       <span
-                        class="text-[#15171a] font-medium"
+                        class="text-[var(--ds-text-heading)] font-medium"
                         x-text="currentPage.title || '無題'"
                       ></span>
                     </span>
@@ -185,39 +197,42 @@
               </template>
               <template x-if="!currentType && currentPage">
                 <span class="flex items-center gap-1.5">
-                  <span class="hover:text-[#15171a] cursor-pointer" @click="loadPageList()">
+                  <span
+                    class="hover:text-[var(--ds-text-heading)] cursor-pointer"
+                    @click="loadPageList()"
+                  >
                     ページ
                   </span>
                   <i data-lucide="chevron-right" class="w-3 h-3"></i>
                   <span
-                    class="text-[#15171a] font-medium"
+                    class="text-[var(--ds-text-heading)] font-medium"
                     x-text="currentPage.title || '無題'"
                   ></span>
                 </span>
               </template>
               <template x-if="view === 'page-list'">
-                <span class="text-[#15171a] font-medium">ページ</span>
+                <span class="text-[var(--ds-text-heading)] font-medium">ページ</span>
               </template>
               <template x-if="view === 'settings'">
-                <span class="text-[#15171a] font-medium">設定</span>
+                <span class="text-[var(--ds-text-heading)] font-medium">設定</span>
               </template>
               <template x-if="view === 'taxonomy-categories'">
-                <span class="text-[#15171a] font-medium">カテゴリ</span>
+                <span class="text-[var(--ds-text-heading)] font-medium">カテゴリ</span>
               </template>
               <template x-if="view === 'taxonomy-tags'">
-                <span class="text-[#15171a] font-medium">タグ</span>
+                <span class="text-[var(--ds-text-heading)] font-medium">タグ</span>
               </template>
               <template x-if="view === 'field-groups'">
-                <span class="text-[#15171a] font-medium">フィールド</span>
+                <span class="text-[var(--ds-text-heading)] font-medium">フィールド</span>
               </template>
               <template x-if="view === 'templates'">
                 <span class="flex items-center gap-1.5">
-                  <span class="text-[#15171a] font-medium">テンプレート</span>
+                  <span class="text-[var(--ds-text-heading)] font-medium">テンプレート</span>
                   <template x-if="currentTemplateFile">
                     <span class="flex items-center gap-1.5">
                       <i data-lucide="chevron-right" class="w-3 h-3"></i>
                       <span
-                        class="text-[#15171a]"
+                        class="text-[var(--ds-text-heading)]"
                         x-text="currentTemplateFile.split('/').pop()"
                       ></span>
                     </span>
@@ -250,10 +265,10 @@
                 <div class="text-center">
                   <i
                     data-lucide="layout-dashboard"
-                    class="w-10 h-10 mx-auto mb-3 text-[#ced4da]"
+                    class="w-10 h-10 mx-auto mb-3 text-[var(--ds-text-placeholder)]"
                   ></i>
                   <p
-                    class="text-sm text-[#7c8b9a]"
+                    class="text-sm text-[var(--ds-text-muted)]"
                     x-text="folderHandle ? 'サイドバーからページを選択' : 'フォルダを選択して開始'"
                   ></p>
                 </div>
@@ -322,7 +337,9 @@
                           <div class="mb-5">
                             <label class="gh-label">
                               <span x-text="field.label"></span>
-                              <span x-show="field.required" class="text-[#f50057]">*</span>
+                              <span x-show="field.required" class="text-[var(--ds-danger-600)]">
+                                *
+                              </span>
                             </label>
                             <template x-if="field.type === 'text'">
                               <input
@@ -372,14 +389,14 @@
                                 <template x-if="editData[field.key]">
                                   <img
                                     :src="editData[field.key]"
-                                    class="max-h-40 rounded border border-[#ebeef0] mb-2"
+                                    class="max-h-40 rounded border border-[var(--ds-border-default)] mb-2"
                                   />
                                 </template>
                                 <input
                                   type="file"
                                   accept="image/*"
                                   @change="handleImageUpload($event, field.key)"
-                                  class="text-xs text-[#7c8b9a]"
+                                  class="text-xs text-[var(--ds-text-muted)]"
                                 />
                               </div>
                             </template>
@@ -392,7 +409,7 @@
 
                 <!-- 右: メタ情報サイドパネル -->
                 <div
-                  class="w-64 shrink-0 border-l border-[#ebeef0] overflow-y-auto p-5 space-y-5 bg-[#f9fafb]"
+                  class="w-64 shrink-0 border-l border-[var(--ds-border-default)] overflow-y-auto p-5 space-y-5 bg-[var(--ds-bg-muted)]"
                 >
                   <!-- 翻訳ステータス -->
                   <template x-if="languages.locales.length > 1">
@@ -451,17 +468,17 @@
                       class="gh-input-light text-xs w-full"
                     />
                     <p
-                      class="text-[10px] text-[#7c8b9a] mt-0.5"
+                      class="text-[10px] text-[var(--ds-text-muted)] mt-0.5"
                       x-text="'ID: ' + (currentPage?.id || editData.id)"
                     ></p>
                   </div>
 
-                  <div class="h-px bg-[#ebeef0]"></div>
+                  <div class="h-px bg-[var(--ds-border-default)]"></div>
 
                   <!-- 削除 -->
                   <button
                     @click="deletePage()"
-                    class="text-[#dc2626] text-xs hover:underline w-full text-left"
+                    class="text-[var(--ds-danger-600)] text-xs hover:underline w-full text-left"
                   >
                     このページを削除
                   </button>
@@ -496,21 +513,26 @@
                             class="font-medium text-[14px] truncate"
                             x-text="page.title || '（無題）'"
                           ></p>
-                          <p class="text-xs text-[#7c8b9a] mt-0.5" x-text="page.id"></p>
+                          <p
+                            class="text-xs text-[var(--ds-text-muted)] mt-0.5"
+                            x-text="page.id"
+                          ></p>
                         </div>
                         <span
                           class="gh-badge"
                           :class="{
-                            'bg-[#30cf43]/10 text-[#30cf43]': page.status === 'published' || !page.status,
-                            'bg-[#ffc107]/10 text-[#e0a800]': page.status === 'draft',
-                            'bg-[#7c8b9a]/10 text-[#7c8b9a]': page.status === 'archived'
+                            'bg-[var(--ds-primary-600)]/10 text-[var(--ds-primary-600)]': page.status === 'published' || !page.status,
+                            'bg-[var(--ds-warning-500)]/10 text-[var(--ds-warning-600)]': page.status === 'draft',
+                            'bg-[var(--ds-text-muted)]/10 text-[var(--ds-text-muted)]': page.status === 'archived'
                           }"
                           x-text="page.status === 'draft' ? '下書き' : page.status === 'archived' ? 'アーカイブ' : '公開中'"
                         ></span>
                       </div>
                     </template>
                     <template x-if="pages.length === 0">
-                      <div class="py-16 text-center text-sm text-[#ced4da]">ページがありません</div>
+                      <div class="py-16 text-center text-sm text-[var(--ds-text-placeholder)]">
+                        ページがありません
+                      </div>
                     </template>
                   </div>
                 </div>
@@ -545,23 +567,23 @@
                             x-text="item.title || '（無題）'"
                           ></p>
                           <p
-                            class="text-xs text-[#7c8b9a] mt-0.5"
+                            class="text-xs text-[var(--ds-text-muted)] mt-0.5"
                             x-text="item.publishedAt || item._meta?.createdAt || ''"
                           ></p>
                         </div>
                         <span
                           class="gh-badge"
                           :class="{
-                            'bg-[#30cf43]/10 text-[#30cf43]': item.status === 'published',
-                            'bg-[#ffc107]/10 text-[#e0a800]': item.status === 'draft',
-                            'bg-[#7c8b9a]/10 text-[#7c8b9a]': item.status === 'archived'
+                            'bg-[var(--ds-primary-600)]/10 text-[var(--ds-primary-600)]': item.status === 'published',
+                            'bg-[var(--ds-warning-500)]/10 text-[var(--ds-warning-600)]': item.status === 'draft',
+                            'bg-[var(--ds-text-muted)]/10 text-[var(--ds-text-muted)]': item.status === 'archived'
                           }"
                           x-text="item.status === 'published' ? '公開中' : item.status === 'draft' ? '下書き' : 'アーカイブ'"
                         ></span>
                       </div>
                     </template>
                     <template x-if="contentItems.length === 0">
-                      <div class="py-16 text-center text-sm text-[#ced4da]">
+                      <div class="py-16 text-center text-sm text-[var(--ds-text-placeholder)]">
                         コンテンツがありません
                       </div>
                     </template>
@@ -633,11 +655,13 @@
                         >
                           <div
                             class="mb-5"
-                            :class="['image','imagelist','file'].includes(field.type) ? 'bg-[#f9fafb] -mx-4 px-4 py-3 rounded-lg border border-[#ebeef0]' : ''"
+                            :class="['image','imagelist','file'].includes(field.type) ? 'bg-[var(--ds-bg-muted)] -mx-4 px-4 py-3 rounded-lg border border-[var(--ds-border-default)]' : ''"
                           >
                             <label class="gh-label">
                               <span x-text="field.label"></span>
-                              <span x-show="field.required" class="text-[#f50057]">*</span>
+                              <span x-show="field.required" class="text-[var(--ds-danger-600)]">
+                                *
+                              </span>
                             </label>
                             <template x-if="field.type === 'text'">
                               <input
@@ -711,7 +735,7 @@
                                 <input
                                   type="checkbox"
                                   x-model="editData[field.key]"
-                                  class="w-4 h-4 rounded border-[#ced4da] accent-[#30cf43]"
+                                  class="w-4 h-4 rounded border-[var(--ds-border-strong)] accent-[var(--ds-primary-600)]"
                                 />
                                 <span
                                   class="text-sm"
@@ -724,14 +748,14 @@
                                 <template x-if="editData[field.key]">
                                   <img
                                     :src="editData[field.key]"
-                                    class="max-h-40 rounded border border-[#ebeef0] mb-2"
+                                    class="max-h-40 rounded border border-[var(--ds-border-default)] mb-2"
                                   />
                                 </template>
                                 <input
                                   type="file"
                                   accept="image/*"
                                   @change="handleImageUpload($event, field.key)"
-                                  class="text-xs text-[#7c8b9a]"
+                                  class="text-xs text-[var(--ds-text-muted)]"
                                 />
                               </div>
                             </template>
@@ -739,14 +763,14 @@
                               <div>
                                 <template x-if="editData[field.key]">
                                   <p
-                                    class="text-xs text-[#7c8b9a] mb-1"
+                                    class="text-xs text-[var(--ds-text-muted)] mb-1"
                                     x-text="editData[field.key]"
                                   ></p>
                                 </template>
                                 <input
                                   type="file"
                                   @change="handleFileUpload($event, field.key)"
-                                  class="text-xs text-[#7c8b9a]"
+                                  class="text-xs text-[var(--ds-text-muted)]"
                                 />
                               </div>
                             </template>
@@ -754,7 +778,7 @@
                               <input
                                 type="color"
                                 x-model="editData[field.key]"
-                                class="w-10 h-8 rounded border border-[#ebeef0] cursor-pointer"
+                                class="w-10 h-8 rounded border border-[var(--ds-border-default)] cursor-pointer"
                               />
                             </template>
                             <!-- radio -->
@@ -770,7 +794,7 @@
                                       :name="field.key"
                                       :value="opt.value || opt"
                                       x-model="editData[field.key]"
-                                      class="accent-[#30cf43]"
+                                      class="accent-[var(--ds-primary-600)]"
                                     />
                                     <span x-text="opt.label || opt"></span>
                                   </label>
@@ -785,8 +809,8 @@
                                   :key="opt.value || opt"
                                 >
                                   <label
-                                    class="flex items-center gap-1.5 px-2 py-1 border border-[#ebeef0] rounded text-xs cursor-pointer"
-                                    :class="(editData[field.key]||[]).includes(opt.value||opt) ? 'bg-[#30cf43]/10 border-[#30cf43]' : ''"
+                                    class="flex items-center gap-1.5 px-2 py-1 border border-[var(--ds-border-default)] rounded text-xs cursor-pointer"
+                                    :class="(editData[field.key]||[]).includes(opt.value||opt) ? 'bg-[var(--ds-primary-600)]/10 border-[var(--ds-primary-600)]' : ''"
                                   >
                                     <input
                                       type="checkbox"
@@ -807,7 +831,7 @@
                                   x-model="editData[field.key + '_from']"
                                   class="gh-input-light"
                                 />
-                                <span class="text-[#7c8b9a] text-sm">〜</span>
+                                <span class="text-[var(--ds-text-muted)] text-sm">〜</span>
                                 <input
                                   type="date"
                                   x-model="editData[field.key + '_to']"
@@ -841,11 +865,11 @@
                                     <div class="relative">
                                       <img
                                         :src="img"
-                                        class="w-20 h-20 object-cover rounded border border-[#ebeef0]"
+                                        class="w-20 h-20 object-cover rounded border border-[var(--ds-border-default)]"
                                       />
                                       <button
                                         @click="editData[field.key].splice(idx,1)"
-                                        class="absolute -top-1 -right-1 w-4 h-4 bg-[#dc2626] text-white rounded-full text-[10px] flex items-center justify-center"
+                                        class="absolute -top-1 -right-1 w-4 h-4 bg-[var(--ds-danger-600)] text-white rounded-full text-[10px] flex items-center justify-center"
                                       >
                                         x
                                       </button>
@@ -857,7 +881,7 @@
                                   accept="image/*"
                                   multiple
                                   @change="for(const f of $event.target.files){handleImageUpload({target:{files:[f]}}, '__tmp');editData[field.key]=[...(editData[field.key]||[]),editData.__tmp];delete editData.__tmp}"
-                                  class="text-xs text-[#7c8b9a]"
+                                  class="text-xs text-[var(--ds-text-muted)]"
                                 />
                               </div>
                             </template>
@@ -872,18 +896,18 @@
                                       :key="idx"
                                     >
                                       <div
-                                        class="border border-[#ebeef0] rounded p-3 space-y-2 relative"
+                                        class="border border-[var(--ds-border-default)] rounded p-3 space-y-2 relative"
                                       >
                                         <button
                                           @click="editData[field.key].splice(idx,1)"
-                                          class="absolute top-1 right-1 text-[#dc2626] text-xs px-1 hover:bg-red-50 rounded"
+                                          class="absolute top-1 right-1 text-[var(--ds-danger-600)] text-xs px-1 hover:bg-red-50 rounded"
                                         >
                                           &times;
                                         </button>
                                         <template x-for="sf in field.subFields" :key="sf.key">
                                           <div>
                                             <label
-                                              class="text-xs text-[#7c8b9a]"
+                                              class="text-xs text-[var(--ds-text-muted)]"
                                               x-text="sf.label"
                                             ></label>
                                             <template x-if="sf.type === 'textarea'">
@@ -898,14 +922,14 @@
                                                 <template x-if="editData[field.key][idx][sf.key]">
                                                   <img
                                                     :src="editData[field.key][idx][sf.key]"
-                                                    class="max-h-20 rounded border border-[#ebeef0] mb-1"
+                                                    class="max-h-20 rounded border border-[var(--ds-border-default)] mb-1"
                                                   />
                                                 </template>
                                                 <input
                                                   type="file"
                                                   accept="image/*"
                                                   @change="handleImageUpload($event, '__tmp').then(() => { editData[field.key][idx][sf.key] = editData.__tmp; delete editData.__tmp })"
-                                                  class="text-xs text-[#7c8b9a]"
+                                                  class="text-xs text-[var(--ds-text-muted)]"
                                                 />
                                               </div>
                                             </template>
@@ -945,7 +969,7 @@
                                         />
                                         <button
                                           @click="editData[field.key].splice(idx,1)"
-                                          class="text-[#dc2626] text-xs"
+                                          class="text-[var(--ds-danger-600)] text-xs"
                                         >
                                           削除
                                         </button>
@@ -963,12 +987,15 @@
                             </template>
                             <!-- group -->
                             <template x-if="field.type === 'group'">
-                              <details class="border border-[#ebeef0] rounded-md" open>
+                              <details
+                                class="border border-[var(--ds-border-default)] rounded-md"
+                                open
+                              >
                                 <summary
-                                  class="px-3 py-2 text-sm font-medium cursor-pointer bg-[#f9fafb]"
+                                  class="px-3 py-2 text-sm font-medium cursor-pointer bg-[var(--ds-bg-muted)]"
                                   x-text="field.label"
                                 ></summary>
-                                <div class="p-3 text-xs text-[#7c8b9a]">
+                                <div class="p-3 text-xs text-[var(--ds-text-muted)]">
                                   グループフィールドはJSONで直接編集してください
                                 </div>
                               </details>
@@ -991,7 +1018,7 @@
 
                 <!-- 右: メタ情報サイドパネル -->
                 <div
-                  class="w-64 shrink-0 border-l border-[#ebeef0] overflow-y-auto p-5 space-y-5 bg-[#f9fafb]"
+                  class="w-64 shrink-0 border-l border-[var(--ds-border-default)] overflow-y-auto p-5 space-y-5 bg-[var(--ds-bg-muted)]"
                 >
                   <!-- ステータス -->
                   <div>
@@ -1025,7 +1052,7 @@
                       class="gh-input-light text-xs w-full"
                     />
                     <p
-                      class="text-[10px] text-[#7c8b9a] mt-0.5"
+                      class="text-[10px] text-[var(--ds-text-muted)] mt-0.5"
                       x-text="'ID: ' + (currentPage?.id || editData.id)"
                     ></p>
                   </div>
@@ -1037,13 +1064,13 @@
                       <img
                         x-show="editData.image"
                         :src="editData.image"
-                        class="w-full aspect-video object-cover rounded border border-[#ebeef0] mb-2"
+                        class="w-full aspect-video object-cover rounded border border-[var(--ds-border-default)] mb-2"
                       />
                       <input
                         type="file"
                         accept="image/*"
                         @change="handleImageUpload($event, 'image')"
-                        class="text-xs text-[#7c8b9a] w-full"
+                        class="text-xs text-[var(--ds-text-muted)] w-full"
                       />
                     </div>
                   </template>
@@ -1071,19 +1098,19 @@
                         <button
                           @click="editData.tags = editData.tags || []; editData.tags.includes(tag.label) ? editData.tags = editData.tags.filter(t => t !== tag.label) : editData.tags.push(tag.label)"
                           class="px-2 py-0.5 rounded border text-[11px] transition-all"
-                          :class="(editData.tags||[]).includes(tag.label) ? 'bg-[#30cf43]/10 border-[#30cf43] text-[#30cf43]' : 'border-[#dfe1e3] text-[#7c8b9a] hover:border-[#ced4da]'"
+                          :class="(editData.tags||[]).includes(tag.label) ? 'bg-[var(--ds-primary-600)]/10 border-[var(--ds-primary-600)] text-[var(--ds-primary-600)]' : 'border-[var(--ds-border-default)] text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)]'"
                           x-text="tag.label"
                         ></button>
                       </template>
                     </div>
                   </div>
 
-                  <div class="h-px bg-[#ebeef0]"></div>
+                  <div class="h-px bg-[var(--ds-border-default)]"></div>
 
                   <!-- 削除 -->
                   <button
                     @click="deleteContent()"
-                    class="text-[#dc2626] text-xs hover:underline w-full text-left"
+                    class="text-[var(--ds-danger-600)] text-xs hover:underline w-full text-left"
                   >
                     この投稿を削除
                   </button>
@@ -1095,13 +1122,13 @@
             <template x-if="view === 'export-result'">
               <div class="px-8 py-12 max-w-md mx-auto text-center">
                 <div
-                  class="w-12 h-12 bg-[#30cf43]/10 rounded-full flex items-center justify-center mx-auto mb-4"
+                  class="w-12 h-12 bg-[var(--ds-primary-600)]/10 rounded-full flex items-center justify-center mx-auto mb-4"
                 >
-                  <i data-lucide="circle-check" class="w-6 h-6 text-[#30cf43]"></i>
+                  <i data-lucide="circle-check" class="w-6 h-6 text-[var(--ds-primary-600)]"></i>
                 </div>
                 <h2 class="text-xl font-bold mb-6">更新ファイルの取り出し完了</h2>
                 <div
-                  class="text-left bg-[#f9fafb] border border-[#ebeef0] rounded-lg p-4 text-sm space-y-1 mb-6"
+                  class="text-left bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-lg p-4 text-sm space-y-1 mb-6"
                 >
                   <p>
                     総ファイル数：
@@ -1117,10 +1144,10 @@
                   </p>
                 </div>
                 <div
-                  class="text-left bg-[#fff8e1] border border-[#ffe082] rounded-lg p-4 text-sm mb-6"
+                  class="text-left bg-[var(--ds-warning-100)] border border-[var(--ds-warning-200)] rounded-lg p-4 text-sm mb-6"
                 >
                   <p class="font-semibold mb-2">アップロード手順</p>
-                  <ol class="list-decimal list-inside space-y-1 text-[#5d4037]">
+                  <ol class="list-decimal list-inside space-y-1 text-[var(--ds-warning-700)]">
                     <li>FTPソフトを開く</li>
                     <li>changed/ フォルダの中身をアップ</li>
                     <li>完了後「完了」をクリック</li>
@@ -1135,17 +1162,19 @@
               <div class="flex h-full">
                 <!-- 左: メニュー一覧 + 項目追加 -->
                 <div
-                  class="w-56 shrink-0 border-r border-[#ebeef0] overflow-y-auto bg-[#f9fafb] flex flex-col"
+                  class="w-56 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)] flex flex-col"
                 >
                   <div class="p-3 flex-1">
-                    <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                    <h3
+                      class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-2"
+                    >
                       メニュー
                     </h3>
                     <div class="space-y-0.5 mb-4">
                       <template x-for="m in menuData.menus" :key="m.id">
                         <button
                           @click="selectMenu(m.id)"
-                          :class="currentMenuId === m.id ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                          :class="currentMenuId === m.id ? 'bg-[var(--ds-success-100)] text-[var(--ds-text-heading)] font-medium' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg-hover)]'"
                           class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
                           x-text="m.name"
                         ></button>
@@ -1155,12 +1184,14 @@
                     <!-- 項目追加パネル（メニュー選択時） -->
                     <template x-if="currentMenu">
                       <div class="space-y-2">
-                        <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-1">
+                        <h3
+                          class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-1"
+                        >
                           項目追加
                         </h3>
-                        <details class="border border-[#ebeef0] rounded-md" open>
+                        <details class="border border-[var(--ds-border-default)] rounded-md" open>
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[var(--ds-text-muted)] bg-[var(--ds-bg-surface)] rounded-t-md"
                           >
                             固定ページ
                           </summary>
@@ -1168,15 +1199,15 @@
                             <template x-for="p in pages" :key="p.id">
                               <button
                                 @click="addMenuItem('page', p.title || p.id, '/' + (p.id === 'index' ? '' : p.id + '/'), p.id)"
-                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[var(--ds-bg-hover)] truncate"
                                 x-text="p.title || p.id"
                               ></button>
                             </template>
                           </div>
                         </details>
-                        <details class="border border-[#ebeef0] rounded-md">
+                        <details class="border border-[var(--ds-border-default)] rounded-md">
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[var(--ds-text-muted)] bg-[var(--ds-bg-surface)] rounded-t-md"
                           >
                             投稿タイプ
                           </summary>
@@ -1184,15 +1215,15 @@
                             <template x-for="t in contentTypes" :key="t.id">
                               <button
                                 @click="addMenuItem('post_type', t.label, '/' + t.slug + '/', t.id)"
-                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[var(--ds-bg-hover)] truncate"
                                 x-text="t.label"
                               ></button>
                             </template>
                           </div>
                         </details>
-                        <details class="border border-[#ebeef0] rounded-md">
+                        <details class="border border-[var(--ds-border-default)] rounded-md">
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[var(--ds-text-muted)] bg-[var(--ds-bg-surface)] rounded-t-md"
                           >
                             カテゴリ
                           </summary>
@@ -1200,18 +1231,20 @@
                             <template x-for="cat in availableCategories" :key="cat.id">
                               <button
                                 @click="addMenuItem('category', cat.label, '', cat.id)"
-                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[#f1f3f5] truncate"
+                                class="block w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[var(--ds-bg-hover)] truncate"
                                 x-text="cat.label"
                               ></button>
                             </template>
                             <template x-if="!availableCategories.length">
-                              <p class="text-xs text-[#ced4da] px-2">カテゴリなし</p>
+                              <p class="text-xs text-[var(--ds-text-placeholder)] px-2">
+                                カテゴリなし
+                              </p>
                             </template>
                           </div>
                         </details>
-                        <details class="border border-[#ebeef0] rounded-md">
+                        <details class="border border-[var(--ds-border-default)] rounded-md">
                           <summary
-                            class="px-3 py-2 text-xs font-semibold text-[#7c8b9a] bg-white rounded-t-md"
+                            class="px-3 py-2 text-xs font-semibold text-[var(--ds-text-muted)] bg-[var(--ds-bg-surface)] rounded-t-md"
                           >
                             カスタムリンク
                           </summary>
@@ -1227,7 +1260,7 @@
                       </div>
                     </template>
                   </div>
-                  <div class="p-3 border-t border-[#ebeef0]">
+                  <div class="p-3 border-t border-[var(--ds-border-default)]">
                     <button @click="addMenu()" class="gh-btn-green text-xs w-full">
                       <i data-lucide="plus" class="w-3 h-3"></i>
                       新規メニュー
@@ -1247,7 +1280,7 @@
                         <div class="flex-1"></div>
                         <button
                           @click="deleteMenu()"
-                          class="text-[#dc2626] text-xs hover:underline mr-2"
+                          class="text-[var(--ds-danger-600)] text-xs hover:underline mr-2"
                         >
                           削除
                         </button>
@@ -1266,7 +1299,7 @@
 
                         <div>
                           <h3 class="text-sm font-bold mb-2">メニュー構造</h3>
-                          <p class="text-xs text-[#ced4da] mb-3">
+                          <p class="text-xs text-[var(--ds-text-placeholder)] mb-3">
                             ドラッグまたは矢印ボタンで並び替え。
                           </p>
 
@@ -1276,8 +1309,8 @@
                           >
                             <template x-for="(item, idx) in currentMenu.items" :key="item.id">
                               <div
-                                class="border rounded-md bg-white transition-all"
-                                :class="{ 'opacity-50': dragIdx === idx, 'border-[#30cf43] border-t-2': dropIdx === idx && dragIdx !== idx, 'border-[#ebeef0]': dropIdx !== idx || dragIdx === idx }"
+                                class="border rounded-md bg-[var(--ds-bg-surface)] transition-all"
+                                :class="{ 'opacity-50': dragIdx === idx, 'border-[var(--ds-primary-600)] border-t-2': dropIdx === idx && dragIdx !== idx, 'border-[var(--ds-border-default)]': dropIdx !== idx || dragIdx === idx }"
                                 :style="'margin-left:' + (item.parent ? '32px' : '0')"
                                 draggable="true"
                                 @dragstart="dragIdx = idx; $event.dataTransfer.effectAllowed = 'move'"
@@ -1290,7 +1323,7 @@
                                   <div class="flex items-center gap-2">
                                     <i
                                       data-lucide="grip-vertical"
-                                      class="w-4 h-4 text-[#ced4da] shrink-0 cursor-grab"
+                                      class="w-4 h-4 text-[var(--ds-text-placeholder)] shrink-0 cursor-grab"
                                       aria-hidden="true"
                                     ></i>
                                     <div
@@ -1301,7 +1334,7 @@
                                       <button
                                         @click.stop="moveMenuItem(idx, -1)"
                                         :disabled="idx === 0"
-                                        class="p-1 text-[#7c8b9a] hover:text-[#15171a] disabled:opacity-30 disabled:cursor-not-allowed"
+                                        class="p-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] disabled:opacity-30 disabled:cursor-not-allowed"
                                       >
                                         <i
                                           data-lucide="chevron-up"
@@ -1311,7 +1344,7 @@
                                       <button
                                         @click.stop="moveMenuItem(idx, 1)"
                                         :disabled="idx === currentMenu.items.length - 1"
-                                        class="p-1 text-[#7c8b9a] hover:text-[#15171a] disabled:opacity-30 disabled:cursor-not-allowed"
+                                        class="p-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] disabled:opacity-30 disabled:cursor-not-allowed"
                                       >
                                         <i
                                           data-lucide="chevron-down"
@@ -1327,17 +1360,20 @@
                                     />
                                     <button
                                       @click="removeMenuItem(idx)"
-                                      class="text-[#dc2626] text-xs hover:underline shrink-0 px-2 py-1.5 -mr-2 rounded hover:bg-red-50"
+                                      class="text-[var(--ds-danger-600)] text-xs hover:underline shrink-0 px-2 py-1.5 -mr-2 rounded hover:bg-red-50"
                                     >
                                       削除
                                     </button>
                                   </div>
                                   <div class="flex items-center gap-2 pl-6">
                                     <span
-                                      class="text-xs text-[#7c8b9a] bg-[#f1f3f5] px-1.5 py-0.5 rounded"
+                                      class="text-xs text-[var(--ds-text-muted)] bg-[var(--ds-bg-hover)] px-1.5 py-0.5 rounded"
                                       x-text="item.type === 'custom' ? 'カスタムリンク' : item.type === 'page' ? '固定ページ' : item.type === 'post_type' ? '投稿タイプ' : 'カテゴリ'"
                                     ></span>
-                                    <span class="text-xs text-[#ced4da]" x-text="item.url"></span>
+                                    <span
+                                      class="text-xs text-[var(--ds-text-placeholder)]"
+                                      x-text="item.url"
+                                    ></span>
                                   </div>
                                   <template x-if="item.type === 'custom'">
                                     <div class="flex items-center gap-3 pl-6">
@@ -1348,13 +1384,13 @@
                                         class="gh-input-light text-xs flex-1"
                                       />
                                       <label
-                                        class="flex items-center gap-1.5 text-xs text-[#7c8b9a] shrink-0"
+                                        class="flex items-center gap-1.5 text-xs text-[var(--ds-text-muted)] shrink-0"
                                       >
                                         <input
                                           type="checkbox"
                                           :checked="item.target === '_blank'"
                                           @change="item.target = $event.target.checked ? '_blank' : ''"
-                                          class="accent-[#30cf43]"
+                                          class="accent-[var(--ds-primary-600)]"
                                         />
                                         新しいタブ
                                       </label>
@@ -1365,7 +1401,7 @@
                             </template>
                             <template x-if="!currentMenu.items.length">
                               <div
-                                class="py-12 text-center text-sm text-[#ced4da] border border-dashed border-[#ebeef0] rounded-md"
+                                class="py-12 text-center text-sm text-[var(--ds-text-placeholder)] border border-dashed border-[var(--ds-border-default)] rounded-md"
                               >
                                 左のパネルから項目を追加してください
                               </div>
@@ -1374,21 +1410,21 @@
                         </div>
 
                         <!-- テンプレートコード -->
-                        <div class="border-t border-[#ebeef0] pt-4">
+                        <div class="border-t border-[var(--ds-border-default)] pt-4">
                           <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
-                          <p class="text-xs text-[#7c8b9a] mb-3">
+                          <p class="text-xs text-[var(--ds-text-muted)] mb-3">
                             テンプレートに以下のコードを貼り付けてこのメニューを表示できます。
                           </p>
                           <div
-                            class="bg-[#f9fafb] border border-[#ebeef0] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
+                            class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
                             @click="navigator.clipboard.writeText($el.querySelector('pre').textContent); showToast('コピーしました')"
                           >
                             <pre
-                              class="font-mono text-xs text-[#15171a] select-all m-0"
+                              class="font-mono text-xs text-[var(--ds-text-heading)] select-all m-0"
                               x-text="'{{#each site.menus.' + currentMenuId + '}}\n  <a href=&quot;{{url}}&quot;{{#if target}} target=&quot;{{target}}&quot;{{/if}}>\n    {{label}}\n  </a>\n{{/each}}'"
                             ></pre>
                             <span
-                              class="absolute top-2 right-2 text-[#7c8b9a] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                              class="absolute top-2 right-2 text-[var(--ds-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                             >
                               クリックでコピー
                             </span>
@@ -1399,7 +1435,9 @@
                   </template>
                   <template x-if="!currentMenu">
                     <div class="flex-1 flex items-center justify-center h-full">
-                      <p class="text-sm text-[#7c8b9a]">メニューを選択または新規作成</p>
+                      <p class="text-sm text-[var(--ds-text-muted)]">
+                        メニューを選択または新規作成
+                      </p>
                     </div>
                   </template>
                 </div>
@@ -1415,14 +1453,16 @@
                     <div class="flex-1"></div>
                     <button @click="saveTaxonomies()" class="gh-btn-green text-[13px]">保存</button>
                   </div>
-                  <p class="text-xs text-[#7c8b9a] mb-4">
+                  <p class="text-xs text-[var(--ds-text-muted)] mb-4">
                     記事に割り当てるカテゴリを管理します。スラッグはURLに使用されます。
                   </p>
                   <div class="space-y-2">
                     <template x-for="(cat, idx) in taxonomyData.categories" :key="cat.id">
-                      <div class="flex gap-3 items-center border border-[#ebeef0] rounded p-3">
+                      <div
+                        class="flex gap-3 items-center border border-[var(--ds-border-default)] rounded p-3"
+                      >
                         <div class="flex-1">
-                          <label class="text-xs text-[#7c8b9a]">名前</label>
+                          <label class="text-xs text-[var(--ds-text-muted)]">名前</label>
                           <input
                             type="text"
                             x-model="cat.label"
@@ -1431,7 +1471,7 @@
                           />
                         </div>
                         <div class="w-48">
-                          <label class="text-xs text-[#7c8b9a]">スラッグ</label>
+                          <label class="text-xs text-[var(--ds-text-muted)]">スラッグ</label>
                           <input
                             type="text"
                             x-model="cat.slug"
@@ -1441,7 +1481,7 @@
                         </div>
                         <button
                           @click="taxonomyData.categories.splice(idx,1)"
-                          class="text-[#dc2626] text-xs hover:underline px-2 pt-4"
+                          class="text-[var(--ds-danger-600)] text-xs hover:underline px-2 pt-4"
                         >
                           削除
                         </button>
@@ -1467,14 +1507,16 @@
                     <div class="flex-1"></div>
                     <button @click="saveTaxonomies()" class="gh-btn-green text-[13px]">保存</button>
                   </div>
-                  <p class="text-xs text-[#7c8b9a] mb-4">
+                  <p class="text-xs text-[var(--ds-text-muted)] mb-4">
                     記事に割り当てるタグを管理します。スラッグはURLに使用されます。
                   </p>
                   <div class="space-y-2">
                     <template x-for="(tag, idx) in taxonomyData.tags" :key="tag.id">
-                      <div class="flex gap-3 items-center border border-[#ebeef0] rounded p-3">
+                      <div
+                        class="flex gap-3 items-center border border-[var(--ds-border-default)] rounded p-3"
+                      >
                         <div class="flex-1">
-                          <label class="text-xs text-[#7c8b9a]">名前</label>
+                          <label class="text-xs text-[var(--ds-text-muted)]">名前</label>
                           <input
                             type="text"
                             x-model="tag.label"
@@ -1483,7 +1525,7 @@
                           />
                         </div>
                         <div class="w-48">
-                          <label class="text-xs text-[#7c8b9a]">スラッグ</label>
+                          <label class="text-xs text-[var(--ds-text-muted)]">スラッグ</label>
                           <input
                             type="text"
                             x-model="tag.slug"
@@ -1493,7 +1535,7 @@
                         </div>
                         <button
                           @click="taxonomyData.tags.splice(idx,1)"
-                          class="text-[#dc2626] text-xs hover:underline px-2 pt-4"
+                          class="text-[var(--ds-danger-600)] text-xs hover:underline px-2 pt-4"
                         >
                           削除
                         </button>
@@ -1515,24 +1557,26 @@
               <div class="flex h-full">
                 <!-- 左: グループ一覧 -->
                 <div
-                  class="w-56 shrink-0 border-r border-[#ebeef0] overflow-y-auto bg-[#f9fafb] flex flex-col"
+                  class="w-56 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)] flex flex-col"
                 >
                   <div class="p-3 flex-1">
-                    <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                    <h3
+                      class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-2"
+                    >
                       フィールドグループ
                     </h3>
                     <div class="space-y-0.5">
                       <template x-for="g in fieldGroups" :key="g.id">
                         <button
                           @click="openFieldGroup(g)"
-                          :class="currentFieldGroup?.id === g.id ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                          :class="currentFieldGroup?.id === g.id ? 'bg-[var(--ds-success-100)] text-[var(--ds-text-heading)] font-medium' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg-hover)]'"
                           class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
                           x-text="g.label"
                         ></button>
                       </template>
                     </div>
                   </div>
-                  <div class="p-3 border-t border-[#ebeef0]">
+                  <div class="p-3 border-t border-[var(--ds-border-default)]">
                     <button @click="createFieldGroup()" class="gh-btn-green text-xs w-full">
                       <i data-lucide="plus" class="w-3 h-3"></i>
                       新規グループ
@@ -1553,7 +1597,7 @@
                         <button
                           x-show="currentFieldGroup.id"
                           @click="deleteFieldGroup()"
-                          class="text-[#dc2626] text-xs hover:underline mr-2"
+                          class="text-[var(--ds-danger-600)] text-xs hover:underline mr-2"
                         >
                           削除
                         </button>
@@ -1589,10 +1633,12 @@
                           <h3 class="text-sm font-bold mb-2">フィールド</h3>
                           <div class="space-y-2">
                             <template x-for="(f, idx) in currentFieldGroup.fields" :key="idx">
-                              <div class="border border-[#ebeef0] rounded p-2 space-y-2">
+                              <div
+                                class="border border-[var(--ds-border-default)] rounded p-2 space-y-2"
+                              >
                                 <div class="flex gap-2 items-end">
                                   <div class="flex-1">
-                                    <label class="text-xs text-[#7c8b9a]">キー</label>
+                                    <label class="text-xs text-[var(--ds-text-muted)]">キー</label>
                                     <input
                                       type="text"
                                       x-model="f.key"
@@ -1600,7 +1646,9 @@
                                     />
                                   </div>
                                   <div class="flex-1">
-                                    <label class="text-xs text-[#7c8b9a]">ラベル</label>
+                                    <label class="text-xs text-[var(--ds-text-muted)]">
+                                      ラベル
+                                    </label>
                                     <input
                                       type="text"
                                       x-model="f.label"
@@ -1608,7 +1656,9 @@
                                     />
                                   </div>
                                   <div class="w-28">
-                                    <label class="text-xs text-[#7c8b9a]">タイプ</label>
+                                    <label class="text-xs text-[var(--ds-text-muted)]">
+                                      タイプ
+                                    </label>
                                     <select
                                       x-model="f.type"
                                       x-effect="$nextTick(() => { if ($el.value !== f.type) $el.value = f.type })"
@@ -1624,7 +1674,7 @@
                                   </div>
                                   <button
                                     @click="removeFieldFromGroup(idx)"
-                                    class="text-[#dc2626] text-xs pb-1"
+                                    class="text-[var(--ds-danger-600)] text-xs pb-1"
                                   >
                                     削除
                                   </button>
@@ -1635,26 +1685,30 @@
                                     <input
                                       type="checkbox"
                                       x-model="f.required"
-                                      class="accent-[#30cf43]"
+                                      class="accent-[var(--ds-primary-600)]"
                                     />
                                     必須
                                   </label>
                                   <button
                                     @click="f._expanded = !f._expanded"
                                     type="button"
-                                    class="text-xs text-[#7c8b9a] hover:text-[#15171a] ml-auto"
+                                    class="text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] ml-auto"
                                   >
                                     <span x-text="f._expanded ? '詳細を閉じる' : '詳細設定'"></span>
                                   </button>
                                 </div>
                                 <!-- 展開式詳細 -->
                                 <template x-if="f._expanded">
-                                  <div class="space-y-3 pt-2 border-t border-[#ebeef0]">
+                                  <div
+                                    class="space-y-3 pt-2 border-t border-[var(--ds-border-default)]"
+                                  >
                                     <template
                                       x-if="['select','multiselect','radio'].includes(f.type)"
                                     >
                                       <div>
-                                        <label class="text-xs text-[#7c8b9a] font-medium">
+                                        <label
+                                          class="text-xs text-[var(--ds-text-muted)] font-medium"
+                                        >
                                           選択肢
                                         </label>
                                         <div class="space-y-1 mt-1">
@@ -1673,7 +1727,7 @@
                                               <button
                                                 @click="f.options.splice(oi, 1)"
                                                 type="button"
-                                                class="text-[#dc2626] text-xs px-1"
+                                                class="text-[var(--ds-danger-600)] text-xs px-1"
                                               >
                                                 &times;
                                               </button>
@@ -1683,7 +1737,7 @@
                                         <button
                                           @click="f.options = [...(f.options||[]), '']"
                                           type="button"
-                                          class="text-xs text-[#30cf43] hover:underline mt-1"
+                                          class="text-xs text-[var(--ds-primary-600)] hover:underline mt-1"
                                         >
                                           + 選択肢追加
                                         </button>
@@ -1691,7 +1745,9 @@
                                     </template>
                                     <template x-if="f.type === 'repeater'">
                                       <div>
-                                        <label class="text-xs text-[#7c8b9a] font-medium">
+                                        <label
+                                          class="text-xs text-[var(--ds-text-muted)] font-medium"
+                                        >
                                           サブフィールド
                                         </label>
                                         <div class="space-y-1 mt-1">
@@ -1734,7 +1790,7 @@
                                               <button
                                                 @click="f.subFields.splice(si, 1)"
                                                 type="button"
-                                                class="text-[#dc2626] text-xs px-1"
+                                                class="text-[var(--ds-danger-600)] text-xs px-1"
                                               >
                                                 &times;
                                               </button>
@@ -1744,14 +1800,16 @@
                                         <button
                                           @click="f.subFields = [...(f.subFields||[]), {key:'', label:'', type:'text'}]"
                                           type="button"
-                                          class="text-xs text-[#30cf43] hover:underline mt-1"
+                                          class="text-xs text-[var(--ds-primary-600)] hover:underline mt-1"
                                         >
                                           + サブフィールド追加
                                         </button>
                                       </div>
                                     </template>
                                     <div>
-                                      <label class="text-xs text-[#7c8b9a] font-medium">
+                                      <label
+                                        class="text-xs text-[var(--ds-text-muted)] font-medium"
+                                      >
                                         条件表示 (showIf)
                                       </label>
                                       <div class="flex gap-2 mt-1">
@@ -1768,7 +1826,7 @@
                                           class="gh-input-light flex-1 text-xs"
                                         />
                                       </div>
-                                      <p class="text-[10px] text-[#7c8b9a] mt-0.5">
+                                      <p class="text-[10px] text-[var(--ds-text-muted)] mt-0.5">
                                         指定フィールドが指定値のときのみ表示
                                       </p>
                                     </div>
@@ -1784,21 +1842,21 @@
 
                         <!-- テンプレートコード -->
                         <template x-if="currentFieldGroup.id && currentFieldGroup.fields?.length">
-                          <div class="border-t border-[#ebeef0] pt-4">
+                          <div class="border-t border-[var(--ds-border-default)] pt-4">
                             <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
-                            <p class="text-xs text-[#7c8b9a] mb-3">
+                            <p class="text-xs text-[var(--ds-text-muted)] mb-3">
                               テンプレートファイルに貼り付けてフィールドを表示できます。
                             </p>
                             <div
-                              class="bg-[#f9fafb] border border-[#ebeef0] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
+                              class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
                               @click="navigator.clipboard.writeText($el.querySelector('pre').textContent); showToast('コピーしました')"
                             >
                               <pre
-                                class="font-mono text-xs text-[#15171a] select-all m-0 whitespace-pre"
+                                class="font-mono text-xs text-[var(--ds-text-heading)] select-all m-0 whitespace-pre"
                                 x-text="getFieldTemplateCode({...currentFieldGroup, slug: currentFieldGroup.id})"
                               ></pre>
                               <span
-                                class="absolute top-2 right-2 text-[#7c8b9a] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                                class="absolute top-2 right-2 text-[var(--ds-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                               >
                                 クリックでコピー
                               </span>
@@ -1810,7 +1868,9 @@
                   </template>
                   <template x-if="!currentFieldGroup">
                     <div class="flex-1 flex items-center justify-center h-full">
-                      <p class="text-sm text-[#7c8b9a]">フィールドグループを選択または新規作成</p>
+                      <p class="text-sm text-[var(--ds-text-muted)]">
+                        フィールドグループを選択または新規作成
+                      </p>
                     </div>
                   </template>
                 </div>
@@ -1821,9 +1881,13 @@
             <template x-if="view === 'templates'">
               <div class="flex h-full">
                 <!-- 左: ファイル一覧 -->
-                <div class="w-56 shrink-0 border-r border-[#ebeef0] overflow-y-auto bg-[#f9fafb]">
+                <div
+                  class="w-56 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
+                >
                   <div class="p-3">
-                    <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                    <h3
+                      class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-2"
+                    >
                       テンプレート
                     </h3>
                     <div class="space-y-0.5">
@@ -1833,7 +1897,7 @@
                       >
                         <button
                           @click="openTemplateFile(f.path)"
-                          :class="currentTemplateFile === f.path ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                          :class="currentTemplateFile === f.path ? 'bg-[var(--ds-success-100)] text-[var(--ds-text-heading)] font-medium' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg-hover)]'"
                           class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
                           x-text="f.name"
                         ></button>
@@ -1841,7 +1905,9 @@
                     </div>
                     <template x-if="templateFiles.some(f => f.isComponent)">
                       <div class="mt-3">
-                        <h3 class="text-xs font-bold text-[#7c8b9a] uppercase tracking-wider mb-2">
+                        <h3
+                          class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-2"
+                        >
                           コンポーネント
                         </h3>
                         <div class="space-y-0.5">
@@ -1851,7 +1917,7 @@
                           >
                             <button
                               @click="openTemplateFile(f.path)"
-                              :class="currentTemplateFile === f.path ? 'bg-[#e8f5e9] text-[#15171a] font-medium' : 'text-[#7c8b9a] hover:bg-[#f1f3f5]'"
+                              :class="currentTemplateFile === f.path ? 'bg-[var(--ds-success-100)] text-[var(--ds-text-heading)] font-medium' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg-hover)]'"
                               class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
                               x-text="f.name"
                             ></button>
@@ -1882,7 +1948,7 @@
                             <div
                               x-show="showSampleMenu"
                               @click.outside="showSampleMenu = false"
-                              class="absolute right-0 top-full mt-1 bg-white border border-[#ebeef0] rounded-md shadow-lg py-1 z-20 min-w-[160px]"
+                              class="absolute right-0 top-full mt-1 bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded-md shadow-lg py-1 z-20 min-w-[160px]"
                             >
                               <template x-for="type in contentTypes" :key="type.id">
                                 <button
@@ -1896,7 +1962,7 @@
                                     showSampleMenu = false;
                                     $nextTick(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = pos + sample.length });
                                   "
-                                  class="block w-full text-left px-3 py-1.5 text-xs hover:bg-[#f1f3f5]"
+                                  class="block w-full text-left px-3 py-1.5 text-xs hover:bg-[var(--ds-bg-hover)]"
                                   x-text="type.label"
                                 ></button>
                               </template>
@@ -1910,7 +1976,7 @@
                       <textarea
                         id="template-editor"
                         x-model="templateCode"
-                        class="flex-1 w-full p-4 font-mono text-sm leading-relaxed resize-none border-0 outline-none bg-[#fafafa] text-[#15171a]"
+                        class="flex-1 w-full p-4 font-mono text-sm leading-relaxed resize-none border-0 outline-none bg-[var(--ds-bg-muted)] text-[var(--ds-text-heading)]"
                         spellcheck="false"
                         @keydown.ctrl.s.prevent="saveTemplateFile()"
                         @keydown.meta.s.prevent="saveTemplateFile()"
@@ -1919,7 +1985,9 @@
                   </template>
                   <template x-if="!currentTemplateFile">
                     <div class="flex-1 flex items-center justify-center">
-                      <p class="text-sm text-[#7c8b9a]">左のファイル一覧からテンプレートを選択</p>
+                      <p class="text-sm text-[var(--ds-text-muted)]">
+                        左のファイル一覧からテンプレートを選択
+                      </p>
                     </div>
                   </template>
                 </div>
@@ -1958,14 +2026,14 @@
                     <div class="flex items-center gap-3">
                       <template x-if="faviconBlobUrl">
                         <div
-                          class="w-12 h-12 rounded-md border border-[#ebeef0] bg-white flex items-center justify-center overflow-hidden"
+                          class="w-12 h-12 rounded-md border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] flex items-center justify-center overflow-hidden"
                         >
                           <img :src="faviconBlobUrl" alt="favicon" class="max-w-full max-h-full" />
                         </div>
                       </template>
                       <template x-if="!faviconBlobUrl">
                         <div
-                          class="w-12 h-12 rounded-md border border-dashed border-[#ced4da] bg-[#f9fafb] flex items-center justify-center text-[#ced4da]"
+                          class="w-12 h-12 rounded-md border border-dashed border-[var(--ds-border-strong)] bg-[var(--ds-bg-muted)] flex items-center justify-center text-[var(--ds-text-placeholder)]"
                         >
                           <i data-lucide="image-plus" class="w-5 h-5"></i>
                         </div>
@@ -1975,9 +2043,9 @@
                           type="file"
                           accept=".ico,.png,.svg,.webp,image/x-icon,image/png,image/svg+xml,image/webp"
                           @change="handleFaviconUpload($event)"
-                          class="text-xs text-[#7c8b9a] block"
+                          class="text-xs text-[var(--ds-text-muted)] block"
                         />
-                        <p class="text-[11px] text-[#7c8b9a] mt-1">
+                        <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
                           ico / png / svg / webp 形式（推奨: 32×32 または 64×64 の png、もしくは
                           svg）
                         </p>
@@ -1985,7 +2053,7 @@
                       <template x-if="siteConfig.favicon">
                         <button
                           @click="removeFavicon()"
-                          class="text-[#dc2626] text-xs hover:underline whitespace-nowrap"
+                          class="text-[var(--ds-danger-600)] text-xs hover:underline whitespace-nowrap"
                         >
                           削除
                         </button>
@@ -1993,15 +2061,43 @@
                     </div>
                   </div>
 
-                  <div class="h-px bg-[#ebeef0] my-2"></div>
+                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
                   <h2 class="text-lg font-bold">デザイン</h2>
 
-                  <!-- カラーテーマ -->
+                  <!-- 管理画面テーマ（light/dark/system） -->
                   <div>
-                    <label class="gh-label">カラーテーマ</label>
+                    <label class="gh-label">管理画面テーマ</label>
+                    <div class="flex gap-2 flex-wrap">
+                      <template
+                        x-for="mode in [
+                          {id:'light',label:'ライト',icon:'sun'},
+                          {id:'dark',label:'ダーク',icon:'moon'},
+                          {id:'system',label:'システム連動',icon:'monitor'}
+                        ]"
+                        :key="mode.id"
+                      >
+                        <button
+                          @click="setThemeMode(mode.id)"
+                          class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all"
+                          :class="themeMode === mode.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] font-semibold' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)] hover:border-[var(--ds-border-strong)]'"
+                        >
+                          <i :data-lucide="mode.icon" class="w-4 h-4"></i>
+                          <span x-text="mode.label"></span>
+                        </button>
+                      </template>
+                    </div>
+                    <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
+                      公開サイトのテーマではなく管理画面の表示モードです
+                    </p>
+                  </div>
+
+                  <!-- カラーテーマ（公開サイト） -->
+                  <div>
+                    <label class="gh-label">カラーテーマ（公開サイト）</label>
                     <div class="flex gap-2 flex-wrap">
                       <template
                         x-for="t in [
+                        {id:'indigo',label:'インディゴ',color:'#271FE0'},
                         {id:'blue',label:'ブルー',color:'#2563eb'},
                         {id:'green',label:'グリーン',color:'#16a34a'},
                         {id:'navy',label:'ネイビー',color:'#1e3a5f'},
@@ -2013,7 +2109,7 @@
                         <button
                           @click="siteConfig.theme = {...(siteConfig.theme||{}), id: t.id, primary: t.color}"
                           class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all"
-                          :class="(siteConfig.theme?.id || 'blue') === t.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                          :class="(siteConfig.theme?.id || 'indigo') === t.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] font-semibold text-[var(--ds-primary-600)]' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)] hover:border-[var(--ds-border-strong)]'"
                         >
                           <span class="w-4 h-4 rounded-full" :style="'background:'+t.color"></span>
                           <span x-text="t.label"></span>
@@ -2037,7 +2133,7 @@
                         <button
                           @click="siteConfig.theme = {...(siteConfig.theme||{}), fontId: f.id}"
                           class="px-3 py-2 rounded-md border text-sm transition-all"
-                          :class="(siteConfig.theme?.fontId || 'system') === f.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                          :class="(siteConfig.theme?.fontId || 'system') === f.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-600)]/5 font-semibold' : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'"
                         >
                           <span x-text="f.label"></span>
                         </button>
@@ -2045,7 +2141,7 @@
                     </div>
                   </div>
 
-                  <div class="h-px bg-[#ebeef0] my-2"></div>
+                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
                   <h2 class="text-lg font-bold">外部サービス連携</h2>
 
                   <!-- フォームバックエンド -->
@@ -2059,7 +2155,7 @@
                         <button
                           @click="siteConfig.services = {...(siteConfig.services||{}), formBackend: fb.id}"
                           class="px-3 py-1.5 rounded-md border text-xs transition-all"
-                          :class="(siteConfig.services?.formBackend || '') === fb.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                          :class="(siteConfig.services?.formBackend || '') === fb.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-600)]/5 font-semibold' : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'"
                           x-text="fb.label"
                         ></button>
                       </template>
@@ -2083,7 +2179,7 @@
                         <button
                           @click="siteConfig.services = {...(siteConfig.services||{}), translator: tr.id}"
                           class="px-3 py-1.5 rounded-md border text-xs transition-all"
-                          :class="(siteConfig.services?.translator || 'none') === tr.id ? 'border-[#30cf43] bg-[#30cf43]/5 font-semibold' : 'border-[#ebeef0] hover:border-[#ced4da]'"
+                          :class="(siteConfig.services?.translator || 'none') === tr.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-600)]/5 font-semibold' : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'"
                           x-text="tr.label"
                         ></button>
                       </template>
@@ -2114,15 +2210,15 @@
           x-transition:leave="transition ease-in duration-150"
           x-transition:leave-start="translate-x-0"
           x-transition:leave-end="translate-x-full"
-          class="w-80 bg-white text-[#15171a] border-l border-[#ebeef0] flex flex-col overflow-hidden"
+          class="w-80 bg-[var(--ds-bg-surface)] text-[var(--ds-text-heading)] border-l border-[var(--ds-border-default)] flex flex-col overflow-hidden"
         >
           <div
-            class="flex items-center justify-between px-4 h-[52px] border-b border-[#ebeef0] shrink-0 relative z-10"
+            class="flex items-center justify-between px-4 h-[52px] border-b border-[var(--ds-border-default)] shrink-0 relative z-10"
           >
             <span class="text-sm font-semibold">履歴</span>
             <button
               @click.stop="closePanel()"
-              class="w-8 h-8 flex items-center justify-center text-[#7c8b9a] hover:text-[#15171a] rounded hover:bg-[#f1f3f5]"
+              class="w-8 h-8 flex items-center justify-center text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] rounded hover:bg-[var(--ds-bg-hover)]"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -2138,32 +2234,35 @@
             <template x-for="(rev, idx) in revisions" :key="rev.filename">
               <button
                 @click="selectRevision(rev)"
-                :class="selectedRevision?.filename === rev.filename ? 'bg-[#f1f3f5]' : 'hover:bg-[#f9fafb]'"
-                class="w-full text-left px-4 py-3 text-sm border-b border-[#ebeef0]"
+                :class="selectedRevision?.filename === rev.filename ? 'bg-[var(--ds-bg-hover)]' : 'hover:bg-[var(--ds-bg-muted)]'"
+                class="w-full text-left px-4 py-3 text-sm border-b border-[var(--ds-border-default)]"
               >
                 <div class="flex items-center justify-between">
                   <span class="text-xs font-medium" x-text="rev.timestamp.replace('_', ' ')"></span>
                   <template x-if="idx === 0">
-                    <span class="gh-badge bg-[#30cf43]/10 text-[#30cf43]">最新</span>
+                    <span
+                      class="gh-badge bg-[var(--ds-primary-600)]/10 text-[var(--ds-primary-600)]"
+                    >
+                      最新
+                    </span>
                   </template>
                 </div>
-                <p class="text-[#7c8b9a] text-xs mt-0.5" x-text="rev.author"></p>
+                <p class="text-[var(--ds-text-muted)] text-xs mt-0.5" x-text="rev.author"></p>
               </button>
             </template>
             <template x-if="revisions.length === 0">
-              <div class="px-4 py-10 text-center text-xs text-[#ced4da]">履歴がありません</div>
+              <div class="px-4 py-10 text-center text-xs text-[var(--ds-text-placeholder)]">
+                履歴がありません
+              </div>
             </template>
             <template x-if="revisionDiff">
-              <div class="p-4 border-t border-[#ebeef0]">
-                <p class="text-xs font-semibold text-[#7c8b9a] mb-2">変更内容</p>
+              <div class="p-4 border-t border-[var(--ds-border-default)]">
+                <p class="text-xs font-semibold text-[var(--ds-text-muted)] mb-2">変更内容</p>
                 <div
-                  class="text-xs bg-[#f9fafb] rounded p-2 revision-diff overflow-auto max-h-48"
+                  class="text-xs bg-[var(--ds-bg-muted)] rounded p-2 revision-diff overflow-auto max-h-48"
                   x-html="revisionDiff"
                 ></div>
-                <button
-                  @click="restoreRevision()"
-                  class="mt-3 w-full gh-btn-outline text-xs text-[#f50057] border-[#f50057]/30 hover:bg-[#f50057]/5"
-                >
+                <button @click="restoreRevision()" class="mt-3 w-full ds-btn-danger text-xs">
                   この版に戻す
                 </button>
               </div>
@@ -2180,15 +2279,15 @@
           x-transition:leave="transition ease-in duration-150"
           x-transition:leave-start="translate-x-0"
           x-transition:leave-end="translate-x-full"
-          class="w-[480px] bg-white border-l border-[#ebeef0] flex flex-col overflow-hidden"
+          class="w-[480px] bg-[var(--ds-bg-surface)] border-l border-[var(--ds-border-default)] flex flex-col overflow-hidden"
         >
           <div
-            class="flex items-center justify-between px-4 h-[52px] border-b border-[#ebeef0] shrink-0 relative z-10"
+            class="flex items-center justify-between px-4 h-[52px] border-b border-[var(--ds-border-default)] shrink-0 relative z-10"
           >
-            <span class="text-sm font-semibold text-[#15171a]">プレビュー</span>
+            <span class="text-sm font-semibold text-[var(--ds-text-heading)]">プレビュー</span>
             <button
               @click.stop="closePanel()"
-              class="w-8 h-8 flex items-center justify-center text-[#7c8b9a] hover:text-[#15171a] rounded hover:bg-[#f1f3f5]"
+              class="w-8 h-8 flex items-center justify-center text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] rounded hover:bg-[var(--ds-bg-hover)]"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -2214,10 +2313,12 @@
     <!-- ページ作成モーダル -->
     <div
       x-show="showPageCreator"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-[var(--ds-bg-overlay)] flex items-center justify-center z-50"
       @click.self="showPageCreator=false"
     >
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-[#15171a]">
+      <div
+        class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-sm p-6 text-[var(--ds-text-heading)]"
+      >
         <h2 class="text-lg font-bold mb-4">新規ページ</h2>
         <div class="space-y-3">
           <div>
@@ -2251,11 +2352,11 @@
     <!-- ページ設定モーダル -->
     <template x-if="showPagesConfigEditor && editingPagesConfig">
       <div
-        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        class="fixed inset-0 bg-[var(--ds-bg-overlay)] flex items-center justify-center z-50"
         @click.self="showPagesConfigEditor=false; editingPagesConfig=null"
       >
         <div
-          class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+          class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 text-[var(--ds-text-heading)]"
         >
           <h2 class="text-lg font-bold mb-4">ページ設定</h2>
           <div class="space-y-4">
@@ -2264,21 +2365,21 @@
                 <input
                   type="checkbox"
                   x-model="editingPagesConfig.hasBody"
-                  class="accent-[#30cf43]"
+                  class="accent-[var(--ds-primary-600)]"
                 />
                 本文エディタを表示
               </label>
-              <p class="text-[10px] text-[#7c8b9a] mt-0.5 ml-6">
+              <p class="text-[10px] text-[var(--ds-text-muted)] mt-0.5 ml-6">
                 すべてのページでEditor.jsの本文エディタを有効にします
               </p>
             </div>
-            <div class="h-px bg-[#ebeef0] my-2"></div>
+            <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
             <h3 class="text-sm font-bold mb-2">フィールドグループ</h3>
             <template x-if="fieldGroups.length">
               <div class="space-y-1">
                 <template x-for="g in fieldGroups" :key="g.id">
                   <label
-                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#f1f3f5] cursor-pointer text-xs"
+                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--ds-bg-hover)] cursor-pointer text-xs"
                   >
                     <input
                       type="checkbox"
@@ -2292,11 +2393,11 @@
                           editingPagesConfig.fieldGroupIds = editingPagesConfig.fieldGroupIds.filter(id => id !== g.id);
                         }
                       "
-                      class="accent-[#30cf43]"
+                      class="accent-[var(--ds-primary-600)]"
                     />
                     <span x-text="g.label"></span>
                     <span
-                      class="text-[#7c8b9a] ml-auto"
+                      class="text-[var(--ds-text-muted)] ml-auto"
                       x-text="g.fields.length + ' フィールド'"
                     ></span>
                   </label>
@@ -2304,7 +2405,7 @@
               </div>
             </template>
             <template x-if="!fieldGroups.length">
-              <p class="text-xs text-[#7c8b9a]">
+              <p class="text-xs text-[var(--ds-text-muted)]">
                 フィールドグループがありません。サイドバーの「フィールド」から作成してください。
               </p>
             </template>
@@ -2325,11 +2426,11 @@
     <!-- コンテンツタイプ編集モーダル -->
     <template x-if="showTypeEditor && editingType">
       <div
-        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        class="fixed inset-0 bg-[var(--ds-bg-overlay)] flex items-center justify-center z-50"
         @click.self="showTypeEditor=false; editingType=null"
       >
         <div
-          class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+          class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 text-[var(--ds-text-heading)]"
         >
           <h2
             class="text-lg font-bold mb-4"
@@ -2355,37 +2456,53 @@
             </div>
             <div class="flex flex-wrap gap-4 mt-1">
               <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                <input type="checkbox" x-model="editingType.hasBody" class="accent-[#30cf43]" />
+                <input
+                  type="checkbox"
+                  x-model="editingType.hasBody"
+                  class="accent-[var(--ds-primary-600)]"
+                />
                 本文
               </label>
               <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                <input type="checkbox" x-model="editingType.hasDate" class="accent-[#30cf43]" />
+                <input
+                  type="checkbox"
+                  x-model="editingType.hasDate"
+                  class="accent-[var(--ds-primary-600)]"
+                />
                 投稿日
               </label>
               <label class="flex items-center gap-1.5 text-xs cursor-pointer">
                 <input
                   type="checkbox"
                   x-model="editingType.hasThumbnail"
-                  class="accent-[#30cf43]"
+                  class="accent-[var(--ds-primary-600)]"
                 />
                 サムネイル
               </label>
               <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                <input type="checkbox" x-model="editingType.hasCategory" class="accent-[#30cf43]" />
+                <input
+                  type="checkbox"
+                  x-model="editingType.hasCategory"
+                  class="accent-[var(--ds-primary-600)]"
+                />
                 カテゴリ
               </label>
               <label class="flex items-center gap-1.5 text-xs cursor-pointer">
-                <input type="checkbox" x-model="editingType.hasTag" class="accent-[#30cf43]" />
+                <input
+                  type="checkbox"
+                  x-model="editingType.hasTag"
+                  class="accent-[var(--ds-primary-600)]"
+                />
                 タグ
               </label>
             </div>
-            <div class="h-px bg-[#ebeef0] my-2"></div>
+            <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
             <h3 class="text-sm font-bold mb-2">フィールドグループ</h3>
             <template x-if="fieldGroups.length">
               <div class="space-y-1">
                 <template x-for="g in fieldGroups" :key="g.id">
                   <label
-                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#f1f3f5] cursor-pointer text-xs"
+                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--ds-bg-hover)] cursor-pointer text-xs"
                   >
                     <input
                       type="checkbox"
@@ -2399,11 +2516,11 @@
                           editingType.fieldGroupIds = editingType.fieldGroupIds.filter(id => id !== g.id);
                         }
                       "
-                      class="accent-[#30cf43]"
+                      class="accent-[var(--ds-primary-600)]"
                     />
                     <span x-text="g.label"></span>
                     <span
-                      class="text-[#7c8b9a] ml-auto"
+                      class="text-[var(--ds-text-muted)] ml-auto"
                       x-text="g.fields.length + ' フィールド'"
                     ></span>
                   </label>
@@ -2411,7 +2528,7 @@
               </div>
             </template>
             <template x-if="!fieldGroups.length">
-              <p class="text-xs text-[#7c8b9a]">
+              <p class="text-xs text-[var(--ds-text-muted)]">
                 フィールドグループがありません。サイドバーの「フィールド」から作成してください。
               </p>
             </template>
@@ -2421,7 +2538,7 @@
             <button
               x-show="editingType?.id"
               @click="deleteType()"
-              class="text-[#dc2626] text-xs hover:underline"
+              class="text-[var(--ds-danger-600)] text-xs hover:underline"
             >
               削除
             </button>
@@ -2444,11 +2561,11 @@
     <!-- 言語設定モーダル -->
     <div
       x-show="showLangEditor"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-[var(--ds-bg-overlay)] flex items-center justify-center z-50"
       @click.self="showLangEditor=false"
     >
       <div
-        class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6 text-[#15171a]"
+        class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6 text-[var(--ds-text-heading)]"
       >
         <h2 class="text-lg font-bold mb-4">言語設定</h2>
         <div class="mb-3">
@@ -2482,7 +2599,9 @@
                 class="gh-input-light w-12 text-xs text-center"
                 placeholder="🇯🇵"
               />
-              <button @click="removeLangLocale(idx)" class="text-[#dc2626] text-xs">削除</button>
+              <button @click="removeLangLocale(idx)" class="text-[var(--ds-danger-600)] text-xs">
+                削除
+              </button>
             </div>
           </template>
           <button @click="addLangLocale()" class="gh-btn-outline text-xs">+ 言語追加</button>
@@ -2495,22 +2614,17 @@
     </div>
 
     <!-- トースト -->
-    <div
-      x-show="toast"
-      x-transition.opacity
-      class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#15171a] text-white px-4 py-2.5 rounded-lg shadow-xl text-sm z-50"
-      x-text="toast"
-    ></div>
+    <div x-show="toast" x-transition.opacity class="ds-toast" x-text="toast"></div>
 
     <!-- カスタムモーダル（confirm/prompt代替） -->
-    <div
-      x-show="modalVisible"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]"
-      @keydown.escape.window="modalCancel()"
-    >
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-[#15171a]" @click.stop>
-        <h3 class="text-base font-bold mb-3" x-text="modalTitle"></h3>
-        <p x-show="modalMessage" class="text-sm text-[#7c8b9a] mb-4" x-text="modalMessage"></p>
+    <div x-show="modalVisible" class="ds-modal-overlay" @keydown.escape.window="modalCancel()">
+      <div class="ds-modal p-6" @click.stop>
+        <h3 class="text-base font-bold mb-3 text-[var(--ds-text-heading)]" x-text="modalTitle"></h3>
+        <p
+          x-show="modalMessage"
+          class="text-sm text-[var(--ds-text-muted)] mb-4"
+          x-text="modalMessage"
+        ></p>
         <input
           x-show="modalShowInput"
           type="text"
@@ -2527,15 +2641,12 @@
     </div>
 
     <!-- ローディング -->
-    <div
-      x-show="exporting"
-      class="fixed inset-0 bg-[#15171a]/50 flex items-center justify-center z-50"
-    >
-      <div class="bg-white rounded-lg p-8 text-center">
+    <div x-show="exporting" class="ds-modal-overlay">
+      <div class="ds-modal p-8 text-center">
         <div
-          class="animate-spin w-6 h-6 border-2 border-[#30cf43] border-t-transparent rounded-full mx-auto mb-3"
+          class="animate-spin w-6 h-6 border-2 border-[var(--ds-primary-600)] border-t-transparent rounded-full mx-auto mb-3"
         ></div>
-        <p class="text-sm text-[#7c8b9a]">公開準備中...</p>
+        <p class="text-sm text-[var(--ds-text-muted)]">公開準備中...</p>
       </div>
     </div>
 

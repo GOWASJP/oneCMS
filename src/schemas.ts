@@ -6,6 +6,7 @@ export const SiteConfigSchema = z.object({
   name: z.string(),
   url: z.string(),
   description: z.string(),
+  favicon: z.string().optional(),
   theme: z
     .object({
       id: z.string().optional(),
@@ -61,7 +62,7 @@ export const ContentMetaSchema = z.object({
 
 // ----- コンテンツデータ -----
 
-export const ContentStatusSchema = z.enum(['draft', 'published', 'preview', 'archived'])
+export const ContentStatusSchema = z.enum(['draft', 'published', 'archived'])
 
 export const ContentDataSchema = z
   .object({

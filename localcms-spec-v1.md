@@ -256,7 +256,7 @@ my-site/
 - `body`: Editor.js JSONから変換されたHTML（書き出し用）
 - `_editorJson`: Editor.jsのブロックデータ（編集用・次回読み込み時に使用）
 
-**コンテンツのステータス**: `draft` / `preview` / `published` / `archived`
+**コンテンツのステータス**: `draft` / `published` / `archived`
 
 ---
 

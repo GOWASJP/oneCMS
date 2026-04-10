@@ -284,6 +284,17 @@
                         履歴
                       </button>
                       <div class="flex-1"></div>
+                      <span
+                        class="gh-save-status"
+                        x-show="isDirty || autoSaving"
+                        x-text="autoSaving ? '保存中…' : '未保存'"
+                      ></span>
+                      <span
+                        class="gh-save-status gh-save-status-ok"
+                        x-show="!isDirty && !autoSaving && lastAutoSavedAt"
+                      >
+                        保存済み
+                      </span>
                       <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
                     </div>
 
@@ -389,8 +400,9 @@
                       <label class="gh-label">言語</label>
                       <div class="flex items-center gap-1.5 flex-wrap">
                         <template x-for="ts in translationStatuses" :key="ts.code">
-                          <span
-                            class="gh-lang-badge cursor-pointer"
+                          <button
+                            type="button"
+                            class="gh-lang-badge"
                             :class="{
                               'gh-lang-current': ts.code === currentLang,
                               'gh-lang-translated': ts.status === 'translated' && ts.code !== currentLang,
@@ -398,8 +410,23 @@
                               'gh-lang-missing': ts.status === 'missing' && ts.code !== currentLang,
                             }"
                             @click="switchLang(ts.code)"
-                            x-text="ts.flag + ' ' + ts.code.toUpperCase()"
-                          ></span>
+                            :title="ts.code === currentLang ? '編集中' : ts.status === 'translated' ? '翻訳済み' : ts.status === 'draft' ? '下書き' : '未翻訳'"
+                          >
+                            <span x-text="ts.flag"></span>
+                            <span x-text="ts.code.toUpperCase()"></span>
+                            <template x-if="ts.code === currentLang">
+                              <i data-lucide="pencil" class="w-3 h-3"></i>
+                            </template>
+                            <template x-if="ts.code !== currentLang && ts.status === 'translated'">
+                              <i data-lucide="check" class="w-3 h-3"></i>
+                            </template>
+                            <template x-if="ts.code !== currentLang && ts.status === 'draft'">
+                              <i data-lucide="clock" class="w-3 h-3"></i>
+                            </template>
+                            <template x-if="ts.code !== currentLang && ts.status === 'missing'">
+                              <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                            </template>
+                          </button>
                         </template>
                       </div>
                       <template x-if="currentLang !== languages.default">
@@ -567,6 +594,17 @@
                         履歴
                       </button>
                       <div class="flex-1"></div>
+                      <span
+                        class="gh-save-status"
+                        x-show="isDirty || autoSaving"
+                        x-text="autoSaving ? '保存中…' : '未保存'"
+                      ></span>
+                      <span
+                        class="gh-save-status gh-save-status-ok"
+                        x-show="!isDirty && !autoSaving && lastAutoSavedAt"
+                      >
+                        保存済み
+                      </span>
                       <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
                     </div>
                     <!-- タイトル（フィールドから分離） -->
@@ -1912,6 +1950,47 @@
                       rows="3"
                       class="gh-input-light w-full"
                     ></textarea>
+                  </div>
+
+                  <!-- ファビコン -->
+                  <div>
+                    <label class="gh-label">ファビコン</label>
+                    <div class="flex items-center gap-3">
+                      <template x-if="faviconBlobUrl">
+                        <div
+                          class="w-12 h-12 rounded-md border border-[#ebeef0] bg-white flex items-center justify-center overflow-hidden"
+                        >
+                          <img :src="faviconBlobUrl" alt="favicon" class="max-w-full max-h-full" />
+                        </div>
+                      </template>
+                      <template x-if="!faviconBlobUrl">
+                        <div
+                          class="w-12 h-12 rounded-md border border-dashed border-[#ced4da] bg-[#f9fafb] flex items-center justify-center text-[#ced4da]"
+                        >
+                          <i data-lucide="image-plus" class="w-5 h-5"></i>
+                        </div>
+                      </template>
+                      <div class="flex-1">
+                        <input
+                          type="file"
+                          accept=".ico,.png,.svg,.webp,image/x-icon,image/png,image/svg+xml,image/webp"
+                          @change="handleFaviconUpload($event)"
+                          class="text-xs text-[#7c8b9a] block"
+                        />
+                        <p class="text-[11px] text-[#7c8b9a] mt-1">
+                          ico / png / svg / webp 形式（推奨: 32×32 または 64×64 の png、もしくは
+                          svg）
+                        </p>
+                      </div>
+                      <template x-if="siteConfig.favicon">
+                        <button
+                          @click="removeFavicon()"
+                          class="text-[#dc2626] text-xs hover:underline whitespace-nowrap"
+                        >
+                          削除
+                        </button>
+                      </template>
+                    </div>
                   </div>
 
                   <div class="h-px bg-[#ebeef0] my-2"></div>

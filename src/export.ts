@@ -4,6 +4,30 @@ import type { SiteConfig, Languages, ContentType, ExportFile } from './types.ts'
 
 type TemplateFunction = (context: Record<string, unknown>) => string
 
+/** 404ページのデフォルト文言（言語コードをキーに持つ、無ければ ja にフォールバック） */
+const notFoundMessages: Record<string, { title: string; body: string; home: string }> = {
+  ja: {
+    title: 'ページが見つかりません',
+    body: 'お探しのページは存在しないか、移動した可能性があります。',
+    home: 'トップへ戻る',
+  },
+  en: {
+    title: 'Page Not Found',
+    body: 'The page you are looking for does not exist or has been moved.',
+    home: 'Back to Home',
+  },
+  'zh-CN': {
+    title: '页面未找到',
+    body: '您查找的页面不存在或已被移动。',
+    home: '返回首页',
+  },
+  ko: {
+    title: '페이지를 찾을 수 없습니다',
+    body: '찾으시는 페이지가 존재하지 않거나 이동되었습니다.',
+    home: '홈으로 돌아가기',
+  },
+}
+
 /**
  * 静的HTML書き出しエンジン
  */
@@ -101,6 +125,22 @@ export class Exporter {
       )
     })
 
+    // ファビコン <link> タグ
+    hbs.registerHelper('faviconTag', function (site: Record<string, unknown>) {
+      const favicon = site?.favicon as string | undefined
+      if (!favicon) return ''
+      const ext = favicon.split('.').pop()?.toLowerCase() || ''
+      const typeMap: Record<string, string> = {
+        ico: 'image/x-icon',
+        png: 'image/png',
+        svg: 'image/svg+xml',
+        webp: 'image/webp',
+      }
+      const type = typeMap[ext] || ''
+      const typeAttr = type ? ` type="${type}"` : ''
+      return new Handlebars.SafeString(`<link rel="icon"${typeAttr} href="${favicon}">`)
+    })
+
     // テーマCSS変数
     hbs.registerHelper('themeStyles', function (site: Record<string, unknown>) {
       const theme = (site as any)?.theme || {}
@@ -195,6 +235,7 @@ export class Exporter {
         [
           '{{themeStyles site}}',
           '{{autoDescription page}}',
+          '{{faviconTag site}}',
           '<meta property="og:title" content="{{page.title}}">',
           '<meta property="og:type" content="website">',
           '{{#if page.image}}<meta property="og:image" content="{{page.image}}">{{/if}}',
@@ -265,10 +306,10 @@ export class Exporter {
       const lang = locale.code
       const prefix = lang === defaultLang ? '' : `${lang}/`
 
-      // 固定ページ書き出し
+      // 固定ページ書き出し（published または status 未指定のみ）
       const langPages = await this.fs.readPages(lang)
       for (const page of langPages) {
-        if (page.status && page.status !== 'published' && page.status !== 'archived') continue
+        if (page.status && page.status !== 'published') continue
 
         const breadcrumb = [{ label: siteConfig.name || 'Home', url: '/' }, { label: page.title }]
 
@@ -412,6 +453,41 @@ export class Exporter {
         path: 'sitemap.xml',
         content: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapEntries.join('\n')}\n</urlset>`,
       })
+    }
+
+    // 404ページ書き出し（各言語・sitemap の後に追加して sitemap から除外）
+    for (const locale of locales) {
+      const lang = locale.code
+      const prefix = lang === defaultLang ? '' : `${lang}/`
+      const messages = notFoundMessages[lang] || notFoundMessages.ja
+      const homeHref = lang === defaultLang ? '/' : `/${lang}/`
+      const notFoundPage = {
+        id: '404',
+        title: messages.title,
+        body: `<p>${messages.body}</p><p><a href="${homeHref}">${messages.home}</a></p>`,
+        status: 'published',
+      }
+      const ctx = {
+        page: notFoundPage,
+        pageType: 'page' as const,
+        site,
+        lang,
+        breadcrumb: [
+          { label: siteConfig.name || 'Home', url: homeHref },
+          { label: messages.title },
+        ],
+        locales,
+        defaultLang,
+        pagePath: '404.html',
+        notFound: true,
+      }
+      const pageHtml = pageTemplate
+        ? pageTemplate(ctx)
+        : `<h1>${messages.title}</h1>${notFoundPage.body}`
+      const fullHtml = baseTemplate
+        ? baseTemplate({ ...ctx, content: new Handlebars.SafeString(pageHtml) })
+        : wrapHtml(messages.title, siteConfig, lang, pageHtml)
+      files.push({ path: `${prefix}404.html`, content: fullHtml })
     }
 
     // robots.txt

@@ -231,12 +231,18 @@ label[for],
 .gh-lang-badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
   border: 1.5px solid transparent;
   transition: all 0.15s;
+  cursor: pointer;
+  background: transparent;
+}
+.gh-lang-badge .w-3 {
+  flex-shrink: 0;
 }
 .gh-lang-current {
   background: #30cf43;
@@ -246,20 +252,39 @@ label[for],
 .gh-lang-translated {
   background: #d4edda;
   color: #1e6b31;
-  border-color: #c3e6cb;
+  border-color: #1e6b31;
 }
 .gh-lang-draft {
   background: #fff3cd;
   color: #856404;
-  border-color: #ffeeba;
+  border-color: #e0a800;
 }
 .gh-lang-missing {
   background: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
+  color: #b02a37;
+  border-color: #dc3545;
 }
 .gh-lang-badge:hover {
   opacity: 0.85;
+}
+
+/* --- Save status indicator --- */
+.gh-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #e0a800;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+}
+.gh-save-status.gh-save-status-ok {
+  color: #1e6b31;
+  background: #d4edda;
+  border-color: #c3e6cb;
 }
 
 /* --- Editor sticky header --- */

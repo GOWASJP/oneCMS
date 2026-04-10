@@ -16,6 +16,7 @@ import {
   APP_NAME,
   STORAGE_AUTHOR_KEY,
   TOAST_DURATION,
+  AUTOSAVE_DEBOUNCE_MS,
   PATH_SITE_CONFIG,
   PATH_LANGUAGES,
   PATH_MENUS,
@@ -79,12 +80,27 @@ interface CmsComponent {
   previewHtml: string
   showPreviewPanel: boolean
 
+  // 自動保存・離脱警告
+  isDirty: boolean
+  suppressDirty: boolean
+  autoSaving: boolean
+  autoSaveTimer: number | null
+  lastAutoSavedAt: number | null
+
+  // ファビコンプレビュー用（管理画面内で表示するための Blob URL）
+  faviconBlobUrl: string
+  markDirty(): void
+  scheduleAutoSave(): void
+  autoSave(): Promise<void>
+  resetDirty(): void
+
   fs: FileSystem | null
   exporter: Exporter | null
   diffEngine: DiffEngine | null
   revisionMgr: RevisionManager | null
 
   $nextTick(fn: () => void): void
+  $watch(expression: string, callback: (value: unknown) => void): void
 
   init(): Promise<void>
   restoreFromHash(): Promise<void>
@@ -115,7 +131,9 @@ interface CmsComponent {
   getEditorHtml(): Promise<string>
   handleImageUpload(event: Event, fieldKey: string): Promise<void>
   handleFileUpload(event: Event, fieldKey: string): Promise<void>
-  savePage(): Promise<void>
+  handleFaviconUpload(event: Event): Promise<void>
+  removeFavicon(): Promise<void>
+  savePage(opts?: { silent?: boolean }): Promise<void>
   saveSiteConfig(): Promise<void>
   showRevisions(): Promise<void>
   selectRevision(rev: RevisionEntry): Promise<void>
@@ -295,17 +313,43 @@ Alpine.data('cms', () => {
     previewHtml: '',
     showPreviewPanel: false,
 
+    // 自動保存・離脱警告
+    isDirty: false,
+    suppressDirty: false,
+    autoSaving: false,
+    autoSaveTimer: null,
+    lastAutoSavedAt: null,
+
+    // ファビコンプレビュー用 Blob URL
+    faviconBlobUrl: '',
+
     // FS / エンジン
     fs: null,
     exporter: null,
     diffEngine: null,
     revisionMgr: null,
 
-    // $nextTick placeholder (Alpine provides this at runtime)
+    // Alpine runtime placeholders
     $nextTick(_fn: () => void) {},
+    $watch(_expression: string, _callback: (value: unknown) => void) {},
 
     /** Alpine init — ページ読み込み時に前回のフォルダを自動復元 */
     async init() {
+      // 離脱警告: 未保存変更がある場合は確認ダイアログを出す
+      window.addEventListener('beforeunload', (e: BeforeUnloadEvent) => {
+        if (this.isDirty) {
+          e.preventDefault()
+          e.returnValue = ''
+        }
+      })
+
+      // editData の変更を監視して dirty フラグを立てる
+      this.$watch('editData', () => {
+        if (this.suppressDirty) return
+        if (this.view !== 'page-edit' && this.view !== 'content-edit') return
+        this.markDirty()
+      })
+
       if (!this.authorName) return
       const handle = await restoreFolderHandle()
       if (!handle) return
@@ -322,6 +366,50 @@ Alpine.data('cms', () => {
       this.revisionMgr = new RevisionManager(this.fs)
       await this.loadSiteData()
       await this.restoreFromHash()
+    },
+
+    /** 未保存変更をマーク・自動保存タイマーを起動 */
+    markDirty() {
+      this.isDirty = true
+      this.scheduleAutoSave()
+    },
+
+    /** dirty 状態をクリア */
+    resetDirty() {
+      this.isDirty = false
+      if (this.autoSaveTimer !== null) {
+        clearTimeout(this.autoSaveTimer)
+        this.autoSaveTimer = null
+      }
+    },
+
+    /** 自動保存をデバウンス予約 */
+    scheduleAutoSave() {
+      if (this.autoSaveTimer !== null) {
+        clearTimeout(this.autoSaveTimer)
+      }
+      this.autoSaveTimer = window.setTimeout(() => {
+        this.autoSaveTimer = null
+        void this.autoSave()
+      }, AUTOSAVE_DEBOUNCE_MS)
+    },
+
+    /** 自動保存本体（タイトル未入力・書き出し中・編集画面以外ではスキップ） */
+    async autoSave() {
+      if (this.autoSaving || this.exporting) return
+      if (this.view !== 'page-edit' && this.view !== 'content-edit') return
+      if (!this.editData.title?.trim()) return
+      const currentPageId = this.currentPage?.id || this.editData.id
+      if (!currentPageId) return
+      this.autoSaving = true
+      try {
+        await this.savePage({ silent: true })
+        this.lastAutoSavedAt = Date.now()
+      } catch (e) {
+        console.error('自動保存エラー:', e)
+      } finally {
+        this.autoSaving = false
+      }
     },
 
     /** URLハッシュを現在のビュー状態で更新 */
@@ -497,6 +585,9 @@ Alpine.data('cms', () => {
         services: {},
         theme: {},
       }
+      // 管理画面のブラウザタブと設定プレビュー用にファビコン Blob URL を生成
+      this.faviconBlobUrl = await loadFaviconBlobUrl(this.fs, this.siteConfig.favicon)
+      applyFaviconLink(this.faviconBlobUrl)
       this.languages = (await this.fs.readJson<Languages>(PATH_LANGUAGES)) || this.languages
       this.currentLang = this.languages.default || 'ja'
       this.contentTypes = await this.fs.readContentTypes()
@@ -614,6 +705,7 @@ Alpine.data('cms', () => {
           author: this.authorName,
         },
       }
+      this.suppressDirty = true
       this.currentPage = page
       this.currentType = null
       this.currentFields = this.resolveFields(this.pagesConfig?.fieldGroupIds, [])
@@ -625,6 +717,10 @@ Alpine.data('cms', () => {
         this.initEditor('')
       }
       this.updateHash()
+      this.$nextTick(() => {
+        this.resetDirty()
+        this.suppressDirty = false
+      })
     },
 
     async loadPageList() {
@@ -652,6 +748,7 @@ Alpine.data('cms', () => {
     },
 
     async openPage(page: ContentData) {
+      this.suppressDirty = true
       this.currentPage = page
       this.currentType = null
       this.currentFields = this.resolveFields(this.pagesConfig?.fieldGroupIds, [])
@@ -664,6 +761,10 @@ Alpine.data('cms', () => {
       }
       this.updateHash()
       this.refreshTranslationStatus()
+      this.$nextTick(() => {
+        this.resetDirty()
+        this.suppressDirty = false
+      })
     },
 
     // --- コンテンツタイプ ---
@@ -680,6 +781,7 @@ Alpine.data('cms', () => {
     },
 
     async openContent(item: ContentData) {
+      this.suppressDirty = true
       this.currentPage = item
       this.currentFields = this.resolveFields(
         this.currentType?.fieldGroupIds,
@@ -697,6 +799,8 @@ Alpine.data('cms', () => {
         if (hasBody) {
           this.initEditor((item as any)._editorJson || item.body || '')
         }
+        this.resetDirty()
+        this.suppressDirty = false
       }, 100)
       this.updateHash()
       this.refreshTranslationStatus()
@@ -720,6 +824,7 @@ Alpine.data('cms', () => {
           author: this.authorName,
         },
       }
+      this.suppressDirty = true
       this.currentPage = item
       this.currentFields = this.resolveFields(
         this.currentType?.fieldGroupIds,
@@ -734,6 +839,8 @@ Alpine.data('cms', () => {
         if (hasBody) {
           this.initEditor('')
         }
+        this.resetDirty()
+        this.suppressDirty = false
       }, 100)
     },
 
@@ -754,7 +861,15 @@ Alpine.data('cms', () => {
       }
 
       this.$nextTick(() => {
-        this.editor = createEditor('editorjs', data, this.fs)
+        // 初期化直後の onChange（初期データ流し込み由来）は無視するため短時間だけ suppress
+        this.suppressDirty = true
+        this.editor = createEditor('editorjs', data, this.fs, () => {
+          if (this.suppressDirty) return
+          this.markDirty()
+        })
+        window.setTimeout(() => {
+          this.suppressDirty = false
+        }, 200)
       })
     },
 
@@ -804,17 +919,92 @@ Alpine.data('cms', () => {
       }
     },
 
+    /** ファビコンアップロード: assets/files/favicon.<ext> に保存し、siteConfig.favicon にパスを記録 */
+    async handleFaviconUpload(event: Event) {
+      const input = event.target as HTMLInputElement
+      const file = input.files?.[0]
+      if (!file || !this.fs) return
+      // 拡張子判定（MIMEタイプ優先、フォールバックでファイル名）
+      const mimeExtMap: Record<string, string> = {
+        'image/x-icon': 'ico',
+        'image/vnd.microsoft.icon': 'ico',
+        'image/png': 'png',
+        'image/svg+xml': 'svg',
+        'image/webp': 'webp',
+      }
+      let ext = mimeExtMap[file.type]
+      if (!ext) {
+        const match = file.name.match(/\.(ico|png|svg|webp)$/i)
+        ext = match ? match[1].toLowerCase() : ''
+      }
+      if (!ext) {
+        this.showToast('ico / png / svg / webp 形式のみアップロードできます', 5000)
+        input.value = ''
+        return
+      }
+      try {
+        // 古い拡張子のファビコンが残っていたら削除（拡張子切替時）
+        const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+        if (filesDir) {
+          for (const oldExt of ['ico', 'png', 'svg', 'webp']) {
+            if (oldExt === ext) continue
+            try {
+              await filesDir.removeEntry(`favicon.${oldExt}`)
+            } catch {
+              /* skip */
+            }
+          }
+        }
+        const buffer = await file.arrayBuffer()
+        const path = `${PATH_ASSETS_FILES}/favicon.${ext}`
+        await this.fs.writeBlob(path, new Blob([buffer]))
+        this.siteConfig.favicon = `/${path}`
+        await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+        this.faviconBlobUrl = await loadFaviconBlobUrl(this.fs, this.siteConfig.favicon)
+        applyFaviconLink(this.faviconBlobUrl)
+        this.showToast('ファビコンをアップロードしました')
+      } catch (e) {
+        console.error('ファビコンアップロードエラー:', e)
+        this.showToast('ファビコンの処理に失敗しました')
+      } finally {
+        input.value = ''
+      }
+    },
+
+    /** ファビコン削除 */
+    async removeFavicon() {
+      if (!this.fs) return
+      if (!(await this.showConfirm('ファビコンを削除しますか？'))) return
+      const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+      if (filesDir) {
+        for (const ext of ['ico', 'png', 'svg', 'webp']) {
+          try {
+            await filesDir.removeEntry(`favicon.${ext}`)
+          } catch {
+            /* skip */
+          }
+        }
+      }
+      delete (this.siteConfig as any).favicon
+      await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+      clearFaviconBlobUrl()
+      this.faviconBlobUrl = ''
+      applyFaviconLink('')
+      this.showToast('ファビコンを削除しました')
+    },
+
     // --- 保存（リビジョン自動作成付き） ---
 
-    async savePage() {
+    async savePage(opts: { silent?: boolean } = {}) {
       if (!this.fs) return
+      const silent = opts.silent === true
       // Editor.jsの内容を先に取得（バリデーション前に必要）
       if (this.editor) {
         this.editData.body = await this.getEditorHtml()
       }
       // 必須フィールドバリデーション
       if (!this.editData.title?.trim()) {
-        this.showToast('タイトルを入力してください')
+        if (!silent) this.showToast('タイトルを入力してください')
         return
       }
       if (this.currentType) {
@@ -825,9 +1015,11 @@ Alpine.data('cms', () => {
             return val === undefined || val === null || val === ''
           })
         if (missing.length > 0) {
-          this.showToast(
-            `必須フィールドを入力してください: ${missing.map((f) => f.label).join(', ')}`,
-          )
+          if (!silent) {
+            this.showToast(
+              `必須フィールドを入力してください: ${missing.map((f) => f.label).join(', ')}`,
+            )
+          }
           return
         }
       }
@@ -843,17 +1035,23 @@ Alpine.data('cms', () => {
 
       if (this.currentType) {
         await this.fs.saveContent(this.currentType.id, pageId, this.currentLang, this.editData)
-        this.contentItems = await this.fs.readContentList(this.currentType.id, this.currentLang)
+        // 自動保存中はリストを再読込すると現在の編集 editData を差し替えてしまうので抑制
+        if (!silent) {
+          this.contentItems = await this.fs.readContentList(this.currentType.id, this.currentLang)
+        }
       } else {
         await this.fs.savePage(pageId, this.currentLang, this.editData)
-        this.pages = await this.fs.readPages(this.currentLang)
+        if (!silent) {
+          this.pages = await this.fs.readPages(this.currentLang)
+        }
       }
 
       if (this.revisionMgr) {
         await this.revisionMgr.save(typePath, pageId, this.currentLang, this.editData)
       }
 
-      this.showToast('保存しました')
+      this.resetDirty()
+      if (!silent) this.showToast('保存しました')
     },
 
     async saveSiteConfig() {
@@ -937,6 +1135,8 @@ Alpine.data('cms', () => {
         this.initEditor((data as any)._editorJson || data.body || '')
       }
       this.showRevisionPanel = false
+      // 復元内容は未保存状態扱い（ユーザーが確認して保存ボタンを押せるように）
+      this.markDirty()
       this.showToast('リビジョンを復元しました')
     },
 
@@ -1031,8 +1231,12 @@ Alpine.data('cms', () => {
     async switchLang(lang: string) {
       if (!this.fs || lang === this.currentLang) return
 
-      // 現在の編集内容を自動保存
-      if (this.editor && (this.view === 'page-edit' || this.view === 'content-edit')) {
+      // 現在の編集内容を自動保存（dirty 時のみ）
+      if (
+        this.isDirty &&
+        this.editor &&
+        (this.view === 'page-edit' || this.view === 'content-edit')
+      ) {
         await this.savePage()
       }
 
@@ -1050,15 +1254,25 @@ Alpine.data('cms', () => {
           await this.openPage(page)
         } else {
           // この言語にはまだページが無い
+          this.suppressDirty = true
           this.editData = { id: this.currentPage.id, title: '', body: '', status: 'draft' }
           this.initEditor('')
+          this.$nextTick(() => {
+            this.resetDirty()
+            this.suppressDirty = false
+          })
         }
       } else if (this.currentPage && this.view === 'content-edit' && this.currentType) {
         const item = this.contentItems.find((i) => i.id === this.currentPage?.id)
         if (item) {
           await this.openContent(item)
         } else {
+          this.suppressDirty = true
           this.editData = { id: this.currentPage.id, title: '', body: '', status: 'draft' }
+          this.$nextTick(() => {
+            this.resetDirty()
+            this.suppressDirty = false
+          })
         }
       }
 
@@ -1081,6 +1295,7 @@ Alpine.data('cms', () => {
         return
       }
 
+      this.suppressDirty = true
       this.editData = {
         ...sourceData,
         id: pageId,
@@ -1094,10 +1309,18 @@ Alpine.data('cms', () => {
         },
       }
       this.initEditor((sourceData as any)._editorJson || sourceData.body || '')
+      this.$nextTick(() => {
+        this.suppressDirty = false
+        this.markDirty()
+      })
       this.showToast(`${sourceLang} の内容をコピーしました`)
     },
 
-    /** 翻訳ステータスを取得・更新 */
+    /** 翻訳ステータスを取得・更新
+     *  missing:    その言語のファイル自体が無い
+     *  translated: 公開済み（status === 'published'）
+     *  draft:      ファイルはあるが公開されていない
+     */
     async getTranslationStatus(): Promise<Array<{ code: string; flag: string; status: string }>> {
       if (!this.fs || !this.currentPage) return []
 
@@ -1111,14 +1334,9 @@ Alpine.data('cms', () => {
             ) || null
           : (await this.fs.readPages(locale.code)).find((p) => p.id === pageId) || null
 
-        let status = 'missing'
+        let status: 'missing' | 'translated' | 'draft' = 'missing'
         if (data) {
-          const meta = data._meta
-          if (meta?.status === 'translated' || (data.title && data.body)) {
-            status = 'translated'
-          } else {
-            status = 'draft'
-          }
+          status = data.status === 'published' ? 'translated' : 'draft'
         }
 
         statuses.push({ code: locale.code, flag: locale.flag, status })
@@ -1626,6 +1844,42 @@ Alpine.data('cms', () => {
 })
 
 Alpine.start()
+
+/** ファビコンを Blob URL として読み込み、管理画面タブと設定プレビューの両方を更新 */
+let currentFaviconBlobUrl: string | null = null
+async function loadFaviconBlobUrl(
+  fs: FileSystem | null,
+  faviconPath: string | undefined,
+): Promise<string> {
+  if (!fs || !faviconPath) return ''
+  const normalized = faviconPath.replace(/^\//, '')
+  const blob = await fs.readBlob(normalized)
+  if (!blob) return ''
+  if (currentFaviconBlobUrl) URL.revokeObjectURL(currentFaviconBlobUrl)
+  currentFaviconBlobUrl = URL.createObjectURL(blob)
+  return currentFaviconBlobUrl
+}
+
+function applyFaviconLink(blobUrl: string): void {
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!blobUrl) {
+    if (link) link.remove()
+    return
+  }
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  link.href = blobUrl
+}
+
+function clearFaviconBlobUrl(): void {
+  if (currentFaviconBlobUrl) {
+    URL.revokeObjectURL(currentFaviconBlobUrl)
+    currentFaviconBlobUrl = null
+  }
+}
 
 async function hasFile(dir: FileSystemDirectoryHandle, name: string): Promise<boolean> {
   try {

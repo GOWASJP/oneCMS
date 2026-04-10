@@ -94,6 +94,17 @@ export class FileSystem {
     await writable.close()
   }
 
+  /** バイナリファイルを Blob として読み込み */
+  async readBlob(path: string): Promise<Blob | null> {
+    const handle = await this.getFile(path)
+    if (!handle) return null
+    try {
+      return await handle.getFile()
+    } catch {
+      return null
+    }
+  }
+
   /** JSONファイルを読み込み */
   async readJson<T = unknown>(path: string): Promise<T | null> {
     const handle = await this.getFile(path)

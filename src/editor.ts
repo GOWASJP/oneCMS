@@ -76,6 +76,7 @@ export function createEditor(
   holderId: string,
   data: EditorData | null,
   fs: FileSystem | null,
+  onChange?: () => void,
 ): EditorJS {
   // v2形式のリストブロックをv1形式に変換
   const normalizedData = data ? normalizeListBlocks(data) : undefined
@@ -84,6 +85,7 @@ export function createEditor(
     holder: holderId,
     placeholder: '/ でメニューを開く、またはテキストを入力...',
     data: normalizedData,
+    onChange: onChange ? () => onChange() : undefined,
     inlineToolbar: ['bold', 'italic', 'inlineCode', 'link'],
     tools: {
       header: {

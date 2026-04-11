@@ -174,6 +174,8 @@ interface CmsComponent {
   availableParentPages(): ContentData[]
   pagePathPreview(): string
   pagesTree(): Array<ContentData & { depth: number }>
+  relationCandidates(typeId: string): ContentData[]
+  relationCandidatesCache: Record<string, ContentData[]>
   availableCategories: Array<{ id: string; label: string }>
   availableTags: Array<{ id: string; label: string }>
   // カスタムモーダル
@@ -204,6 +206,8 @@ interface CmsComponent {
   showTypeEditor: boolean
   editingType: ContentType | null
   openTypeEditor(type?: ContentType): void
+  addFieldToType(): void
+  removeFieldFromType(idx: number): void
   saveType(): Promise<void>
   deleteType(): Promise<void>
   // フィールドグループ管理
@@ -356,6 +360,9 @@ Alpine.data('cms', () => {
 
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
+
+    // relation フィールドの候補リストキャッシュ
+    relationCandidatesCache: {} as Record<string, ContentData[]>,
 
     // FS / エンジン
     fs: null,
@@ -782,6 +789,8 @@ Alpine.data('cms', () => {
             key: 'featuredNews',
             label: '掲載するお知らせ',
             type: 'relation',
+            relationType: 'news',
+            relationMultiple: true,
           },
         ],
       })
@@ -911,6 +920,17 @@ Alpine.data('cms', () => {
       this.showPreviewPanel = false
       this.view = 'page-edit'
       this.editData = { slug: '', ...page }
+      // relation / repeater / imagelist / multiselect フィールドが未初期化の場合は空配列を注入
+      // （x-model のチェックボックス配列や splice 呼び出しが undefined で動作しないため）
+      for (const f of this.currentFields) {
+        if (
+          (['relation', 'repeater', 'imagelist', 'multiselect'].includes(f.type) &&
+            (this.editData as any)[f.key] === undefined) ||
+          (this.editData as any)[f.key] === null
+        ) {
+          ;(this.editData as any)[f.key] = []
+        }
+      }
       // トップページ（index）は常に Editor.js 無効、それ以外は effectiveHasBody に従う
       const isHome = page.id === 'index'
       if (!isHome && effectiveHasBody) {
@@ -951,6 +971,16 @@ Alpine.data('cms', () => {
       this.showPreviewPanel = false
       this.view = 'content-edit'
       this.editData = { slug: '', category: '', tags: [], ...item }
+      // 配列系フィールドの初期化
+      for (const f of this.currentFields) {
+        if (
+          (['relation', 'repeater', 'imagelist', 'multiselect'].includes(f.type) &&
+            (this.editData as any)[f.key] === undefined) ||
+          (this.editData as any)[f.key] === null
+        ) {
+          ;(this.editData as any)[f.key] = []
+        }
+      }
       // Alpine template x-if の入れ子展開を待つ
       setTimeout(() => {
         const hasBody =
@@ -1518,6 +1548,24 @@ Alpine.data('cms', () => {
     langStatusIconSvg(ts: { code: string; status: string }): string {
       const status = ts.code === this.currentLang ? 'current' : ts.status
       return LANG_STATUS_ICONS[status] || ''
+    },
+
+    /** relation フィールドの候補リストを返す（指定コンテンツタイプの現言語公開済みアイテム） */
+    relationCandidates(typeId: string): ContentData[] {
+      if (!typeId) return []
+      const key = `${typeId}:${this.currentLang}`
+      if (this.relationCandidatesCache[key]) return this.relationCandidatesCache[key]
+      if (!this.fs) return []
+      // 同期化のため即時に空配列を返し、非同期で取得してキャッシュを更新
+      this.relationCandidatesCache[key] = []
+      this.fs.readContentList(typeId, this.currentLang).then((items) => {
+        this.relationCandidatesCache[key] = items.sort((a, b) =>
+          (b.publishedAt || b._meta?.createdAt || '').localeCompare(
+            a.publishedAt || a._meta?.createdAt || '',
+          ),
+        )
+      })
+      return this.relationCandidatesCache[key]
     },
 
     /** 親ページとして選択可能なページ一覧を返す

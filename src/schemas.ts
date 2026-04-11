@@ -140,6 +140,10 @@ export const FieldDefinitionSchema = z.object({
     .optional(),
   showIf: ShowIfConditionSchema.optional(),
   subFields: z.array(SubFieldSchema).optional(),
+  /** relation 型で参照するコンテンツタイプの id */
+  relationType: z.string().optional(),
+  /** relation 型で複数選択を許可するか */
+  relationMultiple: z.boolean().optional(),
 })
 
 // ----- フィールドグループ -----

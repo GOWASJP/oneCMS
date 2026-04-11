@@ -240,7 +240,34 @@
                 </span>
               </template>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <!-- 編集中のアクションをトップバーに統合（WP Gutenberg風） -->
+              <template x-if="view === 'page-edit' || view === 'content-edit'">
+                <div
+                  class="flex items-center gap-2 pr-2 mr-2 border-r border-[var(--ds-border-default)]"
+                >
+                  <button @click="showPreview()" class="gh-btn-outline text-xs" title="プレビュー">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                    プレビュー
+                  </button>
+                  <button @click="showRevisions()" class="gh-btn-outline text-xs" title="履歴">
+                    <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                    履歴
+                  </button>
+                  <span
+                    class="gh-save-status"
+                    x-show="isDirty || autoSaving"
+                    x-text="autoSaving ? '保存中…' : '未保存'"
+                  ></span>
+                  <span
+                    class="gh-save-status gh-save-status-ok"
+                    x-show="!isDirty && !autoSaving && lastAutoSavedAt"
+                  >
+                    保存済み
+                  </span>
+                  <button @click="savePage()" class="gh-btn-green text-xs">更新</button>
+                </div>
+              </template>
               <select @change="switchLang($event.target.value)" class="gh-select-light">
                 <template
                   x-for="locale in languages.locales || [{code:'ja', label:'日本語'}]"
@@ -284,48 +311,16 @@
                 <!-- 左: エディタ本体 -->
                 <div class="flex-1 overflow-y-auto">
                   <div class="gh-editor-container">
-                    <!-- ヘッダー（sticky） -->
-                    <div class="gh-editor-header">
-                      <button
-                        @click="currentPage = null; loadPageList()"
-                        class="gh-btn-outline text-xs"
-                      >
-                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        戻る
-                      </button>
-                      <button @click="showPreview()" class="gh-btn-outline text-xs">
-                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                        プレビュー
-                      </button>
-                      <button @click="showRevisions()" class="gh-btn-outline text-xs">
-                        <i data-lucide="history" class="w-3.5 h-3.5"></i>
-                        履歴
-                      </button>
-                      <div class="flex-1"></div>
-                      <span
-                        class="gh-save-status"
-                        x-show="isDirty || autoSaving"
-                        x-text="autoSaving ? '保存中…' : '未保存'"
-                      ></span>
-                      <span
-                        class="gh-save-status gh-save-status-ok"
-                        x-show="!isDirty && !autoSaving && lastAutoSavedAt"
-                      >
-                        保存済み
-                      </span>
-                      <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
-                    </div>
-
-                    <!-- タイトル -->
+                    <!-- タイトル（Gutenberg風：キャンバス最上部の大見出し） -->
                     <input
                       type="text"
                       x-model="editData.title"
-                      placeholder="タイトル..."
+                      placeholder="タイトルを追加"
                       class="gh-title-input"
                     />
                     <!-- 本文エディタ（hasBodyがtrueの時のみ） -->
                     <template x-if="pagesConfig?.hasBody !== false">
-                      <div id="editorjs" class="gh-editorjs mb-5"></div>
+                      <div id="editorjs" class="gh-editorjs"></div>
                     </template>
 
                     <!-- カスタムフィールド -->
@@ -590,49 +585,17 @@
                 <!-- 左: エディタ本体 -->
                 <div class="flex-1 overflow-y-auto">
                   <div class="gh-editor-container">
-                    <!-- ヘッダー（sticky） -->
-                    <div class="gh-editor-header">
-                      <button
-                        @click="view = 'content-list'; updateHash()"
-                        class="gh-btn-outline text-xs"
-                      >
-                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        戻る
-                      </button>
-                      <button @click="showPreview()" class="gh-btn-outline text-xs">
-                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                        プレビュー
-                      </button>
-                      <button @click="showRevisions()" class="gh-btn-outline text-xs">
-                        <i data-lucide="history" class="w-3.5 h-3.5"></i>
-                        履歴
-                      </button>
-                      <div class="flex-1"></div>
-                      <span
-                        class="gh-save-status"
-                        x-show="isDirty || autoSaving"
-                        x-text="autoSaving ? '保存中…' : '未保存'"
-                      ></span>
-                      <span
-                        class="gh-save-status gh-save-status-ok"
-                        x-show="!isDirty && !autoSaving && lastAutoSavedAt"
-                      >
-                        保存済み
-                      </span>
-                      <button @click="savePage()" class="gh-btn-green text-[13px]">更新</button>
-                    </div>
-                    <!-- タイトル（フィールドから分離） -->
+                    <!-- タイトル（Gutenberg風） -->
                     <input
                       type="text"
                       x-model="editData.title"
-                      placeholder="タイトル..."
+                      placeholder="タイトルを追加"
                       class="gh-title-input"
                     />
 
                     <!-- 本文（hasBodyがtrueの時のみ表示） -->
                     <template x-if="currentType?.hasBody">
-                      <div class="mb-5">
-                        <label class="gh-label">本文</label>
+                      <div class="mb-6">
                         <div id="editorjs" class="gh-editorjs"></div>
                       </div>
                     </template>

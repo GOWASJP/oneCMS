@@ -480,26 +480,28 @@ label[for],
    ============================================================ */
 
 .gh-editor-container {
-  max-width: 780px;
+  max-width: 920px;
   margin: 0 auto;
-  padding: 24px 48px 120px;
+  padding: 40px 80px 160px;
 }
 
 .gh-title-input {
   width: 100%;
-  font-size: var(--ds-text-3xl);
+  font-size: 42px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
   border: none;
   outline: none;
   background: transparent;
   color: var(--ds-text-heading);
   padding: 0;
-  margin-bottom: 16px;
+  margin: 0 0 32px;
   font-family: inherit;
+  letter-spacing: -0.01em;
 }
 .gh-title-input::placeholder {
   color: var(--ds-text-placeholder);
+  font-weight: 600;
 }
 
 /* ============================================================
@@ -567,16 +569,16 @@ label[for],
    Editor.js
    ============================================================ */
 
+/* WordPress Gutenberg 風のキャンバス型エディタ：枠線・背景なし、本文全面に展開 */
 .gh-editorjs {
-  min-height: 360px;
-  border: 1px solid var(--ds-border-default);
-  border-radius: var(--ds-radius-sm);
-  padding: 16px;
-  background: var(--ds-bg-surface);
+  min-height: 480px;
+  border: none;
+  background: transparent;
+  padding: 0;
 }
 
 .gh-editorjs .codex-editor__redactor {
-  padding-bottom: 120px !important;
+  padding-bottom: 200px !important;
 }
 
 .gh-editorjs .ce-block__content,
@@ -586,50 +588,42 @@ label[for],
   position: relative;
 }
 
-/* ブロックツールバー（+ と drag handle）をブロックの右外側に移動 */
-.gh-editorjs .ce-toolbar__plus,
-.gh-editorjs .ce-toolbar__plus--left-oriented,
-.gh-editorjs .ce-toolbar__plus--right-oriented {
-  left: auto !important;
-  right: -68px !important;
-  transform: none !important;
-}
-.gh-editorjs .ce-toolbar__settings-btn,
-.gh-editorjs .ce-toolbar__settings-btn--left-oriented,
-.gh-editorjs .ce-toolbar__settings-btn--right-oriented {
-  left: auto !important;
-  right: -34px !important;
-  transform: none !important;
-}
-.gh-editorjs .ce-toolbar__actions {
-  left: auto !important;
-  right: -68px !important;
-}
-
 .gh-editorjs .ce-paragraph {
-  font-size: var(--ds-text-md);
-  line-height: 1.7;
-  color: var(--ds-text-body);
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ds-text-heading);
+  font-weight: 400;
 }
 
 .gh-editorjs h2.ce-header {
-  font-size: 1.5em;
+  font-size: 28px;
   font-weight: 700;
   color: var(--ds-text-heading);
+  line-height: 1.3;
+  margin-top: 16px;
 }
 
 .gh-editorjs h3.ce-header {
-  font-size: 1.25em;
+  font-size: 22px;
   font-weight: 700;
   color: var(--ds-text-heading);
+  line-height: 1.35;
+  margin-top: 12px;
+}
+
+.gh-editorjs h4.ce-header {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ds-text-heading);
+  line-height: 1.4;
+}
+
+.gh-editorjs .cdx-block {
+  padding: 8px 0;
 }
 
 .gh-editorjs .ce-block--selected .ce-block__content {
   background: var(--ds-primary-100);
-}
-
-.gh-editorjs .cdx-block {
-  padding: 4px 0;
 }
 
 .gh-editorjs .image-tool__image {

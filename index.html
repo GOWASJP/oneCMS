@@ -442,12 +442,17 @@
                                     class="max-h-40 rounded border border-[var(--ds-border-default)] mb-2"
                                   />
                                 </template>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  @change="handleImageUpload($event, field.key)"
-                                  class="text-xs text-[var(--ds-text-muted)]"
-                                />
+                                <label class="ds-file-button">
+                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                  <span
+                                    x-text="editData[field.key] ? '画像を変更' : '画像を選択'"
+                                  ></span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    @change="handleImageUpload($event, field.key)"
+                                  />
+                                </label>
                               </div>
                             </template>
                             <template x-if="field.type === 'file'">
@@ -458,11 +463,16 @@
                                     x-text="editData[field.key]"
                                   ></p>
                                 </template>
-                                <input
-                                  type="file"
-                                  @change="handleFileUpload($event, field.key)"
-                                  class="text-xs text-[var(--ds-text-muted)]"
-                                />
+                                <label class="ds-file-button">
+                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                  <span
+                                    x-text="editData[field.key] ? 'ファイルを変更' : 'ファイルを選択'"
+                                  ></span>
+                                  <input
+                                    type="file"
+                                    @change="handleFileUpload($event, field.key)"
+                                  />
+                                </label>
                               </div>
                             </template>
                             <template x-if="field.type === 'color'">
@@ -561,13 +571,16 @@
                                     </div>
                                   </template>
                                 </div>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  @change="for(const f of $event.target.files){handleImageUpload({target:{files:[f]}}, '__tmp');editData[field.key]=[...(editData[field.key]||[]),editData.__tmp];delete editData.__tmp}"
-                                  class="text-xs text-[var(--ds-text-muted)]"
-                                />
+                                <label class="ds-file-button">
+                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                  <span>画像を追加</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    @change="for(const f of $event.target.files){handleImageUpload({target:{files:[f]}}, '__tmp');editData[field.key]=[...(editData[field.key]||[]),editData.__tmp];delete editData.__tmp}"
+                                  />
+                                </label>
                               </div>
                             </template>
                             <template x-if="field.type === 'repeater'">
@@ -608,12 +621,17 @@
                                                     class="max-h-20 rounded border border-[var(--ds-border-default)] mb-1"
                                                   />
                                                 </template>
-                                                <input
-                                                  type="file"
-                                                  accept="image/*"
-                                                  @change="handleImageUpload($event, '__tmp').then(() => { editData[field.key][idx][sf.key] = editData.__tmp; delete editData.__tmp })"
-                                                  class="text-xs text-[var(--ds-text-muted)]"
-                                                />
+                                                <label class="ds-file-button">
+                                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                                  <span
+                                                    x-text="editData[field.key][idx][sf.key] ? '画像を変更' : '画像を選択'"
+                                                  ></span>
+                                                  <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    @change="handleImageUpload($event, '__tmp').then(() => { editData[field.key][idx][sf.key] = editData.__tmp; delete editData.__tmp })"
+                                                  />
+                                                </label>
                                               </div>
                                             </template>
                                             <template
@@ -1076,12 +1094,17 @@
                                     class="max-h-40 rounded border border-[var(--ds-border-default)] mb-2"
                                   />
                                 </template>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  @change="handleImageUpload($event, field.key)"
-                                  class="text-xs text-[var(--ds-text-muted)]"
-                                />
+                                <label class="ds-file-button">
+                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                  <span
+                                    x-text="editData[field.key] ? '画像を変更' : '画像を選択'"
+                                  ></span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    @change="handleImageUpload($event, field.key)"
+                                  />
+                                </label>
                               </div>
                             </template>
                             <template x-if="field.type === 'file'">
@@ -1092,11 +1115,16 @@
                                     x-text="editData[field.key]"
                                   ></p>
                                 </template>
-                                <input
-                                  type="file"
-                                  @change="handleFileUpload($event, field.key)"
-                                  class="text-xs text-[var(--ds-text-muted)]"
-                                />
+                                <label class="ds-file-button">
+                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                  <span
+                                    x-text="editData[field.key] ? 'ファイルを変更' : 'ファイルを選択'"
+                                  ></span>
+                                  <input
+                                    type="file"
+                                    @change="handleFileUpload($event, field.key)"
+                                  />
+                                </label>
                               </div>
                             </template>
                             <template x-if="field.type === 'color'">
@@ -1201,13 +1229,16 @@
                                     </div>
                                   </template>
                                 </div>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  @change="for(const f of $event.target.files){handleImageUpload({target:{files:[f]}}, '__tmp');editData[field.key]=[...(editData[field.key]||[]),editData.__tmp];delete editData.__tmp}"
-                                  class="text-xs text-[var(--ds-text-muted)]"
-                                />
+                                <label class="ds-file-button">
+                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                  <span>画像を追加</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    @change="for(const f of $event.target.files){handleImageUpload({target:{files:[f]}}, '__tmp');editData[field.key]=[...(editData[field.key]||[]),editData.__tmp];delete editData.__tmp}"
+                                  />
+                                </label>
                               </div>
                             </template>
                             <!-- repeater -->
@@ -1250,12 +1281,17 @@
                                                     class="max-h-20 rounded border border-[var(--ds-border-default)] mb-1"
                                                   />
                                                 </template>
-                                                <input
-                                                  type="file"
-                                                  accept="image/*"
-                                                  @change="handleImageUpload($event, '__tmp').then(() => { editData[field.key][idx][sf.key] = editData.__tmp; delete editData.__tmp })"
-                                                  class="text-xs text-[var(--ds-text-muted)]"
-                                                />
+                                                <label class="ds-file-button">
+                                                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                                  <span
+                                                    x-text="editData[field.key][idx][sf.key] ? '画像を変更' : '画像を選択'"
+                                                  ></span>
+                                                  <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    @change="handleImageUpload($event, '__tmp').then(() => { editData[field.key][idx][sf.key] = editData.__tmp; delete editData.__tmp })"
+                                                  />
+                                                </label>
                                               </div>
                                             </template>
                                             <template
@@ -1431,12 +1467,17 @@
                         :src="editData.image"
                         class="w-full aspect-video object-cover rounded border border-[var(--ds-border-default)] mb-2"
                       />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        @change="handleImageUpload($event, 'image')"
-                        class="text-xs text-[var(--ds-text-muted)] w-full"
-                      />
+                      <label class="ds-file-button w-full justify-center">
+                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                        <span
+                          x-text="editData.image ? 'サムネイルを変更' : 'サムネイルを選択'"
+                        ></span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          @change="handleImageUpload($event, 'image')"
+                        />
+                      </label>
                     </div>
                   </template>
 

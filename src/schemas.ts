@@ -7,6 +7,7 @@ export const SiteConfigSchema = z.object({
   url: z.string(),
   description: z.string(),
   favicon: z.string().optional(),
+  logo: z.string().optional(),
   theme: z
     .object({
       id: z.string().optional(),

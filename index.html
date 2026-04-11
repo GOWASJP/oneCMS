@@ -2387,6 +2387,51 @@
                     ></textarea>
                   </div>
 
+                  <!-- サイトロゴ -->
+                  <div>
+                    <label class="gh-label">サイトロゴ</label>
+                    <div class="flex items-start gap-3">
+                      <template x-if="logoBlobUrl">
+                        <div
+                          class="w-32 h-20 rounded-md border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] flex items-center justify-center overflow-hidden p-2"
+                        >
+                          <img
+                            :src="logoBlobUrl"
+                            alt="logo"
+                            class="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      </template>
+                      <template x-if="!logoBlobUrl">
+                        <div
+                          class="w-32 h-20 rounded-md border border-dashed border-[var(--ds-border-strong)] bg-[var(--ds-bg-muted)] flex items-center justify-center text-[var(--ds-text-placeholder)]"
+                        >
+                          <i data-lucide="image-plus" class="w-6 h-6"></i>
+                        </div>
+                      </template>
+                      <div class="flex-1">
+                        <input
+                          type="file"
+                          accept=".png,.svg,.webp,.jpg,.jpeg,image/png,image/svg+xml,image/webp,image/jpeg"
+                          @change="handleLogoUpload($event)"
+                          class="text-xs text-[var(--ds-text-muted)] block"
+                        />
+                        <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
+                          png / svg / webp / jpg 形式。ヘッダー等で表示されます（推奨: SVG
+                          または横長の透過 PNG）
+                        </p>
+                      </div>
+                      <template x-if="siteConfig.logo">
+                        <button
+                          @click="removeLogo()"
+                          class="text-[var(--ds-danger-600)] text-xs hover:underline whitespace-nowrap"
+                        >
+                          削除
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+
                   <!-- ファビコン -->
                   <div>
                     <label class="gh-label">ファビコン</label>

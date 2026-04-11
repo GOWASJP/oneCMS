@@ -307,15 +307,27 @@
                 <!-- 左: エディタ本体 -->
                 <div class="flex-1 overflow-y-auto">
                   <div class="gh-editor-container">
-                    <!-- タイトル（Gutenberg風：キャンバス最上部の大見出し） -->
-                    <input
-                      type="text"
-                      x-model="editData.title"
-                      placeholder="タイトルを追加"
-                      class="gh-title-input"
-                    />
-                    <!-- 本文エディタ（hasBodyがtrueの時のみ） -->
-                    <template x-if="pagesConfig?.hasBody !== false">
+                    <!-- トップページの案内（編集者向け） -->
+                    <template x-if="currentPage?.id === 'index'">
+                      <div
+                        class="mb-8 p-4 rounded-md bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] text-xs leading-relaxed"
+                      >
+                        トップページの構成は製作者が用意したテンプレートに従います。このページでは掲載する情報（見出し、画像、選択するお知らせ等）を埋めるだけで、レイアウトや見た目は自動的に反映されます。
+                      </div>
+                    </template>
+
+                    <!-- タイトル（トップページ以外のみ。トップページは site.name を自動使用） -->
+                    <template x-if="currentPage?.id !== 'index'">
+                      <input
+                        type="text"
+                        x-model="editData.title"
+                        placeholder="タイトルを追加"
+                        class="gh-title-input"
+                      />
+                    </template>
+
+                    <!-- 本文エディタ（hasBodyがtrueかつトップページ以外のみ） -->
+                    <template x-if="pagesConfig?.hasBody !== false && currentPage?.id !== 'index'">
                       <div id="editorjs" class="gh-editorjs"></div>
                     </template>
 

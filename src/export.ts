@@ -277,6 +277,7 @@ export class Exporter {
 
     const baseTemplate = await this.loadTemplate('_base')
     const pageTemplate = await this.loadTemplate('page')
+    const homeTemplate = await this.loadTemplate('home')
     const listTemplate = await this.loadTemplate('list')
     const detailTemplate = await this.loadTemplate('detail')
 
@@ -301,6 +302,39 @@ export class Exporter {
       // 後方互換: 最初のメニューを nav として提供
       nav: menuData.menus?.[0]?.items || siteConfig.nav || [],
     }
+
+    // コンテンツタイプのアイテムを言語別に事前取得（Handlebarsヘルパーから同期参照するため）
+    const typeItemsCache = new Map<string, Map<string, ContentData[]>>()
+    for (const locale of locales) {
+      const lang = locale.code
+      const prefix = lang === defaultLang ? '' : `${lang}/`
+      const byType = new Map<string, ContentData[]>()
+      for (const type of contentTypes) {
+        const items = await this.fs.readContentList(type.id, lang)
+        const published = items
+          .filter((i) => i.status === 'published' || !i.status)
+          .sort((a, b) =>
+            (b.publishedAt || b._meta?.createdAt || '').localeCompare(
+              a.publishedAt || a._meta?.createdAt || '',
+            ),
+          )
+          .map((item) => ({
+            ...item,
+            url: `/${prefix}${type.slug}/${item.slug || item.id}/`,
+          }))
+        byType.set(type.id, published)
+      }
+      typeItemsCache.set(lang, byType)
+    }
+
+    // latestItems(typeId, count, lang) ヘルパー: 指定コンテンツタイプの最新N件を返す
+    this.handlebars.registerHelper(
+      'latestItems',
+      function (typeId: string, count: number, lang: string) {
+        const items = typeItemsCache.get(lang)?.get(typeId) || []
+        return items.slice(0, count || items.length)
+      },
+    )
 
     for (const locale of locales) {
       const lang = locale.code
@@ -373,8 +407,10 @@ export class Exporter {
           pagePath,
         }
 
-        const pageHtml = pageTemplate
-          ? pageTemplate(ctx)
+        // トップページは home.hbs が存在すれば優先、無ければ page.hbs にフォールバック
+        const activeTemplate = isIndex && homeTemplate ? homeTemplate : pageTemplate
+        const pageHtml = activeTemplate
+          ? activeTemplate(ctx)
           : `<h1>${page.title}</h1>${page.body || ''}`
 
         const fullHtml = baseTemplate

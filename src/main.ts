@@ -132,9 +132,17 @@ interface CmsComponent {
   editingPageTitle: string
   loadPageList(): Promise<void>
   // ページ設定
-  pagesConfig: { hasBody?: boolean; fieldGroupIds?: string[] }
+  pagesConfig: {
+    hasBody?: boolean
+    fieldGroupIds?: string[]
+    overrides?: Record<string, { hasBody?: boolean; fieldGroupIds?: string[] }>
+  }
   showPagesConfigEditor: boolean
-  editingPagesConfig: { hasBody?: boolean; fieldGroupIds?: string[] } | null
+  editingPagesConfig: {
+    hasBody?: boolean
+    fieldGroupIds?: string[]
+    overrides?: Record<string, { hasBody?: boolean; fieldGroupIds?: string[] }>
+  } | null
   openPagesConfigEditor(): void
   savePagesConfig(): Promise<void>
   openPage(page: ContentData): Promise<void>
@@ -283,7 +291,11 @@ Alpine.data('cms', () => {
       fieldGroupIds?: string[]
     },
     showPagesConfigEditor: false,
-    editingPagesConfig: null as { hasBody?: boolean; fieldGroupIds?: string[] } | null,
+    editingPagesConfig: null as {
+      hasBody?: boolean
+      fieldGroupIds?: string[]
+      overrides?: Record<string, { hasBody?: boolean; fieldGroupIds?: string[] }>
+    } | null,
 
     // メニュー管理
     menuData: { menus: [] } as any,
@@ -631,9 +643,11 @@ Alpine.data('cms', () => {
       this.currentLang = this.languages.default || 'ja'
       this.contentTypes = await this.fs.readContentTypes()
       this.fieldGroups = await this.fs.readFieldGroups()
-      this.pagesConfig = (await this.fs.readJson<{ hasBody?: boolean; fieldGroupIds?: string[] }>(
-        PATH_PAGES_CONFIG,
-      )) || { hasBody: true, fieldGroupIds: [] }
+      this.pagesConfig = (await this.fs.readJson<{
+        hasBody?: boolean
+        fieldGroupIds?: string[]
+        overrides?: Record<string, { hasBody?: boolean; fieldGroupIds?: string[] }>
+      }>(PATH_PAGES_CONFIG)) || { hasBody: true, fieldGroupIds: [] }
       this.pages = await this.fs.readPages(this.currentLang)
       // カテゴリ・タグ読み込み
       const cats = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
@@ -693,11 +707,15 @@ Alpine.data('cms', () => {
         ],
       })
 
-      // 固定ページ: トップ
+      // 固定ページ: トップ（タイトルは site.name が自動反映される）
       await this.fs.writeJson('content/pages/index/ja.json', {
-        title: 'トップページ',
-        body: '<p>ようこそ。ここはトップページです。</p>',
+        title: 'マイサイト',
         status: 'published',
+        heroHeading: 'ようこそ',
+        heroSubheading: 'サイトの特徴やサービスをここで紹介します。',
+        carousel: [],
+        featuredNews: [],
+        banners: [],
         _meta: {
           createdAt: new Date().toISOString().split('T')[0],
           updatedAt: new Date().toISOString().split('T')[0],
@@ -716,6 +734,134 @@ Alpine.data('cms', () => {
           author: this.authorName,
         },
       })
+
+      // ページ設定: 共通は hasBody=true、トップページ(index)はフィールドベースに上書き
+      await this.fs.writeJson(PATH_PAGES_CONFIG, {
+        hasBody: true,
+        fieldGroupIds: [],
+        overrides: {
+          index: {
+            hasBody: false,
+            fieldGroupIds: ['home-hero', 'home-carousel', 'home-featured-news', 'home-banners'],
+          },
+        },
+      })
+
+      // フィールドグループ: トップページ用サンプル（製作者が自由に編集・追加・削除可能）
+      await this.fs.writeJson('content/_fieldGroups/home-hero.json', {
+        id: 'home-hero',
+        label: 'ヒーロー',
+        fields: [
+          { key: 'heroHeading', label: '見出し', type: 'text' },
+          { key: 'heroSubheading', label: 'サブ見出し', type: 'textarea' },
+          { key: 'heroImage', label: '背景画像', type: 'image' },
+        ],
+      })
+      await this.fs.writeJson('content/_fieldGroups/home-carousel.json', {
+        id: 'home-carousel',
+        label: 'カルーセル',
+        fields: [
+          {
+            key: 'carousel',
+            label: 'スライド',
+            type: 'repeater',
+            subFields: [
+              { key: 'image', label: '画像', type: 'image' },
+              { key: 'caption', label: 'キャプション', type: 'text' },
+              { key: 'link', label: 'リンク先', type: 'url' },
+            ],
+          },
+        ],
+      })
+      await this.fs.writeJson('content/_fieldGroups/home-featured-news.json', {
+        id: 'home-featured-news',
+        label: '注目のお知らせ',
+        fields: [
+          {
+            key: 'featuredNews',
+            label: '掲載するお知らせ',
+            type: 'relation',
+          },
+        ],
+      })
+      await this.fs.writeJson('content/_fieldGroups/home-banners.json', {
+        id: 'home-banners',
+        label: 'バナーエリア',
+        fields: [
+          {
+            key: 'banners',
+            label: 'バナー',
+            type: 'repeater',
+            subFields: [
+              { key: 'image', label: '画像', type: 'image' },
+              { key: 'alt', label: '代替テキスト', type: 'text' },
+              { key: 'link', label: 'リンク先', type: 'url' },
+            ],
+          },
+        ],
+      })
+
+      // サンプルテンプレート: templates/home.hbs（製作者が自由にカスタマイズ可能）
+      const homeTemplate = `{{!-- トップページ用テンプレート（サンプル） --}}
+{{!-- 製作者はこのファイルを自由に書き換えてデザインを構築できます --}}
+
+<section class="home-hero">
+  {{#if page.heroImage}}<img src="{{page.heroImage}}" alt="">{{/if}}
+  <div class="container">
+    {{#if page.heroHeading}}<h1>{{page.heroHeading}}</h1>{{/if}}
+    {{#if page.heroSubheading}}<p>{{page.heroSubheading}}</p>{{/if}}
+  </div>
+</section>
+
+{{#if page.carousel.length}}
+<section class="home-carousel">
+  <div class="container">
+    <div class="carousel-track">
+      {{#each page.carousel}}
+        <figure class="carousel-slide">
+          {{#if link}}<a href="{{link}}">{{/if}}
+          {{#if image}}<img src="{{image}}" alt="{{caption}}">{{/if}}
+          {{#if caption}}<figcaption>{{caption}}</figcaption>{{/if}}
+          {{#if link}}</a>{{/if}}
+        </figure>
+      {{/each}}
+    </div>
+  </div>
+</section>
+{{/if}}
+
+<section class="home-news">
+  <div class="container">
+    <h2>お知らせ</h2>
+    <ul class="news-list">
+      {{#each (latestItems 'news' 5 lang)}}
+        <li>
+          <a href="{{url}}">
+            <time datetime="{{publishedAt}}">{{formatDate publishedAt}}</time>
+            <span>{{title}}</span>
+          </a>
+        </li>
+      {{/each}}
+    </ul>
+    <p class="news-more"><a href="/{{#unless (eq lang defaultLang)}}{{lang}}/{{/unless}}news/">すべて見る</a></p>
+  </div>
+</section>
+
+{{#if page.banners.length}}
+<section class="home-banners">
+  <div class="container">
+    <ul class="banner-grid">
+      {{#each page.banners}}
+        <li>
+          <a href="{{link}}"><img src="{{image}}" alt="{{alt}}"></a>
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+</section>
+{{/if}}
+`
+      await this.fs.writeText('templates/home.hbs', homeTemplate)
     },
 
     // --- 固定ページ ---
@@ -811,13 +957,22 @@ Alpine.data('cms', () => {
       this.suppressDirty = true
       this.currentPage = page
       this.currentType = null
-      this.currentFields = this.resolveFields(this.pagesConfig?.fieldGroupIds, [])
+      // ページ ID 別の override があれば優先、無ければ共通 pagesConfig
+      const override = this.pagesConfig?.overrides?.[page.id]
+      const effectiveFieldGroupIds = override?.fieldGroupIds ?? this.pagesConfig?.fieldGroupIds
+      const effectiveHasBody = override?.hasBody ?? this.pagesConfig?.hasBody ?? true
+      this.currentFields = this.resolveFields(effectiveFieldGroupIds, [])
       this.showRevisionPanel = false
       this.showPreviewPanel = false
       this.view = 'page-edit'
       this.editData = { slug: '', ...page }
-      if (this.pagesConfig?.hasBody !== false) {
+      // トップページ（index）は常に Editor.js 無効、それ以外は effectiveHasBody に従う
+      const isHome = page.id === 'index'
+      if (!isHome && effectiveHasBody) {
         this.initEditor((page as any)._editorJson || page.body || '')
+      } else if (this.editor) {
+        this.editor.destroy()
+        this.editor = null
       }
       this.updateHash()
       this.refreshTranslationStatus()
@@ -1061,6 +1216,10 @@ Alpine.data('cms', () => {
       // Editor.jsの内容を先に取得（バリデーション前に必要）
       if (this.editor) {
         this.editData.body = await this.getEditorHtml()
+      }
+      // トップページはタイトルを意識しない：site.name を自動セット
+      if (this.currentPage?.id === 'index') {
+        this.editData.title = this.siteConfig.name || 'ホーム'
       }
       // 必須フィールドバリデーション
       if (!this.editData.title?.trim()) {

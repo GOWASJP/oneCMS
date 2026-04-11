@@ -311,14 +311,19 @@ export class Exporter {
       // 親子チェーンのルックアップマップ（id → page）
       const pageById = new Map(langPages.map((p) => [p.id, p]))
       // ページの最終URLパス（親チェーンを辿って / 区切りで連結）
+      // `index` はトップページ扱いで / にマップされるため、親チェーンからは除外する
       const resolvePagePath = (page: ContentData): string[] => {
         const slugOf = (p: ContentData): string => p.slug || p.id
         const chain: string[] = []
         let current: ContentData | undefined = page
         const visited = new Set<string>()
+        let isSelf = true
         while (current && !visited.has(current.id)) {
           visited.add(current.id)
-          chain.unshift(slugOf(current))
+          const slug = slugOf(current)
+          // 親チェーンに index が含まれた場合は省略（自身が index の場合のみ残す）
+          if (isSelf || slug !== 'index') chain.unshift(slug)
+          isSelf = false
           const parentId: string = (current.parent as string | undefined) || ''
           current = parentId ? pageById.get(parentId) : undefined
         }
@@ -575,9 +580,12 @@ export class Exporter {
         const chain: string[] = []
         let current: ContentData | undefined = page
         const visited = new Set<string>()
+        let isSelf = true
         while (current && !visited.has(current.id)) {
           visited.add(current.id)
-          chain.unshift(slugOf(current))
+          const slug = slugOf(current)
+          if (isSelf || slug !== 'index') chain.unshift(slug)
+          isSelf = false
           const parentId: string = (current.parent as string | undefined) || ''
           current = parentId ? pageById.get(parentId) : undefined
         }

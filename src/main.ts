@@ -1443,7 +1443,9 @@ Alpine.data('cms', () => {
       return result
     },
 
-    /** 編集中ページの最終的な URL パスを親チェーンから計算してプレビュー表示 */
+    /** 編集中ページの最終的な URL パスを親チェーンから計算してプレビュー表示
+     *  `index` は常にルート `/` にマップするため、親チェーンからは除外する。
+     */
     pagePathPreview(): string {
       const slugOf = (p: ContentData): string => p.slug || p.id
       const currentSlug = this.editData.slug || this.editData.id || ''
@@ -1455,7 +1457,9 @@ Alpine.data('cms', () => {
         visited.add(parentId)
         const parent = this.pages.find((p) => p.id === parentId)
         if (!parent) break
-        chain.unshift(slugOf(parent))
+        const parentSlug = slugOf(parent)
+        // index（トップページ）は / にマップされるのでパスには含めない
+        if (parentSlug !== 'index') chain.unshift(parentSlug)
         parentId = (parent.parent as string | undefined) || ''
       }
       chain.push(currentSlug)

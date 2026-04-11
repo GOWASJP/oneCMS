@@ -451,20 +451,25 @@
                   <!-- 親ページ -->
                   <div>
                     <label class="gh-label">親ページ</label>
-                    <select x-model="editData.parent" class="gh-input-light text-xs w-full">
-                      <option value="">なし（ルート）</option>
+                    <select
+                      @change="editData.parent = $event.target.value"
+                      class="gh-input-light text-xs w-full"
+                    >
+                      <option value="" :selected="!editData.parent">なし（ルート）</option>
                       <template x-for="p in availableParentPages()" :key="p.id">
-                        <option :value="p.id" x-text="(p.title || p.id)"></option>
+                        <option
+                          :value="p.id"
+                          :selected="editData.parent === p.id"
+                          x-text="p.title || p.id"
+                        ></option>
                       </template>
                     </select>
                     <p class="text-[10px] text-[var(--ds-text-muted)] mt-1 leading-snug">
-                      子ページは親ページのURL構造を引き継ぎます。例:
-                      「会社概要」の子ページ「沿革」は
+                      子ページは親ページのURL構造を引き継ぎます。現在のURL:
                       <code
                         class="text-[var(--ds-text-heading)] font-mono"
                         x-text="pagePathPreview()"
                       ></code>
-                      になります。
                     </p>
                   </div>
 

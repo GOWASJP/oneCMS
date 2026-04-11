@@ -1832,7 +1832,7 @@ Alpine.data('cms', () => {
             })
           : `<h1>${pageData.title || ''}</h1>${pageData.body || ''}`
 
-        this.previewHtml = baseTemplate
+        const rendered = baseTemplate
           ? baseTemplate({
               page: pageData,
               site: this.siteConfig,
@@ -1840,6 +1840,12 @@ Alpine.data('cms', () => {
               content: new Handlebars.SafeString(innerHtml),
             })
           : innerHtml
+
+        // 古いプレビューBlob URLを破棄してから新しいプレビューを作る
+        revokePreviewBlobUrls()
+        // /assets/... 参照を Blob URL に書き換える（iframe 内で実ファイルが
+        // 解決できないため）
+        this.previewHtml = await rewriteAssetUrlsToBlob(rendered, this.fs)
 
         this.showPreviewPanel = true
         this.showRevisionPanel = false
@@ -1854,6 +1860,8 @@ Alpine.data('cms', () => {
     closePanel() {
       this.showRevisionPanel = false
       this.showPreviewPanel = false
+      // プレビュー用 Blob URL をメモリリークしないよう解放
+      revokePreviewBlobUrls()
     },
 
     // --- 書き出し（静的HTML生成 + 差分抽出） ---
@@ -2724,6 +2732,57 @@ async function loadAssetBlobUrl(
   const blob = await fs.readBlob(normalized)
   if (!blob) return ''
   return URL.createObjectURL(blob)
+}
+
+/** プレビュー用に作成された Blob URL のリスト（再生成時に revoke する） */
+const previewBlobUrls: string[] = []
+
+function revokePreviewBlobUrls(): void {
+  while (previewBlobUrls.length) {
+    const url = previewBlobUrls.pop()
+    if (url) URL.revokeObjectURL(url)
+  }
+}
+
+/** プレビュー HTML 内の /assets/... 参照を File System API 経由で読んだ
+ *  Blob URL に書き換える。iframe (srcdoc) の中では User の content フォルダを
+ *  HTTP 経由で解決できないため、メモリ上の Blob URL を埋め込む必要がある。
+ */
+async function rewriteAssetUrlsToBlob(html: string, fs: FileSystem | null): Promise<string> {
+  if (!fs || !html) return html
+  // src="..." / href="..." / url(...) / srcset="..." 内の /assets/... を抽出
+  const pathSet = new Set<string>()
+  const attrRe = /(?:src|href)=(["'])(\/assets\/[^"']+)\1/g
+  const cssUrlRe = /url\((['"]?)(\/assets\/[^'")\s]+)\1\)/g
+  const srcsetRe = /srcset=(["'])([^"']*\/assets\/[^"']+)\1/g
+  let m: RegExpExecArray | null
+  while ((m = attrRe.exec(html))) pathSet.add(m[2])
+  while ((m = cssUrlRe.exec(html))) pathSet.add(m[2])
+  // srcset は複数 URL カンマ区切り
+  while ((m = srcsetRe.exec(html))) {
+    const urls = m[2].split(',').map((s) => s.trim().split(/\s+/)[0])
+    for (const u of urls) {
+      if (u.startsWith('/assets/')) pathSet.add(u)
+    }
+  }
+
+  const blobUrlMap = new Map<string, string>()
+  for (const path of pathSet) {
+    const normalized = path.replace(/^\//, '')
+    const blob = await fs.readBlob(normalized)
+    if (blob) {
+      const blobUrl = URL.createObjectURL(blob)
+      previewBlobUrls.push(blobUrl)
+      blobUrlMap.set(path, blobUrl)
+    }
+  }
+
+  let result = html
+  for (const [path, blobUrl] of blobUrlMap) {
+    // グローバル置換（同じパスが複数箇所に出ても全部置換）
+    result = result.split(path).join(blobUrl)
+  }
+  return result
 }
 
 async function hasFile(dir: FileSystemDirectoryHandle, name: string): Promise<boolean> {

@@ -138,10 +138,6 @@
                   <span>フィールド</span>
                 </button>
 
-                <button @click="loadLangEditor()" class="gh-nav-item w-full">
-                  <i data-lucide="languages" class="w-[18px] h-[18px]"></i>
-                  <span>言語設定</span>
-                </button>
                 <template x-if="location.hostname === 'localhost'">
                   <button
                     @click="loadTemplateEditor()"
@@ -2485,6 +2481,40 @@
                         </button>
                       </template>
                     </div>
+                  </div>
+
+                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
+                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">多言語設定</h2>
+
+                  <div>
+                    <label class="gh-label">公開する言語</label>
+                    <div class="flex flex-wrap gap-2 mb-2">
+                      <template x-for="loc in languages.locales" :key="loc.code">
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border bg-[var(--ds-bg-surface)] text-xs"
+                          :class="loc.code === languages.default ? 'border-[var(--ds-primary-600)] text-[var(--ds-primary-600)] font-semibold' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)]'"
+                        >
+                          <span x-text="loc.flag"></span>
+                          <span x-text="loc.label"></span>
+                          <span
+                            class="text-[10px] text-[var(--ds-text-muted)]"
+                            x-text="loc.code"
+                          ></span>
+                          <template x-if="loc.code === languages.default">
+                            <span class="text-[10px] text-[var(--ds-primary-600)]">
+                              （デフォルト）
+                            </span>
+                          </template>
+                        </span>
+                      </template>
+                    </div>
+                    <button @click="loadLangEditor()" class="gh-btn-outline text-xs">
+                      <i data-lucide="languages" class="w-3.5 h-3.5"></i>
+                      言語設定を編集
+                    </button>
+                    <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
+                      公開サイトで利用する言語の追加・削除、デフォルト言語の設定を行います
+                    </p>
                   </div>
 
                   <div class="h-px bg-[var(--ds-border-default)] my-2"></div>

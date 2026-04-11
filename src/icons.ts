@@ -89,4 +89,7 @@ export {
 
   // トップ
   Home,
+
+  // ドキュメント
+  BookOpen,
 } from 'lucide'

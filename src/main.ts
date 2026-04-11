@@ -106,8 +106,17 @@ interface CmsComponent {
   themeMode: ThemeMode
   setThemeMode(mode: ThemeMode): void
 
-  // サイト情報用テンプレートコードスニペット
-  siteInfoTemplateSnippets: Array<{ label: string; code: string; note?: string }>
+  // テンプレートエディタ用リファレンスデータ（全体）
+  templateReferenceGroups: Array<{
+    id: string
+    label: string
+    items: Array<{ label: string; code: string; note?: string }>
+  }>
+  // テンプレートエディタの右パネルの開閉状態（id → bool）
+  templateRefOpenSection: Record<string, boolean>
+  // 投稿タイプリファレンス用に選択中のタイプ ID
+  templateRefSelectedTypeId: string
+  templateRefTypeFields(): Array<{ label: string; code: string; note?: string }>
   markDirty(): void
   scheduleAutoSave(): void
   autoSave(): Promise<void>
@@ -370,69 +379,325 @@ Alpine.data('cms', () => {
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
 
-    // サイト情報用テンプレートコードスニペット
-    // {{site.xxx}} で参照可能なフィールド + 専用ヘルパー
-    siteInfoTemplateSnippets: [
+    // テンプレートエディタの右パネル開閉状態（デフォルトで variables のみ展開）
+    templateRefOpenSection: {
+      variables: true,
+      page: true,
+      helpers: false,
+      types: false,
+      snippets: false,
+    } as Record<string, boolean>,
+
+    // 投稿タイプリファレンス用に選択中のタイプ ID
+    templateRefSelectedTypeId: '',
+
+    /** 選択中の投稿タイプから {{page.xxx}} 形式のリファレンスを生成 */
+    templateRefTypeFields(): Array<{ label: string; code: string; note?: string }> {
+      const typeId = this.templateRefSelectedTypeId
+      if (!typeId) return []
+      const type = this.contentTypes.find((t) => t.id === typeId)
+      if (!type) return []
+      const fields = this.resolveFields(type.fieldGroupIds, type.fields)
+      const result: Array<{ label: string; code: string; note?: string }> = [
+        { label: 'タイトル', code: '{{page.title}}' },
+        { label: 'スラッグ', code: '{{page.slug}}' },
+        { label: '本文 (HTML)', code: '{{{page.body}}}', note: '三重括弧でエスケープせず出力' },
+        { label: '公開日', code: '{{page.publishedAt}}' },
+        {
+          label: '公開日（フォーマット）',
+          code: "{{formatDate page.publishedAt 'YYYY年MM月DD日'}}",
+        },
+        { label: 'カテゴリ', code: '{{page.category}}' },
+      ]
+      for (const f of fields) {
+        if (['title', 'body', 'slug', 'publishedAt', 'category'].includes(f.key)) continue
+        if (f.type === 'image') {
+          result.push({
+            label: f.label,
+            code: `{{#if page.${f.key}}}<img src="{{page.${f.key}}}" alt="">{{/if}}`,
+            note: '画像。条件分岐＋img タグ',
+          })
+        } else if (f.type === 'imagelist') {
+          result.push({
+            label: f.label,
+            code: `{{#each page.${f.key}}}\n  <img src="{{this}}" alt="">\n{{/each}}`,
+            note: '画像配列をループで出力',
+          })
+        } else if (f.type === 'file') {
+          result.push({
+            label: f.label,
+            code: `{{#if page.${f.key}}}<a href="{{page.${f.key}}}">ダウンロード</a>{{/if}}`,
+            note: '添付ファイル',
+          })
+        } else if (f.type === 'richtext') {
+          result.push({
+            label: f.label,
+            code: `{{{page.${f.key}}}}`,
+            note: 'リッチテキスト（HTML 出力）',
+          })
+        } else if (f.type === 'repeater') {
+          result.push({
+            label: f.label,
+            code: `{{#each page.${f.key}}}\n  <!-- 各要素 -->\n{{/each}}`,
+            note: 'リピーター（配列）',
+          })
+        } else if (f.type === 'relation') {
+          result.push({
+            label: f.label,
+            code: `{{#each page.${f.key}}}\n  <a href="/${typeId}/{{this}}/">{{this}}</a>\n{{/each}}`,
+            note: '関連コンテンツの id 配列',
+          })
+        } else if (f.type === 'url') {
+          result.push({
+            label: f.label,
+            code: `{{#if page.${f.key}}}<a href="{{page.${f.key}}}">{{page.${f.key}}}</a>{{/if}}`,
+          })
+        } else if (f.type === 'date' || f.type === 'datetime') {
+          result.push({
+            label: f.label,
+            code: `<time>{{page.${f.key}}}</time>`,
+          })
+        } else if (f.type === 'checkbox' || f.type === 'toggle') {
+          result.push({
+            label: f.label,
+            code: `{{#if page.${f.key}}}有効{{else}}無効{{/if}}`,
+          })
+        } else {
+          result.push({
+            label: f.label,
+            code: `{{page.${f.key}}}`,
+          })
+        }
+      }
+      return result
+    },
+
+    // テンプレートエディタの右パネル：カテゴリ別リファレンス
+    // 製作者向けの全 Handlebars コードを一元管理する
+    templateReferenceGroups: [
       {
-        label: 'サイト名',
-        code: '{{site.name}}',
-      },
-      {
-        label: 'サイトURL',
-        code: '{{site.url}}',
-      },
-      {
-        label: '説明',
-        code: '{{site.description}}',
-      },
-      {
-        label: 'サイトロゴ（あれば img、無ければサイト名）',
-        code: `{{#if site.logo}}
+        id: 'variables',
+        label: 'サイト共通変数',
+        items: [
+          { label: 'サイト名', code: '{{site.name}}' },
+          { label: 'サイトURL', code: '{{site.url}}' },
+          { label: '説明', code: '{{site.description}}' },
+          {
+            label: 'サイトロゴ（フォールバック付き）',
+            code: `{{#if site.logo}}
   <img src="{{site.logo}}" alt="{{site.name}}" class="site-logo">
 {{else}}
   {{site.name}}
 {{/if}}`,
+          },
+          { label: 'ファビコン パス', code: '{{site.favicon}}' },
+          { label: '現在の言語コード', code: '{{lang}}' },
+          { label: 'デフォルト言語コード', code: '{{defaultLang}}' },
+          { label: '現在のページパス', code: '{{pagePath}}' },
+          {
+            label: 'メニュー（ID 指定で取得）',
+            code: `{{#each site.menus.main}}
+  <a href="{{url}}">{{label}}</a>
+{{/each}}`,
+            note: 'main を任意のメニュー ID に置き換え',
+          },
+        ],
       },
       {
-        label: 'ファビコン link タグ（推奨：head 内）',
-        code: '{{faviconTag site}}',
-        note: 'site.favicon が設定されていれば <link rel="icon"> を出力。MIME タイプも自動付与',
+        id: 'page',
+        label: 'ページ・コンテンツ変数',
+        items: [
+          { label: 'タイトル', code: '{{page.title}}' },
+          { label: 'スラッグ', code: '{{page.slug}}' },
+          {
+            label: '本文 HTML',
+            code: '{{{page.body}}}',
+            note: '三重括弧でエスケープせず HTML として出力',
+          },
+          { label: '公開日', code: '{{page.publishedAt}}' },
+          { label: 'カテゴリ', code: '{{page.category}}' },
+          {
+            label: 'タグ（ループ）',
+            code: `{{#each page.tags}}
+  <span class="tag">{{this}}</span>
+{{/each}}`,
+          },
+          { label: 'メイン画像', code: '{{page.image}}' },
+          { label: '更新日', code: '{{page._meta.updatedAt}}' },
+          { label: '著者', code: '{{page._meta.author}}' },
+          {
+            label: 'パンくず',
+            code: `{{#each breadcrumb}}
+  {{#if url}}<a href="{{url}}">{{label}}</a>{{else}}<span>{{label}}</span>{{/if}}
+{{/each}}`,
+          },
+        ],
       },
       {
-        label: 'カラーテーマ CSS 変数',
-        code: '{{themeStyles site}}',
-        note: '--color-primary / --color-secondary / --font-body などの CSS 変数を <style> で出力',
+        id: 'helpers',
+        label: 'Handlebars ヘルパー',
+        items: [
+          {
+            label: 'formatDate（日付フォーマット）',
+            code: "{{formatDate page.publishedAt 'YYYY年MM月DD日'}}",
+            note: 'YYYY / MM / DD のプレースホルダ',
+          },
+          {
+            label: 'truncate（文字数制限）',
+            code: '{{truncate page.body 120}}',
+            note: 'HTML タグを除去して指定文字数まで',
+          },
+          {
+            label: 'eq / gt / lt（比較）',
+            code: '{{#if (eq page.status "published")}}公開中{{/if}}',
+          },
+          {
+            label: 'faviconTag（link rel="icon"）',
+            code: '{{faviconTag site}}',
+            note: 'head 内推奨。MIME タイプも自動付与',
+          },
+          {
+            label: 'themeStyles（CSS 変数）',
+            code: '{{themeStyles site}}',
+            note: '--color-primary / --font-body などを <style> で出力',
+          },
+          {
+            label: 'hreflangTags（SEO）',
+            code: '{{hreflangTags pagePath locales defaultLang site.url}}',
+            note: '多言語サイトの hreflang を head 内に',
+          },
+          {
+            label: 'langSwitcher（言語切替リンク）',
+            code: '{{langSwitcher pagePath locales defaultLang lang}}',
+          },
+          {
+            label: 'breadcrumbJsonLd（JSON-LD）',
+            code: '{{breadcrumbJsonLd breadcrumb site.url}}',
+            note: '構造化データ。head 内推奨',
+          },
+          {
+            label: 'articleJsonLd（記事 JSON-LD）',
+            code: '{{articleJsonLd page site}}',
+          },
+          {
+            label: 'autoDescription（自動 description）',
+            code: '{{autoDescription page}}',
+            note: 'meta description / og:description を自動生成',
+          },
+          {
+            label: 'latestItems（コンテンツタイプ最新N件）',
+            code: `{{#each (latestItems 'news' 5 lang)}}
+  <li>
+    <a href="{{url}}">
+      <time>{{formatDate publishedAt}}</time>
+      <span>{{title}}</span>
+    </a>
+  </li>
+{{/each}}`,
+            note: '第1引数: タイプ id, 第2引数: 件数, 第3引数: lang',
+          },
+        ],
       },
       {
-        label: '言語切替リンク',
-        code: '{{langSwitcher pagePath locales defaultLang lang}}',
-        note: '多言語サイトで全言語のリンクを <nav class="lang-switcher"> で出力',
-      },
-      {
-        label: 'hreflang タグ（SEO・推奨：head 内）',
-        code: '{{hreflangTags pagePath locales defaultLang site.url}}',
-      },
-      {
-        label: '現在の言語コード',
-        code: '{{lang}}',
-      },
-      {
-        label: 'デフォルト言語コード',
-        code: '{{defaultLang}}',
-      },
-      {
-        label: 'フォーム送信先URL',
-        code: '{{site.services.formUrl}}',
-      },
-      {
-        label: 'お問い合わせフォーム（フォームバックエンドを使用）',
-        code: `{{#if site.services.formUrl}}
+        id: 'snippets',
+        label: 'よく使うスニペット',
+        items: [
+          {
+            label: 'お知らせ最新リスト',
+            code: `<ul class="news-list">
+  {{#each (latestItems 'news' 10 lang)}}
+    <li>
+      <a href="{{url}}">
+        <time datetime="{{publishedAt}}">{{formatDate publishedAt 'YYYY-MM-DD'}}</time>
+        <span>{{title}}</span>
+      </a>
+    </li>
+  {{/each}}
+</ul>`,
+          },
+          {
+            label: '画像 + キャプション（条件付き）',
+            code: `{{#if page.image}}
+<figure>
+  <img src="{{page.image}}" alt="{{page.title}}">
+  {{#if page.caption}}<figcaption>{{page.caption}}</figcaption>{{/if}}
+</figure>
+{{/if}}`,
+          },
+          {
+            label: 'ヒーローセクション',
+            code: `<section class="hero">
+  {{#if page.heroImage}}<img src="{{page.heroImage}}" alt="">{{/if}}
+  <div class="container">
+    <h1>{{page.heroHeading}}</h1>
+    <p>{{page.heroSubheading}}</p>
+  </div>
+</section>`,
+          },
+          {
+            label: 'バナーグリッド',
+            code: `<ul class="banner-grid">
+  {{#each page.banners}}
+    <li><a href="{{link}}"><img src="{{image}}" alt="{{alt}}"></a></li>
+  {{/each}}
+</ul>`,
+          },
+          {
+            label: 'カルーセル',
+            code: `<div class="carousel">
+  {{#each page.carousel}}
+    <figure>
+      {{#if link}}<a href="{{link}}">{{/if}}
+      <img src="{{image}}" alt="{{caption}}">
+      {{#if caption}}<figcaption>{{caption}}</figcaption>{{/if}}
+      {{#if link}}</a>{{/if}}
+    </figure>
+  {{/each}}
+</div>`,
+          },
+          {
+            label: 'お問い合わせフォーム雛形',
+            code: `{{#if site.services.formUrl}}
 <form action="{{site.services.formUrl}}" method="POST">
-  <!-- フォーム項目をここに -->
+  <label>お名前 <input type="text" name="name" required></label>
+  <label>メール <input type="email" name="email" required></label>
+  <label>本文 <textarea name="message" required></textarea></label>
+  <button type="submit">送信</button>
 </form>
 {{/if}}`,
+          },
+          {
+            label: 'ページネーション',
+            code: `{{#if (gt total 1)}}
+<nav class="pagination">
+  {{#if prevUrl}}<a href="{{prevUrl}}">前へ</a>{{/if}}
+  {{#each pages}}
+    {{#if (eq this.number ../current)}}
+      <span aria-current="page">{{this.number}}</span>
+    {{else}}
+      <a href="{{this.url}}">{{this.number}}</a>
+    {{/if}}
+  {{/each}}
+  {{#if nextUrl}}<a href="{{nextUrl}}">次へ</a>{{/if}}
+</nav>
+{{/if}}`,
+          },
+          {
+            label: '言語切替（インライン）',
+            code: `{{#each locales}}
+  <a href="/{{#unless (eq code ../defaultLang)}}{{code}}/{{/unless}}{{../pagePath}}"{{#if (eq code ../lang)}} aria-current="true"{{/if}}>
+    {{flag}} {{label}}
+  </a>
+{{/each}}`,
+            note: 'langSwitcher ヘルパーを使わずに直接書く例',
+          },
+        ],
       },
-    ],
+    ] as Array<{
+      id: string
+      label: string
+      items: Array<{ label: string; code: string; note?: string }>
+    }>,
 
     // relation フィールドの候補リストキャッシュ
     relationCandidatesCache: {} as Record<string, ContentData[]>,

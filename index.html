@@ -2397,6 +2397,143 @@
                     </div>
                   </template>
                 </div>
+
+                <!-- 右: リファレンスパネル -->
+                <aside
+                  class="w-80 shrink-0 border-l border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
+                >
+                  <div class="p-3">
+                    <h3
+                      class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5"
+                    >
+                      <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                      リファレンス
+                    </h3>
+                    <p class="text-[10px] text-[var(--ds-text-muted)] mb-3 leading-snug">
+                      クリックでクリップボードにコピー、または編集中ファイルのカーソル位置に挿入できます。
+                    </p>
+
+                    <!-- 各セクション（カテゴリ別） -->
+                    <template x-for="group in templateReferenceGroups" :key="group.id">
+                      <div class="mb-2">
+                        <button
+                          @click="templateRefOpenSection[group.id] = !templateRefOpenSection[group.id]"
+                          class="w-full flex items-center justify-between px-2 py-1.5 text-xs font-bold text-[var(--ds-text-heading)] hover:bg-[var(--ds-bg-hover)] rounded"
+                        >
+                          <span x-text="group.label"></span>
+                          <i
+                            data-lucide="chevron-down"
+                            class="w-3 h-3 transition-transform"
+                            :class="templateRefOpenSection[group.id] ? '' : '-rotate-90'"
+                          ></i>
+                        </button>
+                        <div
+                          x-show="templateRefOpenSection[group.id]"
+                          class="mt-1 space-y-1.5 pl-1"
+                        >
+                          <template x-for="item in group.items" :key="item.label">
+                            <div>
+                              <p
+                                class="text-[10px] text-[var(--ds-text-muted)] mb-0.5 px-1"
+                                x-text="item.label"
+                              ></p>
+                              <div
+                                class="bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded p-2 cursor-pointer relative group hover:border-[var(--ds-primary-600)] overflow-x-auto"
+                                @click="
+                                  const ta = document.getElementById('template-editor');
+                                  if (ta && currentTemplateFile) {
+                                    const pos = ta.selectionStart;
+                                    templateCode = templateCode.substring(0, pos) + item.code + templateCode.substring(pos);
+                                    $nextTick(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = pos + item.code.length });
+                                    showToast('カーソル位置に挿入しました');
+                                  } else {
+                                    navigator.clipboard.writeText(item.code);
+                                    showToast('コピーしました');
+                                  }
+                                "
+                              >
+                                <pre
+                                  class="font-mono text-[10px] text-[var(--ds-text-heading)] m-0 whitespace-pre"
+                                  x-text="item.code"
+                                ></pre>
+                              </div>
+                              <template x-if="item.note">
+                                <p
+                                  class="text-[10px] text-[var(--ds-text-muted)] mt-0.5 px-1 leading-snug"
+                                  x-text="item.note"
+                                ></p>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+
+                    <!-- 投稿タイプ別フィールド（動的） -->
+                    <div class="mb-2">
+                      <button
+                        @click="templateRefOpenSection['types'] = !templateRefOpenSection['types']"
+                        class="w-full flex items-center justify-between px-2 py-1.5 text-xs font-bold text-[var(--ds-text-heading)] hover:bg-[var(--ds-bg-hover)] rounded"
+                      >
+                        <span>投稿タイプ別フィールド</span>
+                        <i
+                          data-lucide="chevron-down"
+                          class="w-3 h-3 transition-transform"
+                          :class="templateRefOpenSection['types'] ? '' : '-rotate-90'"
+                        ></i>
+                      </button>
+                      <div x-show="templateRefOpenSection['types']" class="mt-1 space-y-1.5 pl-1">
+                        <select
+                          x-model="templateRefSelectedTypeId"
+                          class="gh-select-light text-xs w-full mb-2"
+                        >
+                          <option value="">タイプを選択...</option>
+                          <template x-for="type in contentTypes" :key="type.id">
+                            <option :value="type.id" x-text="type.label"></option>
+                          </template>
+                        </select>
+                        <template x-if="templateRefSelectedTypeId">
+                          <div class="space-y-1.5">
+                            <template x-for="item in templateRefTypeFields()" :key="item.label">
+                              <div>
+                                <p
+                                  class="text-[10px] text-[var(--ds-text-muted)] mb-0.5 px-1"
+                                  x-text="item.label"
+                                ></p>
+                                <div
+                                  class="bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded p-2 cursor-pointer relative group hover:border-[var(--ds-primary-600)] overflow-x-auto"
+                                  @click="
+                                    const ta = document.getElementById('template-editor');
+                                    if (ta && currentTemplateFile) {
+                                      const pos = ta.selectionStart;
+                                      templateCode = templateCode.substring(0, pos) + item.code + templateCode.substring(pos);
+                                      $nextTick(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = pos + item.code.length });
+                                      showToast('カーソル位置に挿入しました');
+                                    } else {
+                                      navigator.clipboard.writeText(item.code);
+                                      showToast('コピーしました');
+                                    }
+                                  "
+                                >
+                                  <pre
+                                    class="font-mono text-[10px] text-[var(--ds-text-heading)] m-0 whitespace-pre"
+                                    x-text="item.code"
+                                  ></pre>
+                                </div>
+                                <template x-if="item.note">
+                                  <p
+                                    class="text-[10px] text-[var(--ds-text-muted)] mt-0.5 px-1 leading-snug"
+                                    x-text="item.note"
+                                  ></p>
+                                </template>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
               </div>
             </template>
 
@@ -2675,41 +2812,6 @@
                       />
                     </template>
                   </div>
-
-                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
-                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">
-                    テンプレートコード
-                  </h2>
-                  <p class="text-xs text-[var(--ds-text-muted)] -mt-2">
-                    上記の項目をテンプレートで参照する Handlebars
-                    コードです。製作者向け。各ブロックをクリックでコピーできます。
-                  </p>
-
-                  <template x-for="snippet in siteInfoTemplateSnippets" :key="snippet.label">
-                    <div>
-                      <label class="gh-label" x-text="snippet.label"></label>
-                      <div
-                        class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
-                        @click="navigator.clipboard.writeText($el.querySelector('pre').textContent); showToast('コピーしました')"
-                      >
-                        <pre
-                          class="font-mono text-xs text-[var(--ds-text-heading)] select-all m-0 whitespace-pre"
-                          x-text="snippet.code"
-                        ></pre>
-                        <span
-                          class="absolute top-2 right-2 text-[var(--ds-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-                        >
-                          クリックでコピー
-                        </span>
-                      </div>
-                      <template x-if="snippet.note">
-                        <p
-                          class="text-[10px] text-[var(--ds-text-muted)] mt-1 leading-snug"
-                          x-text="snippet.note"
-                        ></p>
-                      </template>
-                    </div>
-                  </template>
                 </div>
               </div>
             </template>

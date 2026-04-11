@@ -480,9 +480,9 @@ label[for],
    ============================================================ */
 
 .gh-editor-container {
-  max-width: 860px;
-  margin: 24px auto;
-  padding: 0 32px 120px;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 24px 48px 120px;
 }
 
 .gh-title-input {

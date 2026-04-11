@@ -476,6 +476,8 @@ Alpine.data('cms', () => {
         hash = `#/content/${this.currentType.id}/${this.currentPage.id}`
       } else if (this.view === 'settings') {
         hash = '#/settings'
+      } else if (this.view === 'site-info') {
+        hash = '#/site-info'
       } else if (this.view === 'menus') {
         hash = '#/menus'
       } else if (this.view === 'templates') {
@@ -503,6 +505,8 @@ Alpine.data('cms', () => {
         await this.openHomePage()
       } else if (parts[0] === 'settings') {
         this.view = 'settings'
+      } else if (parts[0] === 'site-info') {
+        this.view = 'site-info'
       } else if (parts[0] === 'templates') {
         await this.loadTemplateEditor()
       } else if (parts[0] === 'field-groups') {
@@ -537,7 +541,8 @@ Alpine.data('cms', () => {
         return this.currentPage.title || '新規作成'
       if (this.view === 'content-list' && this.currentType) return this.currentType.label
       if (this.view === 'page-list') return 'ページ'
-      if (this.view === 'settings') return 'サイト設定'
+      if (this.view === 'site-info') return 'サイト情報'
+      if (this.view === 'settings') return '設定'
       if (this.view === 'templates') return 'テンプレート'
       if (this.view === 'field-groups') return 'フィールド'
       if (this.view === 'taxonomy-categories') return 'カテゴリ'

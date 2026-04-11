@@ -153,6 +153,14 @@
                   </button>
                 </template>
                 <button
+                  @click="view = 'site-info'; updateHash()"
+                  :class="view === 'site-info' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
+                  <i data-lucide="globe" class="w-[18px] h-[18px]"></i>
+                  <span>サイト情報</span>
+                </button>
+                <button
                   @click="view = 'settings'; updateHash()"
                   :class="view === 'settings' ? 'gh-nav-active' : ''"
                   class="gh-nav-item w-full"
@@ -220,6 +228,9 @@
               </template>
               <template x-if="view === 'page-list'">
                 <span class="text-[var(--ds-text-heading)] font-medium">ページ</span>
+              </template>
+              <template x-if="view === 'site-info'">
+                <span class="text-[var(--ds-text-heading)] font-medium">サイト情報</span>
               </template>
               <template x-if="view === 'settings'">
                 <span class="text-[var(--ds-text-heading)] font-medium">設定</span>
@@ -2353,14 +2364,16 @@
             </template>
 
             <!-- 設定 -->
-            <template x-if="view === 'settings'">
+            <!-- サイト情報（site.json に保存される、公開サイトに影響する設定） -->
+            <template x-if="view === 'site-info'">
               <div class="px-8 py-0 max-w-5xl mx-auto">
                 <div class="gh-editor-header">
-                  <h1 class="text-lg font-bold">設定</h1>
+                  <h1 class="text-lg font-bold">サイト情報</h1>
                   <div class="flex-1"></div>
                   <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
                 </div>
                 <div class="space-y-5">
+                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">基本情報</h2>
                   <div>
                     <label class="gh-label">サイト名</label>
                     <input type="text" x-model="siteConfig.name" class="gh-input-light w-full" />
@@ -2420,38 +2433,13 @@
                   </div>
 
                   <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
-                  <h2 class="text-lg font-bold">デザイン</h2>
-
-                  <!-- 管理画面テーマ（light/dark/system） -->
-                  <div>
-                    <label class="gh-label">管理画面テーマ</label>
-                    <div class="flex gap-2 flex-wrap">
-                      <template
-                        x-for="mode in [
-                          {id:'light',label:'ライト',icon:'sun'},
-                          {id:'dark',label:'ダーク',icon:'moon'},
-                          {id:'system',label:'システム連動',icon:'monitor'}
-                        ]"
-                        :key="mode.id"
-                      >
-                        <button
-                          @click="setThemeMode(mode.id)"
-                          class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all"
-                          :class="themeMode === mode.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] font-semibold' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)] hover:border-[var(--ds-border-strong)]'"
-                        >
-                          <i :data-lucide="mode.icon" class="w-4 h-4"></i>
-                          <span x-text="mode.label"></span>
-                        </button>
-                      </template>
-                    </div>
-                    <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
-                      公開サイトのテーマではなく管理画面の表示モードです
-                    </p>
-                  </div>
+                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">
+                    公開サイトのデザイン
+                  </h2>
 
                   <!-- カラーテーマ（公開サイト） -->
                   <div>
-                    <label class="gh-label">カラーテーマ（公開サイト）</label>
+                    <label class="gh-label">カラーテーマ</label>
                     <div class="flex gap-2 flex-wrap">
                       <template
                         x-for="t in [
@@ -2500,7 +2488,9 @@
                   </div>
 
                   <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
-                  <h2 class="text-lg font-bold">外部サービス連携</h2>
+                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">
+                    外部サービス連携
+                  </h2>
 
                   <!-- フォームバックエンド -->
                   <div>
@@ -2552,6 +2542,49 @@
                         class="gh-input-light w-full"
                       />
                     </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- 設定（CMS自体の動作に関わる設定。site.json には保存されない） -->
+            <template x-if="view === 'settings'">
+              <div class="px-8 py-0 max-w-5xl mx-auto">
+                <div class="gh-editor-header">
+                  <h1 class="text-lg font-bold">設定</h1>
+                </div>
+                <p class="text-xs text-[var(--ds-text-muted)] mb-6">
+                  この画面は ONE CMS
+                  自体の動作設定です。サイトに関する情報（サイト名・カラーテーマ・外部サービス連携など）はサイドバーの「サイト情報」から編集してください。
+                </p>
+                <div class="space-y-5">
+                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">表示</h2>
+
+                  <!-- 管理画面テーマ（light/dark/system） -->
+                  <div>
+                    <label class="gh-label">管理画面テーマ</label>
+                    <div class="flex gap-2 flex-wrap">
+                      <template
+                        x-for="mode in [
+                          {id:'light',label:'ライト',icon:'sun'},
+                          {id:'dark',label:'ダーク',icon:'moon'},
+                          {id:'system',label:'システム連動',icon:'monitor'}
+                        ]"
+                        :key="mode.id"
+                      >
+                        <button
+                          @click="setThemeMode(mode.id)"
+                          class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all"
+                          :class="themeMode === mode.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] font-semibold' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)] hover:border-[var(--ds-border-strong)]'"
+                        >
+                          <i :data-lucide="mode.icon" class="w-4 h-4"></i>
+                          <span x-text="mode.label"></span>
+                        </button>
+                      </template>
+                    </div>
+                    <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
+                      ブラウザ単位の設定です。同じユーザーでも別の PC・ブラウザでは個別に設定します
+                    </p>
                   </div>
                 </div>
               </div>

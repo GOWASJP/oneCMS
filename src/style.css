@@ -583,6 +583,27 @@ label[for],
 .gh-editorjs .ce-toolbar__content {
   max-width: 680px;
   margin: 0 auto;
+  position: relative;
+}
+
+/* ブロックツールバー（+ と drag handle）をブロックの右外側に移動 */
+.gh-editorjs .ce-toolbar__plus,
+.gh-editorjs .ce-toolbar__plus--left-oriented,
+.gh-editorjs .ce-toolbar__plus--right-oriented {
+  left: auto !important;
+  right: -68px !important;
+  transform: none !important;
+}
+.gh-editorjs .ce-toolbar__settings-btn,
+.gh-editorjs .ce-toolbar__settings-btn--left-oriented,
+.gh-editorjs .ce-toolbar__settings-btn--right-oriented {
+  left: auto !important;
+  right: -34px !important;
+  transform: none !important;
+}
+.gh-editorjs .ce-toolbar__actions {
+  left: auto !important;
+  right: -68px !important;
 }
 
 .gh-editorjs .ce-paragraph {

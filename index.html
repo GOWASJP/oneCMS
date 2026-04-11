@@ -2675,6 +2675,41 @@
                       />
                     </template>
                   </div>
+
+                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
+                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">
+                    テンプレートコード
+                  </h2>
+                  <p class="text-xs text-[var(--ds-text-muted)] -mt-2">
+                    上記の項目をテンプレートで参照する Handlebars
+                    コードです。製作者向け。各ブロックをクリックでコピーできます。
+                  </p>
+
+                  <template x-for="snippet in siteInfoTemplateSnippets" :key="snippet.label">
+                    <div>
+                      <label class="gh-label" x-text="snippet.label"></label>
+                      <div
+                        class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
+                        @click="navigator.clipboard.writeText($el.querySelector('pre').textContent); showToast('コピーしました')"
+                      >
+                        <pre
+                          class="font-mono text-xs text-[var(--ds-text-heading)] select-all m-0 whitespace-pre"
+                          x-text="snippet.code"
+                        ></pre>
+                        <span
+                          class="absolute top-2 right-2 text-[var(--ds-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                        >
+                          クリックでコピー
+                        </span>
+                      </div>
+                      <template x-if="snippet.note">
+                        <p
+                          class="text-[10px] text-[var(--ds-text-muted)] mt-1 leading-snug"
+                          x-text="snippet.note"
+                        ></p>
+                      </template>
+                    </div>
+                  </template>
                 </div>
               </div>
             </template>

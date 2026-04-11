@@ -105,6 +105,9 @@ interface CmsComponent {
   // テーマ
   themeMode: ThemeMode
   setThemeMode(mode: ThemeMode): void
+
+  // サイト情報用テンプレートコードスニペット
+  siteInfoTemplateSnippets: Array<{ label: string; code: string; note?: string }>
   markDirty(): void
   scheduleAutoSave(): void
   autoSave(): Promise<void>
@@ -366,6 +369,70 @@ Alpine.data('cms', () => {
 
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
+
+    // サイト情報用テンプレートコードスニペット
+    // {{site.xxx}} で参照可能なフィールド + 専用ヘルパー
+    siteInfoTemplateSnippets: [
+      {
+        label: 'サイト名',
+        code: '{{site.name}}',
+      },
+      {
+        label: 'サイトURL',
+        code: '{{site.url}}',
+      },
+      {
+        label: '説明',
+        code: '{{site.description}}',
+      },
+      {
+        label: 'サイトロゴ（あれば img、無ければサイト名）',
+        code: `{{#if site.logo}}
+  <img src="{{site.logo}}" alt="{{site.name}}" class="site-logo">
+{{else}}
+  {{site.name}}
+{{/if}}`,
+      },
+      {
+        label: 'ファビコン link タグ（推奨：head 内）',
+        code: '{{faviconTag site}}',
+        note: 'site.favicon が設定されていれば <link rel="icon"> を出力。MIME タイプも自動付与',
+      },
+      {
+        label: 'カラーテーマ CSS 変数',
+        code: '{{themeStyles site}}',
+        note: '--color-primary / --color-secondary / --font-body などの CSS 変数を <style> で出力',
+      },
+      {
+        label: '言語切替リンク',
+        code: '{{langSwitcher pagePath locales defaultLang lang}}',
+        note: '多言語サイトで全言語のリンクを <nav class="lang-switcher"> で出力',
+      },
+      {
+        label: 'hreflang タグ（SEO・推奨：head 内）',
+        code: '{{hreflangTags pagePath locales defaultLang site.url}}',
+      },
+      {
+        label: '現在の言語コード',
+        code: '{{lang}}',
+      },
+      {
+        label: 'デフォルト言語コード',
+        code: '{{defaultLang}}',
+      },
+      {
+        label: 'フォーム送信先URL',
+        code: '{{site.services.formUrl}}',
+      },
+      {
+        label: 'お問い合わせフォーム（フォームバックエンドを使用）',
+        code: `{{#if site.services.formUrl}}
+<form action="{{site.services.formUrl}}" method="POST">
+  <!-- フォーム項目をここに -->
+</form>
+{{/if}}`,
+      },
+    ],
 
     // relation フィールドの候補リストキャッシュ
     relationCandidatesCache: {} as Record<string, ContentData[]>,

@@ -1,6 +1,12 @@
 <header class="site-header">
   <div class="container">
-    <a href="/" class="site-title">{{site.name}}</a>
+    <a href="/" class="site-title">
+      {{#if site.logo}}
+        <img src="{{site.logo}}" alt="{{site.name}}" class="site-logo">
+      {{else}}
+        {{site.name}}
+      {{/if}}
+    </a>
     {{> nav}}
   </div>
 </header>

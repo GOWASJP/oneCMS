@@ -99,6 +99,8 @@ interface CmsComponent {
 
   // ファビコンプレビュー用（管理画面内で表示するための Blob URL）
   faviconBlobUrl: string
+  // ロゴプレビュー用 Blob URL
+  logoBlobUrl: string
 
   // テーマ
   themeMode: ThemeMode
@@ -156,6 +158,8 @@ interface CmsComponent {
   handleFileUpload(event: Event, fieldKey: string): Promise<void>
   handleFaviconUpload(event: Event): Promise<void>
   removeFavicon(): Promise<void>
+  handleLogoUpload(event: Event): Promise<void>
+  removeLogo(): Promise<void>
   savePage(opts?: { silent?: boolean }): Promise<void>
   saveSiteConfig(): Promise<void>
   showRevisions(): Promise<void>
@@ -357,6 +361,8 @@ Alpine.data('cms', () => {
 
     // ファビコンプレビュー用 Blob URL
     faviconBlobUrl: '',
+    // ロゴプレビュー用 Blob URL
+    logoBlobUrl: '',
 
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
@@ -652,6 +658,8 @@ Alpine.data('cms', () => {
       // 管理画面のブラウザタブと設定プレビュー用にファビコン Blob URL を生成
       this.faviconBlobUrl = await loadFaviconBlobUrl(this.fs, this.siteConfig.favicon)
       applyFaviconLink(this.faviconBlobUrl)
+      // ロゴプレビュー用 Blob URL を生成
+      this.logoBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.logo)
       this.languages = (await this.fs.readJson<Languages>(PATH_LANGUAGES)) || this.languages
       this.currentLang = this.languages.default || 'ja'
       this.contentTypes = await this.fs.readContentTypes()
@@ -1186,6 +1194,76 @@ Alpine.data('cms', () => {
       this.faviconBlobUrl = ''
       applyFaviconLink('')
       this.showToast('ファビコンを削除しました')
+    },
+
+    /** サイトロゴアップロード: assets/files/logo.<ext> に保存し、siteConfig.logo にパスを記録 */
+    async handleLogoUpload(event: Event) {
+      const input = event.target as HTMLInputElement
+      const file = input.files?.[0]
+      if (!file || !this.fs) return
+      const mimeExtMap: Record<string, string> = {
+        'image/png': 'png',
+        'image/svg+xml': 'svg',
+        'image/webp': 'webp',
+        'image/jpeg': 'jpg',
+      }
+      let ext = mimeExtMap[file.type]
+      if (!ext) {
+        const match = file.name.match(/\.(png|svg|webp|jpe?g)$/i)
+        ext = match ? match[1].toLowerCase().replace('jpeg', 'jpg') : ''
+      }
+      if (!ext) {
+        this.showToast('png / svg / webp / jpg 形式のみアップロードできます', 5000)
+        input.value = ''
+        return
+      }
+      try {
+        // 古い拡張子のロゴが残っていたら削除（拡張子切替時）
+        const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+        if (filesDir) {
+          for (const oldExt of ['png', 'svg', 'webp', 'jpg']) {
+            if (oldExt === ext) continue
+            try {
+              await filesDir.removeEntry(`logo.${oldExt}`)
+            } catch {
+              /* skip */
+            }
+          }
+        }
+        const buffer = await file.arrayBuffer()
+        const path = `${PATH_ASSETS_FILES}/logo.${ext}`
+        await this.fs.writeBlob(path, new Blob([buffer]))
+        this.siteConfig.logo = `/${path}`
+        await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+        this.logoBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.logo)
+        this.showToast('ロゴをアップロードしました')
+      } catch (e) {
+        console.error('ロゴアップロードエラー:', e)
+        this.showToast('ロゴの処理に失敗しました')
+      } finally {
+        input.value = ''
+      }
+    },
+
+    /** ロゴ削除 */
+    async removeLogo() {
+      if (!this.fs) return
+      if (!(await this.showConfirm('ロゴを削除しますか？'))) return
+      const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+      if (filesDir) {
+        for (const ext of ['png', 'svg', 'webp', 'jpg']) {
+          try {
+            await filesDir.removeEntry(`logo.${ext}`)
+          } catch {
+            /* skip */
+          }
+        }
+      }
+      delete (this.siteConfig as any).logo
+      await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+      if (this.logoBlobUrl) URL.revokeObjectURL(this.logoBlobUrl)
+      this.logoBlobUrl = ''
+      this.showToast('ロゴを削除しました')
     },
 
     // --- 保存（リビジョン自動作成付き） ---
@@ -2221,6 +2299,18 @@ function clearFaviconBlobUrl(): void {
     URL.revokeObjectURL(currentFaviconBlobUrl)
     currentFaviconBlobUrl = null
   }
+}
+
+/** 任意のサイト相対パス（/assets/files/xxx.png 等）を File System API で読んで Blob URL を返す */
+async function loadAssetBlobUrl(
+  fs: FileSystem | null,
+  assetPath: string | undefined,
+): Promise<string> {
+  if (!fs || !assetPath) return ''
+  const normalized = assetPath.replace(/^\//, '')
+  const blob = await fs.readBlob(normalized)
+  if (!blob) return ''
+  return URL.createObjectURL(blob)
 }
 
 async function hasFile(dir: FileSystemDirectoryHandle, name: string): Promise<boolean> {

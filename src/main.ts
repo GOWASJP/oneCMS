@@ -106,6 +106,9 @@ interface CmsComponent {
   themeMode: ThemeMode
   setThemeMode(mode: ThemeMode): void
 
+  // テンプレート/コンポーネントの役割説明
+  templateDescription(name: string): string
+
   // テンプレートエディタ用リファレンスデータ（全体）
   templateReferenceGroups: Array<{
     id: string
@@ -378,6 +381,11 @@ Alpine.data('cms', () => {
 
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
+
+    /** テンプレート/コンポーネントの役割説明（ファイル名 → 説明） */
+    templateDescription(name: string): string {
+      return TEMPLATE_DESCRIPTIONS[name] || ''
+    },
 
     // テンプレートエディタの右パネル開閉状態（デフォルトで variables のみ展開）
     templateRefOpenSection: {
@@ -2611,6 +2619,35 @@ Alpine.data('cms', () => {
 })
 
 Alpine.start()
+
+/** テンプレート/コンポーネントファイルの役割説明
+ *  ファイル名（拡張子含む）をキーに、製作者向けの説明文を返す
+ */
+const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
+  // テンプレート（最上位）
+  '_base.hbs': '全ページ共通の HTML レイアウト枠',
+  'home.hbs': 'トップページ',
+  'page.hbs': '固定ページ（会社概要・利用規約など）',
+  'list.hbs': '投稿タイプの一覧ページ',
+  'detail.hbs': '投稿タイプの詳細ページ',
+  'config.json': 'テンプレートパックのメタ情報',
+
+  // コンポーネント（再利用パーシャル）
+  'head.hbs': '<head> 内の meta タグ・SEO・スタイル',
+  'header.hbs': 'サイトヘッダー（ロゴ・ナビ）',
+  'footer.hbs': 'サイトフッター',
+  'nav.hbs': 'グローバルナビゲーション',
+  'breadcrumb.hbs': 'パンくずリスト',
+  'pagination.hbs': 'ページネーション',
+  'styles.hbs': '共通 CSS（<style> タグでまとめて出力）',
+  'accordion.hbs': 'アコーディオン UI',
+  'card-list.hbs': 'カード形式のリスト',
+  'contact-form.hbs': 'お問い合わせフォーム雛形',
+  'gallery.hbs': '画像ギャラリー',
+  'hero.hbs': 'ヒーローセクション',
+  'tabs.hbs': 'タブ UI',
+  'timeline.hbs': 'タイムライン UI',
+}
 
 /** 翻訳ステータスバッジ用の static SVG（Lucide のアイコンデータから抽出したパス） */
 const LANG_STATUS_ICONS: Record<string, string> = {

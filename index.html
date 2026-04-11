@@ -2288,7 +2288,7 @@
               <div class="flex h-full">
                 <!-- 左: ファイル一覧 -->
                 <div
-                  class="w-56 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
+                  class="w-64 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
                 >
                   <div class="p-3">
                     <h3
@@ -2303,19 +2303,29 @@
                       >
                         <button
                           @click="openTemplateFile(f.path)"
-                          :class="currentTemplateFile === f.path ? 'bg-[var(--ds-success-100)] text-[var(--ds-text-heading)] font-medium' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg-hover)]'"
-                          class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
-                          x-text="f.name"
-                        ></button>
+                          :class="currentTemplateFile === f.path ? 'bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] font-medium' : 'text-[var(--ds-text-body)] hover:bg-[var(--ds-bg-hover)]'"
+                          class="block w-full text-left px-2 py-1.5 rounded"
+                        >
+                          <span class="block text-xs font-mono truncate" x-text="f.name"></span>
+                          <template x-if="templateDescription(f.name)">
+                            <span
+                              class="block text-[10px] text-[var(--ds-text-muted)] truncate mt-0.5"
+                              x-text="templateDescription(f.name)"
+                            ></span>
+                          </template>
+                        </button>
                       </template>
                     </div>
                     <template x-if="templateFiles.some(f => f.isComponent)">
-                      <div class="mt-3">
+                      <div class="mt-4">
                         <h3
                           class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-2"
                         >
                           コンポーネント
                         </h3>
+                        <p class="text-[10px] text-[var(--ds-text-muted)] mb-2 leading-snug">
+                          {{> name}} で他のテンプレートから呼び出せる再利用パーシャル
+                        </p>
                         <div class="space-y-0.5">
                           <template
                             x-for="f in templateFiles.filter(f => f.isComponent)"
@@ -2323,10 +2333,17 @@
                           >
                             <button
                               @click="openTemplateFile(f.path)"
-                              :class="currentTemplateFile === f.path ? 'bg-[var(--ds-success-100)] text-[var(--ds-text-heading)] font-medium' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-bg-hover)]'"
-                              class="block w-full text-left px-2 py-1.5 text-xs rounded truncate"
-                              x-text="f.name"
-                            ></button>
+                              :class="currentTemplateFile === f.path ? 'bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] font-medium' : 'text-[var(--ds-text-body)] hover:bg-[var(--ds-bg-hover)]'"
+                              class="block w-full text-left px-2 py-1.5 rounded"
+                            >
+                              <span class="block text-xs font-mono truncate" x-text="f.name"></span>
+                              <template x-if="templateDescription(f.name)">
+                                <span
+                                  class="block text-[10px] text-[var(--ds-text-muted)] truncate mt-0.5"
+                                  x-text="templateDescription(f.name)"
+                                ></span>
+                              </template>
+                            </button>
                           </template>
                         </div>
                       </div>

@@ -214,7 +214,7 @@
                   <i data-lucide="chevron-right" class="w-3 h-3"></i>
                   <span
                     class="text-[var(--ds-text-heading)] font-medium"
-                    x-text="currentPage.title || '無題'"
+                    x-text="currentPage.id === 'index' ? 'トップページ' : (currentPage.title || '無題')"
                   ></span>
                 </span>
               </template>
@@ -340,7 +340,10 @@
                         <template
                           x-if="!field.showIf || editData[field.showIf.field] === field.showIf.value"
                         >
-                          <div class="mb-5">
+                          <div
+                            class="mb-5"
+                            :class="['image','imagelist','file'].includes(field.type) ? 'bg-[var(--ds-bg-muted)] -mx-4 px-4 py-3 rounded-lg border border-[var(--ds-border-default)]' : ''"
+                          >
                             <label class="gh-label">
                               <span x-text="field.label"></span>
                               <span x-show="field.required" class="text-[var(--ds-danger-600)]">
@@ -390,6 +393,40 @@
                                 class="gh-input-light"
                               />
                             </template>
+                            <template x-if="field.type === 'datetime'">
+                              <input
+                                type="datetime-local"
+                                x-model="editData[field.key]"
+                                class="gh-input-light"
+                              />
+                            </template>
+                            <template x-if="field.type === 'select'">
+                              <select x-model="editData[field.key]" class="gh-select-light">
+                                <option value="">選択...</option>
+                                <template
+                                  x-for="opt in (field.options || [])"
+                                  :key="opt.value || opt"
+                                >
+                                  <option
+                                    :value="opt.value || opt"
+                                    x-text="opt.label || opt"
+                                  ></option>
+                                </template>
+                              </select>
+                            </template>
+                            <template x-if="field.type === 'checkbox' || field.type === 'toggle'">
+                              <label class="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  x-model="editData[field.key]"
+                                  class="w-4 h-4 rounded border-[var(--ds-border-strong)] accent-[var(--ds-primary-600)]"
+                                />
+                                <span
+                                  class="text-sm"
+                                  x-text="editData[field.key] ? 'ON' : 'OFF'"
+                                ></span>
+                              </label>
+                            </template>
                             <template x-if="field.type === 'image'">
                               <div>
                                 <template x-if="editData[field.key]">
@@ -404,6 +441,271 @@
                                   @change="handleImageUpload($event, field.key)"
                                   class="text-xs text-[var(--ds-text-muted)]"
                                 />
+                              </div>
+                            </template>
+                            <template x-if="field.type === 'file'">
+                              <div>
+                                <template x-if="editData[field.key]">
+                                  <p
+                                    class="text-xs text-[var(--ds-text-muted)] mb-1"
+                                    x-text="editData[field.key]"
+                                  ></p>
+                                </template>
+                                <input
+                                  type="file"
+                                  @change="handleFileUpload($event, field.key)"
+                                  class="text-xs text-[var(--ds-text-muted)]"
+                                />
+                              </div>
+                            </template>
+                            <template x-if="field.type === 'color'">
+                              <input
+                                type="color"
+                                x-model="editData[field.key]"
+                                class="w-10 h-8 rounded border border-[var(--ds-border-default)] cursor-pointer"
+                              />
+                            </template>
+                            <template x-if="field.type === 'radio'">
+                              <div class="flex flex-col gap-1.5">
+                                <template
+                                  x-for="opt in (field.options || [])"
+                                  :key="opt.value || opt"
+                                >
+                                  <label class="flex items-center gap-2 cursor-pointer text-sm">
+                                    <input
+                                      type="radio"
+                                      :name="field.key"
+                                      :value="opt.value || opt"
+                                      x-model="editData[field.key]"
+                                      class="accent-[var(--ds-primary-600)]"
+                                    />
+                                    <span x-text="opt.label || opt"></span>
+                                  </label>
+                                </template>
+                              </div>
+                            </template>
+                            <template x-if="field.type === 'multiselect'">
+                              <div class="flex flex-wrap gap-2">
+                                <template
+                                  x-for="opt in (field.options || [])"
+                                  :key="opt.value || opt"
+                                >
+                                  <label
+                                    class="flex items-center gap-1.5 px-2 py-1 border border-[var(--ds-border-default)] rounded text-xs cursor-pointer"
+                                    :class="(editData[field.key]||[]).includes(opt.value||opt) ? 'bg-[var(--ds-primary-600)]/10 border-[var(--ds-primary-600)]' : ''"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      :value="opt.value || opt"
+                                      x-model="editData[field.key]"
+                                      class="hidden"
+                                    />
+                                    <span x-text="opt.label || opt"></span>
+                                  </label>
+                                </template>
+                              </div>
+                            </template>
+                            <template x-if="field.type === 'daterange'">
+                              <div class="flex items-center gap-2">
+                                <input
+                                  type="date"
+                                  x-model="editData[field.key + '_from']"
+                                  class="gh-input-light"
+                                />
+                                <span class="text-[var(--ds-text-muted)] text-sm">〜</span>
+                                <input
+                                  type="date"
+                                  x-model="editData[field.key + '_to']"
+                                  class="gh-input-light"
+                                />
+                              </div>
+                            </template>
+                            <template x-if="field.type === 'year'">
+                              <input
+                                type="number"
+                                x-model="editData[field.key]"
+                                min="1900"
+                                max="2100"
+                                placeholder="2025"
+                                class="gh-input-light w-32"
+                              />
+                            </template>
+                            <template x-if="field.type === 'hidden'">
+                              <input type="hidden" x-model="editData[field.key]" />
+                            </template>
+                            <template x-if="field.type === 'imagelist'">
+                              <div>
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                  <template
+                                    x-for="(img, idx) in (editData[field.key] || [])"
+                                    :key="idx"
+                                  >
+                                    <div class="relative">
+                                      <img
+                                        :src="img"
+                                        class="w-20 h-20 object-cover rounded border border-[var(--ds-border-default)]"
+                                      />
+                                      <button
+                                        @click="editData[field.key].splice(idx,1)"
+                                        class="absolute -top-1 -right-1 w-4 h-4 bg-[var(--ds-danger-600)] text-white rounded-full text-[10px] flex items-center justify-center"
+                                      >
+                                        x
+                                      </button>
+                                    </div>
+                                  </template>
+                                </div>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  @change="for(const f of $event.target.files){handleImageUpload({target:{files:[f]}}, '__tmp');editData[field.key]=[...(editData[field.key]||[]),editData.__tmp];delete editData.__tmp}"
+                                  class="text-xs text-[var(--ds-text-muted)]"
+                                />
+                              </div>
+                            </template>
+                            <template x-if="field.type === 'repeater'">
+                              <div class="space-y-2">
+                                <template x-if="field.subFields && field.subFields.length">
+                                  <div class="space-y-2">
+                                    <template
+                                      x-for="(row, idx) in (editData[field.key] || [])"
+                                      :key="idx"
+                                    >
+                                      <div
+                                        class="border border-[var(--ds-border-default)] rounded p-3 space-y-2 relative"
+                                      >
+                                        <button
+                                          @click="editData[field.key].splice(idx,1)"
+                                          class="absolute top-1 right-1 text-[var(--ds-danger-600)] text-xs px-1 hover:bg-red-50 rounded"
+                                        >
+                                          &times;
+                                        </button>
+                                        <template x-for="sf in field.subFields" :key="sf.key">
+                                          <div>
+                                            <label
+                                              class="text-xs text-[var(--ds-text-muted)]"
+                                              x-text="sf.label"
+                                            ></label>
+                                            <template x-if="sf.type === 'textarea'">
+                                              <textarea
+                                                x-model="editData[field.key][idx][sf.key]"
+                                                rows="2"
+                                                class="gh-input-light w-full text-sm"
+                                              ></textarea>
+                                            </template>
+                                            <template x-if="sf.type === 'image'">
+                                              <div>
+                                                <template x-if="editData[field.key][idx][sf.key]">
+                                                  <img
+                                                    :src="editData[field.key][idx][sf.key]"
+                                                    class="max-h-20 rounded border border-[var(--ds-border-default)] mb-1"
+                                                  />
+                                                </template>
+                                                <input
+                                                  type="file"
+                                                  accept="image/*"
+                                                  @change="handleImageUpload($event, '__tmp').then(() => { editData[field.key][idx][sf.key] = editData.__tmp; delete editData.__tmp })"
+                                                  class="text-xs text-[var(--ds-text-muted)]"
+                                                />
+                                              </div>
+                                            </template>
+                                            <template
+                                              x-if="!['textarea','image'].includes(sf.type)"
+                                            >
+                                              <input
+                                                :type="sf.type === 'number' ? 'number' : sf.type === 'url' ? 'url' : sf.type === 'email' ? 'email' : sf.type === 'date' ? 'date' : 'text'"
+                                                x-model="editData[field.key][idx][sf.key]"
+                                                class="gh-input-light w-full text-sm"
+                                              />
+                                            </template>
+                                          </div>
+                                        </template>
+                                      </div>
+                                    </template>
+                                    <button
+                                      @click="const empty = {}; field.subFields.forEach(sf => empty[sf.key] = ''); editData[field.key] = [...(editData[field.key]||[]), empty]"
+                                      class="gh-btn-outline text-xs"
+                                    >
+                                      + 追加
+                                    </button>
+                                  </div>
+                                </template>
+                                <template x-if="!field.subFields || !field.subFields.length">
+                                  <div class="space-y-2">
+                                    <template
+                                      x-for="(row, idx) in (editData[field.key] || [])"
+                                      :key="idx"
+                                    >
+                                      <div class="flex gap-2 items-center">
+                                        <input
+                                          type="text"
+                                          x-model="editData[field.key][idx]"
+                                          class="gh-input-light flex-1"
+                                        />
+                                        <button
+                                          @click="editData[field.key].splice(idx,1)"
+                                          class="text-[var(--ds-danger-600)] text-xs"
+                                        >
+                                          削除
+                                        </button>
+                                      </div>
+                                    </template>
+                                    <button
+                                      @click="editData[field.key] = [...(editData[field.key]||[]), '']"
+                                      class="gh-btn-outline text-xs"
+                                    >
+                                      + 追加
+                                    </button>
+                                  </div>
+                                </template>
+                              </div>
+                            </template>
+                            <template x-if="field.type === 'relation'">
+                              <div>
+                                <template x-if="field.relationType">
+                                  <div
+                                    class="space-y-1 max-h-60 overflow-y-auto border border-[var(--ds-border-default)] rounded p-2"
+                                  >
+                                    <template
+                                      x-for="item in relationCandidates(field.relationType)"
+                                      :key="item.id"
+                                    >
+                                      <label
+                                        class="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-[var(--ds-bg-hover)] cursor-pointer"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          :value="item.id"
+                                          x-model="editData[field.key]"
+                                          class="accent-[var(--ds-primary-600)]"
+                                        />
+                                        <span
+                                          class="flex-1 truncate"
+                                          x-text="item.title || item.id"
+                                        ></span>
+                                        <span
+                                          class="text-[10px] text-[var(--ds-text-muted)]"
+                                          x-text="item.publishedAt || ''"
+                                        ></span>
+                                      </label>
+                                    </template>
+                                    <template x-if="!relationCandidates(field.relationType).length">
+                                      <p
+                                        class="text-xs text-[var(--ds-text-muted)] py-2 text-center"
+                                      >
+                                        該当するコンテンツがありません
+                                      </p>
+                                    </template>
+                                  </div>
+                                </template>
+                                <template x-if="!field.relationType">
+                                  <input
+                                    type="text"
+                                    x-model="editData[field.key]"
+                                    placeholder="関連コンテンツID"
+                                    class="gh-input-light w-full"
+                                  />
+                                </template>
                               </div>
                             </template>
                           </div>
@@ -1018,12 +1320,52 @@
                             </template>
                             <!-- relation -->
                             <template x-if="field.type === 'relation'">
-                              <input
-                                type="text"
-                                x-model="editData[field.key]"
-                                placeholder="関連コンテンツID"
-                                class="gh-input-light w-full"
-                              />
+                              <div>
+                                <template x-if="field.relationType">
+                                  <div
+                                    class="space-y-1 max-h-60 overflow-y-auto border border-[var(--ds-border-default)] rounded p-2"
+                                  >
+                                    <template
+                                      x-for="item in relationCandidates(field.relationType)"
+                                      :key="item.id"
+                                    >
+                                      <label
+                                        class="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-[var(--ds-bg-hover)] cursor-pointer"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          :value="item.id"
+                                          x-model="editData[field.key]"
+                                          class="accent-[var(--ds-primary-600)]"
+                                        />
+                                        <span
+                                          class="flex-1 truncate"
+                                          x-text="item.title || item.id"
+                                        ></span>
+                                        <span
+                                          class="text-[10px] text-[var(--ds-text-muted)]"
+                                          x-text="item.publishedAt || ''"
+                                        ></span>
+                                      </label>
+                                    </template>
+                                    <template x-if="!relationCandidates(field.relationType).length">
+                                      <p
+                                        class="text-xs text-[var(--ds-text-muted)] py-2 text-center"
+                                      >
+                                        該当するコンテンツがありません
+                                      </p>
+                                    </template>
+                                  </div>
+                                </template>
+                                <template x-if="!field.relationType">
+                                  <input
+                                    type="text"
+                                    x-model="editData[field.key]"
+                                    placeholder="関連コンテンツID"
+                                    class="gh-input-light w-full"
+                                  />
+                                </template>
+                              </div>
                             </template>
                           </div>
                         </template>

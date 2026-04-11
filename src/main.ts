@@ -161,6 +161,9 @@ interface CmsComponent {
   getTranslationStatus(): Promise<Array<{ code: string; flag: string; status: string }>>
   refreshTranslationStatus(): Promise<void>
   langStatusIconSvg(ts: { code: string; status: string }): string
+  availableParentPages(): ContentData[]
+  pagePathPreview(): string
+  pagesTree(): Array<ContentData & { depth: number }>
   availableCategories: Array<{ id: string; label: string }>
   availableTags: Array<{ id: string; label: string }>
   // カスタムモーダル
@@ -1383,6 +1386,80 @@ Alpine.data('cms', () => {
     langStatusIconSvg(ts: { code: string; status: string }): string {
       const status = ts.code === this.currentLang ? 'current' : ts.status
       return LANG_STATUS_ICONS[status] || ''
+    },
+
+    /** 親ページとして選択可能なページ一覧を返す（自身と自身の子孫を除外して循環参照を防ぐ） */
+    availableParentPages(): ContentData[] {
+      const currentId = this.currentPage?.id || ''
+      if (!currentId) return this.pages.slice()
+      // currentId の子孫 id 集合を計算（BFS）
+      const descendants = new Set<string>()
+      const queue: string[] = [currentId]
+      while (queue.length) {
+        const id = queue.shift() as string
+        for (const p of this.pages) {
+          if ((p.parent || '') === id && !descendants.has(p.id)) {
+            descendants.add(p.id)
+            queue.push(p.id)
+          }
+        }
+      }
+      return this.pages.filter((p) => p.id !== currentId && !descendants.has(p.id))
+    },
+
+    /** ページ一覧を親子ツリー構造の順序（DFS）で depth 付きで返す */
+    pagesTree(): Array<ContentData & { depth: number }> {
+      const byParent = new Map<string, ContentData[]>()
+      for (const p of this.pages) {
+        const parent = (p.parent as string | undefined) || ''
+        if (!byParent.has(parent)) byParent.set(parent, [])
+        byParent.get(parent)!.push(p)
+      }
+      // 兄弟は menuOrder → タイトルで並び替え
+      for (const list of byParent.values()) {
+        list.sort((a, b) => {
+          const ao = a.menuOrder ?? 1e9
+          const bo = b.menuOrder ?? 1e9
+          if (ao !== bo) return ao - bo
+          return (a.title || a.id).localeCompare(b.title || b.id)
+        })
+      }
+      const result: Array<ContentData & { depth: number }> = []
+      const visit = (parentId: string, depth: number): void => {
+        const children = byParent.get(parentId) || []
+        for (const child of children) {
+          result.push({ ...child, depth })
+          visit(child.id, depth + 1)
+        }
+      }
+      visit('', 0)
+      // 親が存在しない孤立ページも拾う（親IDが不正な場合）
+      const collected = new Set(result.map((p) => p.id))
+      for (const p of this.pages) {
+        if (!collected.has(p.id)) {
+          result.push({ ...p, depth: 0 })
+        }
+      }
+      return result
+    },
+
+    /** 編集中ページの最終的な URL パスを親チェーンから計算してプレビュー表示 */
+    pagePathPreview(): string {
+      const slugOf = (p: ContentData): string => p.slug || p.id
+      const currentSlug = this.editData.slug || this.editData.id || ''
+      if (!currentSlug || currentSlug === 'index') return '/'
+      const chain: string[] = []
+      let parentId = (this.editData.parent as string | undefined) || ''
+      const visited = new Set<string>()
+      while (parentId && !visited.has(parentId)) {
+        visited.add(parentId)
+        const parent = this.pages.find((p) => p.id === parentId)
+        if (!parent) break
+        chain.unshift(slugOf(parent))
+        parentId = (parent.parent as string | undefined) || ''
+      }
+      chain.push(currentSlug)
+      return '/' + chain.join('/') + '/'
     },
 
     // --- コンテンツタイプ管理 ---

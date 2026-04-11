@@ -448,6 +448,26 @@
                     ></p>
                   </div>
 
+                  <!-- 親ページ -->
+                  <div>
+                    <label class="gh-label">親ページ</label>
+                    <select x-model="editData.parent" class="gh-input-light text-xs w-full">
+                      <option value="">なし（ルート）</option>
+                      <template x-for="p in availableParentPages()" :key="p.id">
+                        <option :value="p.id" x-text="(p.title || p.id)"></option>
+                      </template>
+                    </select>
+                    <p class="text-[10px] text-[var(--ds-text-muted)] mt-1 leading-snug">
+                      子ページは親ページのURL構造を引き継ぎます。例:
+                      「会社概要」の子ページ「沿革」は
+                      <code
+                        class="text-[var(--ds-text-heading)] font-mono"
+                        x-text="pagePathPreview()"
+                      ></code>
+                      になります。
+                    </p>
+                  </div>
+
                   <div class="h-px bg-[var(--ds-border-default)]"></div>
 
                   <!-- 削除 -->
@@ -481,8 +501,18 @@
                     </button>
                   </div>
                   <div class="space-y-1">
-                    <template x-for="page in pages" :key="page.id">
-                      <div @click="openPage(page)" class="gh-list-item">
+                    <template x-for="page in pagesTree()" :key="page.id">
+                      <div
+                        @click="openPage(page)"
+                        class="gh-list-item"
+                        :style="'padding-left: ' + (16 + page.depth * 24) + 'px'"
+                      >
+                        <template x-if="page.depth > 0">
+                          <i
+                            data-lucide="corner-down-right"
+                            class="w-3.5 h-3.5 text-[var(--ds-text-placeholder)] shrink-0"
+                          ></i>
+                        </template>
                         <div class="flex-1 min-w-0">
                           <p
                             class="font-medium text-[14px] truncate"

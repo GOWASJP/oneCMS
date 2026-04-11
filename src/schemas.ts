@@ -76,6 +76,10 @@ export const ContentDataSchema = z
     tags: z.array(z.string()).optional(),
     image: z.string().optional(),
     description: z.string().optional(),
+    /** 親ページの id（固定ページの階層構造用、空/未指定はルート） */
+    parent: z.string().optional(),
+    /** 同じ親を持つ兄弟間での並び順（小さい順。未指定は最後） */
+    menuOrder: z.number().optional(),
     fieldGroupIds: z.array(z.string()).optional(),
     _meta: ContentMetaSchema.optional(),
     _revision: z

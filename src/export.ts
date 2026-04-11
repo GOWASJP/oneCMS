@@ -1,6 +1,6 @@
 import Handlebars from 'handlebars'
 import type { FileSystem } from './fs.ts'
-import type { SiteConfig, Languages, ContentType, ExportFile } from './types.ts'
+import type { SiteConfig, Languages, ContentType, ExportFile, ContentData } from './types.ts'
 
 type TemplateFunction = (context: Record<string, unknown>) => string
 
@@ -308,13 +308,55 @@ export class Exporter {
 
       // 固定ページ書き出し（published または status 未指定のみ）
       const langPages = await this.fs.readPages(lang)
+      // 親子チェーンのルックアップマップ（id → page）
+      const pageById = new Map(langPages.map((p) => [p.id, p]))
+      // ページの最終URLパス（親チェーンを辿って / 区切りで連結）
+      const resolvePagePath = (page: ContentData): string[] => {
+        const slugOf = (p: ContentData): string => p.slug || p.id
+        const chain: string[] = []
+        let current: ContentData | undefined = page
+        const visited = new Set<string>()
+        while (current && !visited.has(current.id)) {
+          visited.add(current.id)
+          chain.unshift(slugOf(current))
+          const parentId: string = (current.parent as string | undefined) || ''
+          current = parentId ? pageById.get(parentId) : undefined
+        }
+        return chain
+      }
+      // ページのパンくずを親チェーンから構築
+      const resolveBreadcrumb = (page: ContentData): Array<{ label: string; url?: string }> => {
+        const crumbs: Array<{ label: string; url?: string }> = [
+          { label: siteConfig.name || 'Home', url: '/' },
+        ]
+        // 親チェーン（自身を除く）をルート→自身の順に
+        const ancestors: ContentData[] = []
+        let parentId: string = (page.parent as string | undefined) || ''
+        const visited = new Set<string>()
+        while (parentId && !visited.has(parentId)) {
+          visited.add(parentId)
+          const parent = pageById.get(parentId)
+          if (!parent) break
+          ancestors.unshift(parent)
+          parentId = (parent.parent as string | undefined) || ''
+        }
+        for (const ancestor of ancestors) {
+          const segs = resolvePagePath(ancestor)
+          const url = segs[0] === 'index' ? '/' : `/${prefix}${segs.join('/')}/`
+          crumbs.push({ label: ancestor.title, url })
+        }
+        crumbs.push({ label: page.title })
+        return crumbs
+      }
+
       for (const page of langPages) {
         if (page.status && page.status !== 'published') continue
 
-        const breadcrumb = [{ label: siteConfig.name || 'Home', url: '/' }, { label: page.title }]
+        const breadcrumb = resolveBreadcrumb(page)
+        const segments = resolvePagePath(page)
+        const isIndex = segments.length === 1 && segments[0] === 'index'
+        const pagePath = isIndex ? '' : `${segments.join('/')}/`
 
-        const pageSlug = page.slug || page.id
-        const pagePath = pageSlug === 'index' ? '' : `${pageSlug}/`
         const ctx = {
           page,
           pageType: 'page' as const,
@@ -334,8 +376,9 @@ export class Exporter {
           ? baseTemplate({ ...ctx, content: new Handlebars.SafeString(pageHtml) })
           : wrapHtml(page.title, siteConfig, lang, pageHtml)
 
-        const filePath =
-          pageSlug === 'index' ? `${prefix}index.html` : `${prefix}${pageSlug}/index.html`
+        const filePath = isIndex
+          ? `${prefix}index.html`
+          : `${prefix}${segments.join('/')}/index.html`
 
         files.push({ path: filePath, content: fullHtml })
         step++
@@ -524,14 +567,31 @@ export class Exporter {
       const lang = locale.code
       const prefix = lang === defaultLang ? '' : `${lang}/`
 
-      // 固定ページ
+      // 固定ページ（親チェーンで URL 構築）
       const pages = await this.fs.readPages(lang)
+      const pageById = new Map(pages.map((p) => [p.id, p]))
+      const resolvePagePath = (page: ContentData): string[] => {
+        const slugOf = (p: ContentData): string => p.slug || p.id
+        const chain: string[] = []
+        let current: ContentData | undefined = page
+        const visited = new Set<string>()
+        while (current && !visited.has(current.id)) {
+          visited.add(current.id)
+          chain.unshift(slugOf(current))
+          const parentId: string = (current.parent as string | undefined) || ''
+          current = parentId ? pageById.get(parentId) : undefined
+        }
+        return chain
+      }
       for (const page of pages) {
         if (page.status && page.status !== 'published') continue
+        const segs = resolvePagePath(page)
+        const isIndex = segs.length === 1 && segs[0] === 'index'
+        const url = isIndex ? `/${prefix}` : `/${prefix}${segs.join('/')}/`
         index.push({
           title: page.title,
           body: stripHtmlTags(page.body || '').substring(0, 300),
-          url: `/${prefix}${(page.slug || page.id) === 'index' ? '' : (page.slug || page.id) + '/'}`,
+          url,
           lang,
           type: 'page',
           date: page._meta?.updatedAt || '',

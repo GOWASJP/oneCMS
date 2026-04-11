@@ -2488,21 +2488,23 @@
 
                   <div>
                     <label class="gh-label">公開する言語</label>
-                    <div class="flex flex-wrap gap-2 mb-2">
+                    <div class="flex flex-wrap gap-2 mb-3">
                       <template x-for="loc in languages.locales" :key="loc.code">
                         <span
-                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border bg-[var(--ds-bg-surface)] text-xs"
-                          :class="loc.code === languages.default ? 'border-[var(--ds-primary-600)] text-[var(--ds-primary-600)] font-semibold' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)]'"
+                          class="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm bg-[var(--ds-bg-surface)]"
+                          :class="loc.code === languages.default ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)] font-semibold' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)]'"
                         >
-                          <span x-text="loc.flag"></span>
+                          <span class="text-base" x-text="loc.flag"></span>
                           <span x-text="loc.label"></span>
                           <span
-                            class="text-[10px] text-[var(--ds-text-muted)]"
+                            class="text-xs uppercase tracking-wider opacity-70"
                             x-text="loc.code"
                           ></span>
                           <template x-if="loc.code === languages.default">
-                            <span class="text-[10px] text-[var(--ds-primary-600)]">
-                              （デフォルト）
+                            <span
+                              class="text-[10px] px-1.5 py-0.5 rounded bg-[var(--ds-primary-600)] text-white font-semibold tracking-wide"
+                            >
+                              デフォルト
                             </span>
                           </template>
                         </span>

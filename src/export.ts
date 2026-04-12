@@ -451,6 +451,7 @@ export class Exporter {
 
           const listPagePath = `${type.slug}/`
           const listCtx = {
+            pageType: 'list' as const,
             type,
             items: pageItems,
             site,
@@ -494,6 +495,7 @@ export class Exporter {
           const itemSlug = item.slug || item.id
           const detailPagePath = `${type.slug}/${itemSlug}/`
           const detailCtx = {
+            pageType: 'detail' as const,
             page: item,
             type,
             site,

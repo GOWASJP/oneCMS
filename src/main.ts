@@ -394,8 +394,9 @@ Alpine.data('cms', () => {
     // テンプレートエディタの右パネル開閉状態（デフォルトで variables のみ展開）
     templateRefOpenSection: {
       variables: true,
-      page: true,
+      page: false,
       helpers: false,
+      conditions: false,
       types: false,
       snippets: false,
     } as Record<string, boolean>,
@@ -651,6 +652,98 @@ Alpine.data('cms', () => {
   </li>
 {{/each}}`,
             note: '第1引数: タイプ id, 第2引数: 件数, 第3引数: lang',
+          },
+        ],
+      },
+      {
+        id: 'conditions',
+        label: '条件分岐',
+        items: [
+          {
+            label: 'ページ種別で分岐（_base.hbs 等で使用）',
+            code: `{{#if (eq pageType "page")}}
+  {{!-- 固定ページ --}}
+{{/if}}
+{{#if (eq pageType "detail")}}
+  {{!-- 投稿タイプ詳細 --}}
+{{/if}}
+{{#if (eq pageType "list")}}
+  {{!-- 投稿タイプ一覧 --}}
+{{/if}}`,
+            note: 'pageType は page / detail / list のいずれか',
+          },
+          {
+            label: '特定の固定ページだけ表示',
+            code: `{{#if (eq page.slug "about")}}
+  {{!-- 会社概要ページ専用 --}}
+{{/if}}`,
+          },
+          {
+            label: '特定の投稿タイプだけ表示',
+            code: `{{#if (eq type.id "news")}}
+  {{!-- お知らせ専用 --}}
+{{/if}}`,
+            note: 'detail.hbs / list.hbs で使用。type.id でタイプを判定',
+          },
+          {
+            label: 'サイドバー付きレイアウト（特定タイプのみ）',
+            code: `<div class="{{#if (eq type.id "news")}}layout-with-sidebar{{else}}layout-single{{/if}}">
+  <main>{{{content}}}</main>
+  {{#if (eq type.id "news")}}
+  <aside class="sidebar">
+    {{!-- サイドバーコンテンツ --}}
+  </aside>
+  {{/if}}
+</div>`,
+            note: '_base.hbs で使用。news のみサイドバー付き',
+          },
+          {
+            label: 'ギャラリーレイアウト（特定タイプ）',
+            code: `{{#if (eq type.id "works")}}
+<div class="gallery-grid">
+  {{#each page.images}}
+    <figure>
+      <img src="{{this}}" alt="">
+    </figure>
+  {{/each}}
+</div>
+{{else}}
+  {{{page.body}}}
+{{/if}}`,
+            note: 'detail.hbs で works タイプはギャラリー、他は通常の本文',
+          },
+          {
+            label: 'フィールドの有無で表示切替',
+            code: `{{#if page.image}}
+  <img src="{{page.image}}" alt="{{page.title}}">
+{{/if}}`,
+          },
+          {
+            label: '言語で分岐',
+            code: `{{#if (eq lang "ja")}}
+  <p>日本語のみ表示</p>
+{{/if}}
+{{#if (eq lang "en")}}
+  <p>English only</p>
+{{/if}}`,
+          },
+          {
+            label: '複数条件（and / or）',
+            code: `{{#if (and page.image (eq type.id "works"))}}
+  {{!-- 実績タイプ かつ 画像がある場合のみ --}}
+{{/if}}
+
+{{#if (or (eq pageType "page") (eq pageType "detail"))}}
+  {{!-- 固定ページまたは詳細ページ --}}
+{{/if}}`,
+          },
+          {
+            label: 'トップページかどうか',
+            code: `{{#if (eq page.id "index")}}
+  {{!-- トップページ --}}
+{{else}}
+  {{!-- トップページ以外 --}}
+{{/if}}`,
           },
         ],
       },
@@ -1823,24 +1916,29 @@ Alpine.data('cms', () => {
         const pageData = { ...this.editData }
         const lang = this.currentLang
 
+        const pageType = this.currentType ? 'detail' : 'page'
+        const previewCtx = {
+          page: pageData,
+          pageType,
+          type: this.currentType || undefined,
+          site: this.siteConfig,
+          lang,
+          locales: this.languages.locales,
+          defaultLang: this.languages.default,
+          breadcrumb: [
+            { label: this.siteConfig.name || 'Home', url: '/' },
+            ...(this.currentType ? [{ label: this.currentType.label, url: '#' }] : []),
+            { label: pageData.title },
+          ],
+        }
+
         const innerHtml = pageTemplate
-          ? pageTemplate({
-              page: pageData,
-              site: this.siteConfig,
-              lang,
-              breadcrumb: [
-                { label: this.siteConfig.name || 'Home', url: '/' },
-                ...(this.currentType ? [{ label: this.currentType.label, url: '#' }] : []),
-                { label: pageData.title },
-              ],
-            })
+          ? pageTemplate(previewCtx)
           : `<h1>${pageData.title || ''}</h1>${pageData.body || ''}`
 
         const rendered = baseTemplate
           ? baseTemplate({
-              page: pageData,
-              site: this.siteConfig,
-              lang,
+              ...previewCtx,
               content: new Handlebars.SafeString(innerHtml),
             })
           : innerHtml

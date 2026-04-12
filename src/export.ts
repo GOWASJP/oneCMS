@@ -2,6 +2,9 @@ import Handlebars from 'handlebars'
 import type { FileSystem } from './fs.ts'
 import type { SiteConfig, Languages, ContentType, ExportFile, ContentData } from './types.ts'
 
+// Alpine.js CDN ビルド: 公開サイトの dist/assets/js/ に書き出す
+import alpineJs from 'alpinejs/dist/cdn.min.js?raw'
+
 type TemplateFunction = (context: Record<string, unknown>) => string
 
 /** 404ページのデフォルト文言（言語コードをキーに持つ、無ければ ja にフォールバック） */
@@ -621,6 +624,12 @@ export class Exporter {
     files.push({
       path: 'robots.txt',
       content: `User-agent: *\nAllow: /\n${siteConfig.url ? `Sitemap: ${siteConfig.url.replace(/\/$/, '')}/sitemap.xml` : ''}`,
+    })
+
+    // Alpine.js（公開サイト用の IIFE ビルド）
+    files.push({
+      path: 'assets/js/alpine.min.js',
+      content: alpineJs,
     })
 
     // 検索インデックス生成

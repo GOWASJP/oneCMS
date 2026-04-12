@@ -9,6 +9,9 @@ import '@fontsource/inter/latin-700.css'
 // 実行時コンパイルするために使う（オフライン完動のため bundle する）
 import tailwindBrowserJs from '@tailwindcss/browser?raw'
 
+// Alpine.js CDN ビルド（IIFE）。公開サイト + プレビューで使用
+import alpineJs from 'alpinejs/dist/cdn.min.js?raw'
+
 import Alpine from 'alpinejs'
 import EditorJS from '@editorjs/editorjs'
 import { createIcons } from 'lucide'
@@ -693,6 +696,100 @@ Alpine.data('cms', () => {
   </li>
 {{/each}}`,
             note: '第1引数: タイプ id, 第2引数: 件数, 第3引数: lang',
+          },
+        ],
+      },
+      {
+        id: 'alpine',
+        label: 'Alpine.js インタラクション',
+        items: [
+          {
+            label: 'ハンバーガーメニュー',
+            code: `<div x-data="{ open: false }">
+  <button @click="open = !open" class="menu-toggle">
+    <span x-show="!open">MENU</span>
+    <span x-show="open">閉じる</span>
+  </button>
+  <nav x-show="open" x-transition>
+    {{> nav}}
+  </nav>
+</div>`,
+            note: 'スマホ向け。CSS で @media + display:none と組み合わせてPC時は常時表示にする',
+          },
+          {
+            label: 'ドロップダウン',
+            code: `<div x-data="{ open: false }" class="relative">
+  <button @click="open = !open">メニュー ▾</button>
+  <ul x-show="open" @click.outside="open = false"
+      x-transition class="absolute bg-white shadow-lg rounded">
+    <li><a href="#">項目1</a></li>
+    <li><a href="#">項目2</a></li>
+  </ul>
+</div>`,
+          },
+          {
+            label: 'モーダル',
+            code: `<div x-data="{ show: false }">
+  <button @click="show = true">開く</button>
+  <div x-show="show" x-transition.opacity
+       class="fixed inset-0 bg-black/50 flex items-center justify-center"
+       @click="show = false">
+    <div class="bg-white rounded-lg p-6 max-w-md" @click.stop>
+      <h2>タイトル</h2>
+      <p>内容</p>
+      <button @click="show = false">閉じる</button>
+    </div>
+  </div>
+</div>`,
+          },
+          {
+            label: 'アコーディオン / FAQ',
+            code: `<div x-data="{ active: null }">
+  <div>
+    <button @click="active = active === 1 ? null : 1"
+            class="w-full text-left font-bold py-2 border-b">
+      Q. 質問1
+    </button>
+    <div x-show="active === 1" x-collapse>
+      <p class="py-2">回答1</p>
+    </div>
+  </div>
+  <div>
+    <button @click="active = active === 2 ? null : 2"
+            class="w-full text-left font-bold py-2 border-b">
+      Q. 質問2
+    </button>
+    <div x-show="active === 2" x-collapse>
+      <p class="py-2">回答2</p>
+    </div>
+  </div>
+</div>`,
+            note: 'x-collapse は Alpine Collapse プラグインが必要。無ければ x-show + x-transition で代用',
+          },
+          {
+            label: 'タブ切替',
+            code: `<div x-data="{ tab: 'tab1' }">
+  <div class="flex border-b">
+    <button @click="tab = 'tab1'"
+            :class="tab === 'tab1' ? 'border-b-2 border-blue-500 font-bold' : ''"
+            class="px-4 py-2">タブ1</button>
+    <button @click="tab = 'tab2'"
+            :class="tab === 'tab2' ? 'border-b-2 border-blue-500 font-bold' : ''"
+            class="px-4 py-2">タブ2</button>
+  </div>
+  <div x-show="tab === 'tab1'">タブ1の内容</div>
+  <div x-show="tab === 'tab2'">タブ2の内容</div>
+</div>`,
+          },
+          {
+            label: 'トップに戻るボタン',
+            code: `<button x-data="{ show: false }"
+        @scroll.window="show = window.scrollY > 300"
+        x-show="show" x-transition
+        @click="window.scrollTo({top:0, behavior:'smooth'})"
+        class="fixed bottom-6 right-6 bg-blue-500 text-white p-3 rounded-full shadow-lg">
+  ▲
+</button>`,
           },
         ],
       },
@@ -2115,9 +2212,9 @@ Alpine.data('cms', () => {
         // /assets/... 参照を Blob URL に書き換える（iframe 内で実ファイルが
         // 解決できないため）
         let html = await rewriteAssetUrlsToBlob(rendered, this.fs)
-        // Tailwind CSS v4 のランタイムを注入。これにより製作者がテンプレートに
-        // 書いた Tailwind クラスがプレビュー内で実行時コンパイルされる
+        // Tailwind CSS v4 + Alpine.js をプレビューに注入
         html = injectTailwindRuntime(html)
+        html = injectAlpineRuntime(html)
         this.previewHtml = html
 
         this.showPreviewPanel = true
@@ -3026,6 +3123,20 @@ function injectTailwindRuntime(html: string): string {
   return scriptTag + html
 }
 let tailwindBlobUrl: string | null = null
+
+/** Alpine.js を Blob URL 経由で注入（公開サイトとプレビューの両方で使用） */
+let alpineBlobUrl: string | null = null
+function injectAlpineRuntime(html: string): string {
+  if (!alpineBlobUrl) {
+    const blob = new Blob([alpineJs], { type: 'text/javascript' })
+    alpineBlobUrl = URL.createObjectURL(blob)
+  }
+  const scriptTag = `<script src="${alpineBlobUrl}" defer></script>`
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${scriptTag}\n</head>`)
+  }
+  return scriptTag + html
+}
 
 /** プレビュー用に作成された Blob URL のリスト（再生成時に revoke する） */
 const previewBlobUrls: string[] = []

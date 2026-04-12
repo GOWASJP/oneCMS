@@ -862,6 +862,22 @@
                     </div>
                   </template>
 
+                  <!-- ページ別カスタムスクリプト -->
+                  <template x-if="currentPage?.id !== 'index'">
+                    <div>
+                      <label class="gh-label">カスタムスクリプト</label>
+                      <textarea
+                        x-model="editData.customScript"
+                        rows="3"
+                        class="gh-input-light w-full font-mono text-[10px]"
+                        placeholder="<!-- このページ専用の script -->"
+                      ></textarea>
+                      <p class="text-[10px] text-[var(--ds-text-muted)] mt-0.5">
+                        このページの &lt;/body&gt; 直前に挿入
+                      </p>
+                    </div>
+                  </template>
+
                   <div class="h-px bg-[var(--ds-border-default)]"></div>
 
                   <!-- 削除（トップページは削除不可） -->
@@ -2833,6 +2849,37 @@
                         </button>
                       </template>
                     </div>
+                  </div>
+
+                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
+                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">
+                    カスタムスクリプト
+                  </h2>
+
+                  <div>
+                    <label class="gh-label">&lt;HEAD&gt; 内スクリプト（全ページ共通）</label>
+                    <textarea
+                      x-model="siteConfig.customHeadScript"
+                      rows="4"
+                      class="gh-input-light w-full font-mono text-xs"
+                      placeholder="<!-- Google Analytics, OGP, 外部CSS等 -->"
+                    ></textarea>
+                    <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
+                      全ページの &lt;head&gt; 内に挿入されます
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="gh-label">&lt;/BODY&gt; 直前スクリプト（全ページ共通）</label>
+                    <textarea
+                      x-model="siteConfig.customBodyScript"
+                      rows="4"
+                      class="gh-input-light w-full font-mono text-xs"
+                      placeholder="<!-- チャットウィジェット、アクセス解析等 -->"
+                    ></textarea>
+                    <p class="text-[11px] text-[var(--ds-text-muted)] mt-1">
+                      全ページの &lt;/body&gt; 直前に挿入。Alpine.js より後に実行されます
+                    </p>
                   </div>
 
                   <div class="h-px bg-[var(--ds-border-default)] my-2"></div>

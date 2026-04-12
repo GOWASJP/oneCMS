@@ -8,6 +8,8 @@ export const SiteConfigSchema = z.object({
   description: z.string(),
   favicon: z.string().optional(),
   logo: z.string().optional(),
+  customHeadScript: z.string().optional(),
+  customBodyScript: z.string().optional(),
   theme: z
     .object({
       id: z.string().optional(),

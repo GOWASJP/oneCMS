@@ -1926,6 +1926,36 @@
                   >
                     + カテゴリ追加
                   </button>
+
+                  <!-- テンプレートコード -->
+                  <div class="border-t border-[var(--ds-border-default)] mt-6 pt-4">
+                    <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                    <p class="text-xs text-[var(--ds-text-muted)] mb-3">
+                      テンプレートファイルに貼り付けてカテゴリを表示できます。各ブロックをクリックでコピー。
+                    </p>
+                    <template x-for="snippet in categorySnippets" :key="snippet.label">
+                      <div class="mb-3">
+                        <p
+                          class="text-[10px] text-[var(--ds-text-muted)] mb-1"
+                          x-text="snippet.label"
+                        ></p>
+                        <div
+                          class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
+                          @click="navigator.clipboard.writeText(snippet.code); showToast('コピーしました')"
+                        >
+                          <pre
+                            class="font-mono text-xs text-[var(--ds-text-heading)] select-all m-0 whitespace-pre"
+                            x-text="snippet.code"
+                          ></pre>
+                          <span
+                            class="absolute top-2 right-2 text-[var(--ds-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                          >
+                            クリックでコピー
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
             </template>
@@ -1980,6 +2010,36 @@
                   >
                     + タグ追加
                   </button>
+
+                  <!-- テンプレートコード -->
+                  <div class="border-t border-[var(--ds-border-default)] mt-6 pt-4">
+                    <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                    <p class="text-xs text-[var(--ds-text-muted)] mb-3">
+                      テンプレートファイルに貼り付けてタグを表示できます。各ブロックをクリックでコピー。
+                    </p>
+                    <template x-for="snippet in tagSnippets" :key="snippet.label">
+                      <div class="mb-3">
+                        <p
+                          class="text-[10px] text-[var(--ds-text-muted)] mb-1"
+                          x-text="snippet.label"
+                        ></p>
+                        <div
+                          class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-md p-3 cursor-pointer relative group overflow-x-auto"
+                          @click="navigator.clipboard.writeText(snippet.code); showToast('コピーしました')"
+                        >
+                          <pre
+                            class="font-mono text-xs text-[var(--ds-text-heading)] select-all m-0 whitespace-pre"
+                            x-text="snippet.code"
+                          ></pre>
+                          <span
+                            class="absolute top-2 right-2 text-[var(--ds-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                          >
+                            クリックでコピー
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
             </template>

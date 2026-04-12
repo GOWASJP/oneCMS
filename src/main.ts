@@ -113,6 +113,10 @@ interface CmsComponent {
   // テンプレート/コンポーネントの役割説明
   templateDescription(name: string): string
 
+  // タクソノミー管理画面用テンプレートスニペット
+  categorySnippets: Array<{ label: string; code: string }>
+  tagSnippets: Array<{ label: string; code: string }>
+
   // テンプレートエディタ用リファレンスデータ（全体）
   templateReferenceGroups: Array<{
     id: string
@@ -386,6 +390,43 @@ Alpine.data('cms', () => {
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
 
+    // カテゴリ管理画面用テンプレートスニペット
+    categorySnippets: [
+      { label: '現在の記事のカテゴリ', code: '{{page.category}}' },
+      {
+        label: 'カテゴリバッジ（条件付き）',
+        code: '{{#if page.category}}\n  <span class="badge">{{page.category}}</span>\n{{/if}}',
+      },
+      {
+        label: 'カテゴリで表示切替',
+        code: '{{#if (eq page.category "お知らせ")}}\n  {{!-- お知らせカテゴリのみ --}}\n{{/if}}',
+      },
+      {
+        label: '一覧でカテゴリ付きリスト',
+        code: '{{#each items}}\n  <article>\n    <h3><a href="{{url}}">{{page.title}}</a></h3>\n    {{#if page.category}}<span class="badge">{{page.category}}</span>{{/if}}\n  </article>\n{{/each}}',
+      },
+    ],
+
+    // タグ管理画面用テンプレートスニペット
+    tagSnippets: [
+      {
+        label: '現在の記事のタグ一覧',
+        code: '{{#each page.tags}}\n  <span class="tag">{{this}}</span>\n{{/each}}',
+      },
+      {
+        label: 'タグがあれば表示',
+        code: '{{#if page.tags.length}}\n  <div class="tags">\n    {{#each page.tags}}\n      <span class="tag">{{this}}</span>\n    {{/each}}\n  </div>\n{{/if}}',
+      },
+      {
+        label: 'タグをリンク付きで表示',
+        code: '{{#each page.tags}}\n  <a href="?tag={{this}}" class="tag">{{this}}</a>\n{{/each}}',
+      },
+      {
+        label: '一覧でタグ付きリスト',
+        code: '{{#each items}}\n  <article>\n    <h3><a href="{{url}}">{{page.title}}</a></h3>\n    {{#each page.tags}}<span class="tag">{{this}}</span>{{/each}}\n  </article>\n{{/each}}',
+      },
+    ],
+
     /** テンプレート/コンポーネントの役割説明（ファイル名 → 説明） */
     templateDescription(name: string): string {
       return TEMPLATE_DESCRIPTIONS[name] || ''
@@ -652,6 +693,63 @@ Alpine.data('cms', () => {
   </li>
 {{/each}}`,
             note: '第1引数: タイプ id, 第2引数: 件数, 第3引数: lang',
+          },
+        ],
+      },
+      {
+        id: 'taxonomy',
+        label: 'カテゴリ・タグ',
+        items: [
+          {
+            label: '現在の記事のカテゴリ',
+            code: '{{page.category}}',
+          },
+          {
+            label: 'カテゴリバッジ（条件付き）',
+            code: `{{#if page.category}}
+  <span class="badge">{{page.category}}</span>
+{{/if}}`,
+          },
+          {
+            label: 'カテゴリで表示を切替',
+            code: `{{#if (eq page.category "お知らせ")}}
+  {{!-- お知らせカテゴリのみ表示 --}}
+{{/if}}`,
+            note: 'カテゴリ名をそのまま比較',
+          },
+          {
+            label: 'タグ一覧（ループ）',
+            code: `{{#each page.tags}}
+  <span class="tag">{{this}}</span>
+{{/each}}`,
+          },
+          {
+            label: 'タグがあれば表示',
+            code: `{{#if page.tags.length}}
+  <div class="tags">
+    {{#each page.tags}}
+      <span class="tag">{{this}}</span>
+    {{/each}}
+  </div>
+{{/if}}`,
+          },
+          {
+            label: 'タグをリンク付きで表示',
+            code: `{{#each page.tags}}
+  <a href="?tag={{this}}" class="tag">{{this}}</a>
+{{/each}}`,
+            note: '静的サイトではフィルタリングは JS 側で実装が必要',
+          },
+          {
+            label: '一覧でカテゴリ＋タグ表示',
+            code: `{{#each items}}
+  <article>
+    <h3><a href="{{url}}">{{page.title}}</a></h3>
+    {{#if page.category}}<span class="badge">{{page.category}}</span>{{/if}}
+    {{#each page.tags}}<span class="tag">{{this}}</span>{{/each}}
+  </article>
+{{/each}}`,
+            note: 'list.hbs の items ループ内で使用',
           },
         ],
       },

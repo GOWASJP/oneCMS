@@ -490,6 +490,9 @@ dist/
 | `langSwitcher`     | 言語切替リンク                                  |
 | `faviconTag`       | ファビコン link タグ                            |
 | `latestItems`      | 指定コンテンツタイプの最新 N 件取得（URL 付き） |
+| `menuTree`         | メニュー項目をツリー構造（親子）で返す          |
+| `isActivePath`     | メニューURLと現在ページのパスが一致するか判定   |
+| `isActiveOrParent` | 現在ページがメニューURLまたはその子パスか判定   |
 
 ### 11.2 役割分担と 3 層構造
 

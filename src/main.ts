@@ -697,6 +697,54 @@ Alpine.data('cms', () => {
         ],
       },
       {
+        id: 'navigation',
+        label: 'ナビゲーション',
+        items: [
+          {
+            label: 'メニューツリー（サブメニュー対応）',
+            code: `{{#each (menuTree site.nav)}}
+<li class="{{#if (isActivePath url ../pagePath)}}current-menu-item{{/if}}">
+  <a href="{{url}}">{{label}}</a>
+  {{#if children.length}}
+  <ul class="sub-menu">
+    {{#each children}}
+    <li><a href="{{url}}">{{label}}</a></li>
+    {{/each}}
+  </ul>
+  {{/if}}
+</li>
+{{/each}}`,
+            note: 'menuTree でメニューの親子関係をツリーに展開。site.nav または site.menus.xxx を渡す',
+          },
+          {
+            label: 'カレントページ判定',
+            code: '{{#if (isActivePath url pagePath)}}current-menu-item{{/if}}',
+            note: 'メニュー項目の url と現在の pagePath が一致すれば true',
+          },
+          {
+            label: 'カレントまたは親パス判定',
+            code: '{{#if (isActiveOrParent url pagePath)}}current-menu-ancestor{{/if}}',
+            note: '子ページにいるとき親メニューもハイライトする。例: /service/ の子 /service/sub/ にいるとき /service/ が true',
+          },
+          {
+            label: 'メニュー（ID指定・フラット）',
+            code: `{{#each site.menus.main}}
+  <a href="{{url}}">{{label}}</a>
+{{/each}}`,
+            note: 'サブメニュー不要の場合はフラットにループ。main はメニュー ID',
+          },
+          {
+            label: 'フッターナビ',
+            code: `<ul class="footnav">
+  {{#each site.menus.footer}}
+    <li><a href="{{url}}">{{label}}</a></li>
+  {{/each}}
+</ul>`,
+            note: 'フッター用メニューを別メニュー ID で管理',
+          },
+        ],
+      },
+      {
         id: 'taxonomy',
         label: 'カテゴリ・タグ',
         items: [
@@ -2015,14 +2063,35 @@ Alpine.data('cms', () => {
         const lang = this.currentLang
 
         const pageType = this.currentType ? 'detail' : 'page'
+        // プレビュー用に site にメニューデータを注入
+        const menuData = (await this.fs?.readJson<any>('content/menus.json')) || { menus: [] }
+        const menus: Record<string, unknown[]> = {}
+        for (const menu of menuData.menus || []) {
+          menus[menu.id] = menu.items || []
+        }
+        const previewSite = {
+          ...this.siteConfig,
+          menus,
+          nav: menuData.menus?.[0]?.items || this.siteConfig.nav || [],
+        }
+
+        // pagePath を計算（カレント判定で使用）
+        const pageSlug = pageData.slug || pageData.id || ''
+        const previewPagePath = this.currentType
+          ? `${this.currentType.slug}/${pageSlug}/`
+          : pageSlug === 'index'
+            ? ''
+            : `${pageSlug}/`
+
         const previewCtx = {
           page: pageData,
           pageType,
           type: this.currentType || undefined,
-          site: this.siteConfig,
+          site: previewSite,
           lang,
           locales: this.languages.locales,
           defaultLang: this.languages.default,
+          pagePath: previewPagePath,
           breadcrumb: [
             { label: this.siteConfig.name || 'Home', url: '/' },
             ...(this.currentType ? [{ label: this.currentType.label, url: '#' }] : []),

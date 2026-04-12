@@ -201,6 +201,47 @@ export class Exporter {
         return new Handlebars.SafeString(`<nav class="lang-switcher">${items}</nav>`)
       },
     )
+
+    // メニューをツリー構造で返す（parent フィールドで親子関係を解決）
+    // テンプレート側で {{#each (menuTree site.menus.main)}} で使用
+    hbs.registerHelper('menuTree', function (items: Array<Record<string, unknown>>) {
+      if (!items || !Array.isArray(items)) return []
+      // parent が空 or 未定義のアイテムをルートとして収集
+      const roots: Array<Record<string, unknown>> = []
+      const childrenMap = new Map<string, Array<Record<string, unknown>>>()
+      for (const item of items) {
+        const parentId = (item.parent as string) || ''
+        if (!parentId) {
+          roots.push(item)
+        } else {
+          if (!childrenMap.has(parentId)) childrenMap.set(parentId, [])
+          childrenMap.get(parentId)!.push(item)
+        }
+      }
+      // ルート項目に children 配列を付与
+      return roots.map((item) => ({
+        ...item,
+        children: childrenMap.get(item.id as string) || [],
+      }))
+    })
+
+    // 現在のページかどうかを判定（URL のパスを正規化して比較）
+    hbs.registerHelper('isActivePath', function (menuUrl: string, pagePath: string) {
+      const normalize = (p: string): string =>
+        '/' + (p || '').replace(/^\/|\/$/g, '').replace(/\/index\.html$/, '') + '/'
+      return normalize(menuUrl) === normalize(pagePath)
+    })
+
+    // 現在のページまたはその親パスか（サブメニューの親項目もハイライトする用途）
+    hbs.registerHelper('isActiveOrParent', function (menuUrl: string, pagePath: string) {
+      const normalize = (p: string): string =>
+        '/' + (p || '').replace(/^\/|\/$/g, '').replace(/\/index\.html$/, '') + '/'
+      const u = normalize(menuUrl)
+      const p = normalize(pagePath)
+      // ルート '/' は常にマッチしてしまうので除外
+      if (u === '/') return p === '/'
+      return p.startsWith(u)
+    })
   }
 
   /** テンプレートファイルを読み込みコンパイル */

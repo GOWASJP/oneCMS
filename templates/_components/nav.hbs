@@ -1,7 +1,21 @@
+{{!-- グローバルナビゲーション（サブメニュー対応・カレント表示） --}}
+{{!-- メニュー管理で登録した項目を親子構造で出力します --}}
+{{!-- 使い方: {{> nav}} （_base.hbs 等から呼び出し） --}}
 <nav>
   <ul class="site-nav">
-    {{#each site.nav}}
-    <li><a href="{{this.url}}">{{this.label}}</a></li>
+    {{#each (menuTree site.nav)}}
+    <li class="{{#if (isActivePath url ../pagePath)}}current-menu-item{{else}}{{#if (isActiveOrParent url ../pagePath)}}current-menu-ancestor{{/if}}{{/if}}">
+      <a href="{{url}}">{{label}}</a>
+      {{#if children.length}}
+      <ul class="sub-menu">
+        {{#each children}}
+        <li class="{{#if (isActivePath url ../../pagePath)}}current-menu-item{{/if}}">
+          <a href="{{url}}">{{label}}</a>
+        </li>
+        {{/each}}
+      </ul>
+      {{/if}}
+    </li>
     {{/each}}
   </ul>
 </nav>

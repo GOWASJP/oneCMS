@@ -40,6 +40,7 @@
     "@editorjs/quote": "^2.7.6",
     "@editorjs/table": "^2.4.5",
     "@fontsource/inter": "^5.2.8",
+    "@tailwindcss/browser": "^4.2.2",
     "alpinejs": "^3.15.11",
     "diff-match-patch": "^1.0.5",
     "editorjs-html": "^4.0.5",

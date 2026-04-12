@@ -5,6 +5,10 @@ import '@fontsource/inter/latin-500.css'
 import '@fontsource/inter/latin-600.css'
 import '@fontsource/inter/latin-700.css'
 
+// Tailwind CSS v4 のブラウザランタイム。プレビュー iframe 内で Tailwind クラスを
+// 実行時コンパイルするために使う（オフライン完動のため bundle する）
+import tailwindBrowserJs from '@tailwindcss/browser?raw'
+
 import Alpine from 'alpinejs'
 import EditorJS from '@editorjs/editorjs'
 import { createIcons } from 'lucide'
@@ -1845,7 +1849,11 @@ Alpine.data('cms', () => {
         revokePreviewBlobUrls()
         // /assets/... 参照を Blob URL に書き換える（iframe 内で実ファイルが
         // 解決できないため）
-        this.previewHtml = await rewriteAssetUrlsToBlob(rendered, this.fs)
+        let html = await rewriteAssetUrlsToBlob(rendered, this.fs)
+        // Tailwind CSS v4 のランタイムを注入。これにより製作者がテンプレートに
+        // 書いた Tailwind クラスがプレビュー内で実行時コンパイルされる
+        html = injectTailwindRuntime(html)
+        this.previewHtml = html
 
         this.showPreviewPanel = true
         this.showRevisionPanel = false
@@ -2732,6 +2740,19 @@ async function loadAssetBlobUrl(
   const blob = await fs.readBlob(normalized)
   if (!blob) return ''
   return URL.createObjectURL(blob)
+}
+
+/** プレビュー HTML に Tailwind CSS v4 ブラウザランタイムを注入する。
+ *  </head> の直前に <script> として挿入し、DOM に書かれている Tailwind
+ *  クラスを実行時にスキャンして CSS を生成させる。
+ */
+function injectTailwindRuntime(html: string): string {
+  const scriptTag = `<script>\n${tailwindBrowserJs}\n</script>`
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${scriptTag}\n</head>`)
+  }
+  // head が無い場合は HTML の先頭に追加
+  return scriptTag + html
 }
 
 /** プレビュー用に作成された Blob URL のリスト（再生成時に revoke する） */

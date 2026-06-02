@@ -55,6 +55,8 @@ export const PATH_CMS_META = '.cms/version.json'
 export const PATH_CMS_BACKUP_DIR = '.cms/backup'
 // 既定テンプレートの基準ハッシュ（差分提案アップデートで「未編集」を判定するため）
 export const PATH_TEMPLATES_BASELINE = '.cms/templates-baseline.json'
+// 前回書き出し時のソース署名（変更がなければ書き出しをスキップするため）
+export const PATH_EXPORT_SOURCE = '.cms/export-source.json'
 export const PATH_ASSETS_IMAGES = 'assets/images'
 export const PATH_ASSETS_FILES = 'assets/files'
 export const PATH_ASSETS_ORIGINALS = 'assets/_originals'

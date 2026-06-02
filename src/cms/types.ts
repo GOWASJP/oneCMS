@@ -26,6 +26,7 @@ export interface CmsComponent {
   currentLang: string
   exporting: boolean
   exportResult: ExportResult | null
+  exportProgress: { step: number; total: number } | null
   toast: string | null
 
   siteConfig: SiteConfig

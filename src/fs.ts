@@ -228,6 +228,34 @@ export class FileSystem {
     return items
   }
 
+  /**
+   * ディレクトリ配下のファイルの署名（相対パス:サイズ:更新時刻）を再帰的に集める。
+   * 内容を読まずにメタ情報のみ取得するため軽量。書き出しの変更検知（アセット差し替え検出）に使う。
+   */
+  async listDirSignatures(path: string): Promise<string[]> {
+    const dir = await this.getDir(path)
+    if (!dir) return []
+    const out: string[] = []
+    const walk = async (d: FileSystemDirectoryHandle, prefix: string): Promise<void> => {
+      const entries = await collectEntries(d)
+      for (const [name, handle] of entries) {
+        if (handle.kind === 'file') {
+          try {
+            const f = await (handle as FileSystemFileHandle).getFile()
+            out.push(`${prefix}${name}:${f.size}:${f.lastModified}`)
+          } catch {
+            /* skip */
+          }
+        } else {
+          await walk(handle as FileSystemDirectoryHandle, `${prefix}${name}/`)
+        }
+      }
+    }
+    await walk(dir, '')
+    out.sort()
+    return out
+  }
+
   /** ディレクトリ内のファイルを再帰的に別ディレクトリへコピー */
   async copyDir(srcPath: string, destPath: string): Promise<number> {
     const srcDir = await this.getDir(srcPath)

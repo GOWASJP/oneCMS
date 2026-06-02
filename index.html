@@ -3690,11 +3690,26 @@
 
     <!-- ローディング -->
     <div x-show="exporting" class="ds-modal-overlay">
-      <div class="ds-modal p-8 text-center">
+      <div class="ds-modal p-8 text-center w-72">
         <div
           class="animate-spin w-6 h-6 border-2 border-[var(--ds-primary-600)] border-t-transparent rounded-full mx-auto mb-3"
         ></div>
         <p class="text-sm text-[var(--ds-text-muted)]">書き出し中...</p>
+        <template x-if="exportProgress && exportProgress.total > 0">
+          <div class="mt-3">
+            <div class="h-1.5 w-full bg-[var(--ds-border-default)] rounded-full overflow-hidden">
+              <div
+                class="h-full bg-[var(--ds-primary-600)] transition-all duration-200"
+                :style="`width: ${Math.round((exportProgress.step / exportProgress.total) * 100)}%`"
+              ></div>
+            </div>
+            <p class="text-[11px] text-[var(--ds-text-muted)] mt-1.5">
+              <span x-text="exportProgress.step"></span>
+              /
+              <span x-text="exportProgress.total"></span>
+            </p>
+          </div>
+        </template>
       </div>
     </div>
 

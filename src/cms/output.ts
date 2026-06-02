@@ -4,7 +4,7 @@ import Handlebars from 'handlebars'
 import DiffMatchPatch from 'diff-match-patch'
 import { type RevisionEntry } from '../types.ts'
 import { INITIAL_TEMPLATES } from '../initial-templates.ts'
-import { PATH_TEMPLATES_BASELINE } from '../constants.ts'
+import { PATH_TEMPLATES_BASELINE, PATH_EXPORT_SOURCE } from '../constants.ts'
 import {
   injectTailwindRuntime,
   injectAlpineRuntime,
@@ -149,6 +149,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     if (!this.fs || !this.exporter || !this.diffEngine || this.exporting) return
     this.exporting = true
     this.exportResult = null
+    this.exportProgress = { step: 0, total: 0 }
 
     try {
       const files = await this.exporter.exportAll(
@@ -156,10 +157,25 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
         this.languages,
         this.pages,
         this.contentTypes,
+        (step, total) => {
+          this.exportProgress = { step, total }
+        },
       )
+
+      // 変更がなければ全体スキップ（増分書き出し）
+      if (files === null) {
+        this.showToast('前回から変更がないため、書き出しをスキップしました', 5000)
+        return
+      }
 
       const { manifest, changed, removed } = await this.diffEngine.detectChanges(files)
       const result = await this.diffEngine.writeToDisk(files, manifest, changed)
+
+      // 書き出し成功後にソース署名を保存（次回の変更検知用）
+      await this.fs.writeJson(PATH_EXPORT_SOURCE, {
+        hash: this.exporter.lastSourceHash,
+        at: new Date().toISOString(),
+      })
 
       this.exportResult = {
         totalFiles: result.totalFiles,
@@ -172,6 +188,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       this.showToast('書き出しに失敗しました')
     } finally {
       this.exporting = false
+      this.exportProgress = null
     }
   },
 

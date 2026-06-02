@@ -9,11 +9,24 @@ import type {
   MenuData,
   MenuItem,
 } from './types.ts'
+import { PATH_DIST, PATH_EXPORT_SOURCE } from './constants.ts'
 
 // Alpine.js CDN ビルド: 公開サイトの dist/assets/js/ に書き出す
 import alpineJs from 'alpinejs/dist/cdn.min.js?raw'
 
 type TemplateFunction = (context: Record<string, unknown>) => string
+
+/** メインスレッドを一瞬解放して UI（進捗バー）を更新させる */
+const yieldToMain = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+/** 文字列の SHA-256（16進）。書き出し前の変更検知に使用 */
+async function sha256(text: string): Promise<string> {
+  const data = new TextEncoder().encode(text)
+  const buf = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
 
 /** 404ページのデフォルト文言（言語コードをキーに持つ、無ければ ja にフォールバック） */
 const notFoundMessages: Record<string, { title: string; body: string; home: string }> = {
@@ -45,6 +58,8 @@ const notFoundMessages: Record<string, { title: string; body: string; home: stri
 export class Exporter {
   private fs: FileSystem
   private handlebars: typeof Handlebars
+  /** 直近の exportAll で算出したソース署名（呼び出し側が成功後に保存する） */
+  lastSourceHash = ''
 
   constructor(fs: FileSystem) {
     this.fs = fs
@@ -324,7 +339,8 @@ export class Exporter {
     _pages: unknown[],
     contentTypes: ContentType[],
     onProgress?: (step: number, total: number) => void,
-  ): Promise<ExportFile[]> {
+    force = false,
+  ): Promise<ExportFile[] | null> {
     await this.registerPartials()
 
     const baseTemplate = await this.loadTemplate('_base')
@@ -372,6 +388,39 @@ export class Exporter {
         rawItemsCache.set(lang, byType)
       }),
     )
+
+    // 変更がなければ書き出しをスキップ（増分書き出し）。
+    // テンプレート・サイト設定・メニュー・全コンテンツのハッシュで判定する。
+    // ※ latestItems やメニュー等でページ間が大域結合するため、安全側に倒して
+    //   「どこかが変わったら全体を再生成」する粒度にしている。
+    const tplFiles = await this.fs.readTemplateFiles()
+    const [tplTexts, imageSigs, fileSigs] = await Promise.all([
+      Promise.all(tplFiles.map((f) => this.fs.readText(f.path))),
+      this.fs.listDirSignatures('assets/images'),
+      this.fs.listDirSignatures('assets/files'),
+    ])
+    const sourceSignature = JSON.stringify({
+      site: siteConfig,
+      languages,
+      menus: menuData,
+      types: contentTypes,
+      templates: tplFiles.map((f, i) => [f.path, tplTexts[i]]),
+      pages: [...pagesCache.entries()],
+      items: [...rawItemsCache.entries()].map(([lang, m]) => [lang, [...m.entries()]]),
+      // アセット（画像・ファイル）の差し替えも検知する（メタ情報のみ）
+      assets: [...imageSigs, ...fileSigs],
+    })
+    this.lastSourceHash = await sha256(sourceSignature)
+    if (!force) {
+      const prev = await this.fs.readJson<{ hash: string }>(PATH_EXPORT_SOURCE)
+      const manifestExists = (await this.fs.readJson(`${PATH_DIST}/manifest.json`)) !== null
+      if (prev?.hash === this.lastSourceHash && manifestExists) {
+        return null
+      }
+    }
+
+    // 進捗表示の総ステップ数（言語ごとに「固定ページ群」＋「各コンテンツタイプ」）
+    const totalSteps = locales.length * (contentTypes.length + 1)
 
     // コンテンツタイプのアイテムを言語別に事前取得（Handlebarsヘルパーから同期参照するため）
     const typeItemsCache = new Map<string, Map<string, ContentData[]>>()
@@ -492,9 +541,10 @@ export class Exporter {
           : `${prefix}${segments.join('/')}/index.html`
 
         files.push({ path: filePath, content: fullHtml })
-        step++
-        if (onProgress) onProgress(step, locales.length)
       }
+      step++
+      if (onProgress) onProgress(step, totalSteps)
+      await yieldToMain()
 
       // コンテンツタイプ書き出し
       for (const type of contentTypes) {
@@ -561,6 +611,7 @@ export class Exporter {
         }
 
         // 詳細ページ書き出し
+        let detailCount = 0
         for (const item of published) {
           const itemSlug = item.slug || item.id
           const detailPagePath = `${type.slug}/${itemSlug}/`
@@ -592,10 +643,13 @@ export class Exporter {
             path: `${prefix}${type.slug}/${itemSlug}/index.html`,
             content: fullHtml,
           })
+          // 大量件数でも UI が固まらないよう一定間隔でメインスレッドを解放
+          if (++detailCount % 50 === 0) await yieldToMain()
         }
 
         step++
-        if (onProgress) onProgress(step, locales.length)
+        if (onProgress) onProgress(step, totalSteps)
+        await yieldToMain()
       }
     }
 
@@ -658,23 +712,25 @@ export class Exporter {
       content: alpineJs,
     })
 
-    // 検索インデックス生成
-    const searchIndex = await this.buildSearchIndex(
+    // 検索インデックス生成（言語別に分割：訪問者は自言語分のみ読み込めばよい）
+    const searchByLang = await this.buildSearchIndex(
       languages,
       contentTypes,
       pagesCache,
       rawItemsCache,
     )
-    files.push({
-      path: 'search-index.json',
-      content: JSON.stringify(searchIndex),
-    })
-
-    // 検索ページHTML
-    files.push({
-      path: 'search/index.html',
-      content: this.generateSearchPage(siteConfig, defaultLang),
-    })
+    for (const locale of locales) {
+      const lang = locale.code
+      const prefix = lang === defaultLang ? '' : `${lang}/`
+      files.push({
+        path: `search-index.${lang}.json`,
+        content: JSON.stringify(searchByLang.get(lang) || []),
+      })
+      files.push({
+        path: `${prefix}search/index.html`,
+        content: this.generateSearchPage(siteConfig, lang),
+      })
+    }
 
     return files
   }
@@ -685,13 +741,15 @@ export class Exporter {
     contentTypes: ContentType[],
     pagesCache: Map<string, ContentData[]>,
     rawItemsCache: Map<string, Map<string, ContentData[]>>,
-  ): Promise<Array<Record<string, string>>> {
-    const index: Array<Record<string, string>> = []
+  ): Promise<Map<string, Array<Record<string, string>>>> {
+    const byLang = new Map<string, Array<Record<string, string>>>()
     const defaultLang = languages.default || 'ja'
 
     for (const locale of languages.locales) {
       const lang = locale.code
       const prefix = lang === defaultLang ? '' : `${lang}/`
+      const index: Array<Record<string, string>> = []
+      byLang.set(lang, index)
 
       // 固定ページ（親チェーンで URL 構築）。読込済みキャッシュを再利用
       const pages = pagesCache.get(lang) || []
@@ -744,7 +802,7 @@ export class Exporter {
       }
     }
 
-    return index
+    return byLang
   }
 
   /** 検索ページHTMLを生成 */
@@ -778,7 +836,7 @@ export class Exporter {
   <div class="results" id="results"></div>
   <script>
     let index=[];
-    fetch('/search-index.json').then(r=>r.json()).then(d=>{index=d});
+    fetch('/search-index.${lang}.json').then(r=>r.json()).then(d=>{index=d});
     const q=document.getElementById('q');
     const r=document.getElementById('results');
     q.addEventListener('input',()=>{

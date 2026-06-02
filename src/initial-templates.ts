@@ -22,7 +22,6 @@ import paginationHbs from '../templates/_components/pagination.hbs?raw'
 import stylesHbs from '../templates/_components/styles.hbs?raw'
 import accordionHbs from '../templates/_components/accordion.hbs?raw'
 import cardListHbs from '../templates/_components/card-list.hbs?raw'
-import contactFormHbs from '../templates/_components/contact-form.hbs?raw'
 import galleryHbs from '../templates/_components/gallery.hbs?raw'
 import heroHbs from '../templates/_components/hero.hbs?raw'
 import tabsHbs from '../templates/_components/tabs.hbs?raw'
@@ -47,7 +46,6 @@ export const INITIAL_TEMPLATES: Record<string, string> = {
   'templates/_components/styles.hbs': stylesHbs,
   'templates/_components/accordion.hbs': accordionHbs,
   'templates/_components/card-list.hbs': cardListHbs,
-  'templates/_components/contact-form.hbs': contactFormHbs,
   'templates/_components/gallery.hbs': galleryHbs,
   'templates/_components/hero.hbs': heroHbs,
   'templates/_components/tabs.hbs': tabsHbs,

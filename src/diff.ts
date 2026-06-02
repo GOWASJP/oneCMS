@@ -27,20 +27,19 @@ export class DiffEngine {
     return (await this.fs.readJson<Record<string, string>>(`${PATH_DIST}/manifest.json`)) || {}
   }
 
-  /** 書き出しファイルのハッシュを計算し、差分を検出 */
+  /** 書き出しファイルのハッシュを計算し、差分を検出（ハッシュ計算を並列化） */
   async detectChanges(files: ExportFile[]): Promise<DiffResult> {
     const oldManifest = await this.loadManifest()
     const newManifest: Record<string, string> = {}
     const changed: ExportFile[] = []
 
-    for (const file of files) {
-      const fileHash = await this.hash(file.content)
-      newManifest[file.path] = fileHash
-
-      if (oldManifest[file.path] !== fileHash) {
+    const hashes = await Promise.all(files.map((f) => this.hash(f.content)))
+    files.forEach((file, i) => {
+      newManifest[file.path] = hashes[i]
+      if (oldManifest[file.path] !== hashes[i]) {
         changed.push(file)
       }
-    }
+    })
 
     const removed = Object.keys(oldManifest).filter((p) => !newManifest[p])
 

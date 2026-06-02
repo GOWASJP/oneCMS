@@ -64,3 +64,31 @@ export interface DiffResult {
   changed: ExportFile[]
   removed: string[]
 }
+
+/** ナビゲーションメニューの項目 */
+export interface MenuItem {
+  id: string
+  label: string
+  /** custom（任意URL） / page（固定ページ） / post_type（投稿タイプ）等 */
+  type: string
+  url?: string
+  /** page/post_type のときの参照先 ID */
+  object?: string
+  target?: string
+  /** 親項目の ID（サブメニュー用）。トップレベルは空文字 */
+  parent?: string
+  order: number
+}
+
+/** 1 つのメニュー（メイン・フッター等） */
+export interface Menu {
+  id: string
+  name: string
+  items: MenuItem[]
+}
+
+/** menus.json 全体 */
+export interface MenuData {
+  menus: Menu[]
+  locations?: Record<string, string>
+}

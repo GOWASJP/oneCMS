@@ -20,14 +20,6 @@ export const SiteConfigSchema = z.object({
       fontCdn: z.string().optional(),
     })
     .optional(),
-  services: z
-    .object({
-      formBackend: z.string().optional(),
-      formUrl: z.string().optional(),
-      translator: z.string().optional(),
-      translatorApiKey: z.string().optional(),
-    })
-    .optional(),
   nav: z
     .array(
       z.object({
@@ -137,6 +129,8 @@ export const FieldDefinitionSchema = z.object({
   key: z.string(),
   label: z.string(),
   type: FieldTypeSchema,
+  /** 記入者向けの補足説明（編集画面で項目の下に表示） */
+  description: z.string().optional(),
   required: z.boolean().optional(),
   options: z
     .array(z.union([z.object({ value: z.string(), label: z.string() }), z.string()]))

@@ -3,5 +3,7 @@ build/
 dist/
 changed/
 .revisions/
+.cms/
+content/**/_index.json
 .DS_Store
 *.log

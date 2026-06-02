@@ -188,6 +188,8 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     this.currentFieldGroup!.fields = this.currentFieldGroup!.fields.map((f: any) => ({
       ...f,
       _expanded: false,
+      // 既存フィールドはキー確定済みとして扱い、ラベル変更で上書きしない
+      _keyEdited: true,
       showIf_field: f.showIf?.field || '',
       showIf_value:
         f.showIf?.value !== undefined && f.showIf?.value !== null ? String(f.showIf.value) : '',
@@ -209,11 +211,70 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
       key: '',
       label: '',
       type: 'text',
+      description: '',
       _expanded: false,
+      _keyEdited: false,
       showIf_field: '',
       showIf_value: '',
       options: [],
     } as any)
+    // 新規フィールドはタイプピッカーをすぐ開いて選んでもらう
+    this.openTypePicker(this.currentFieldGroup.fields[this.currentFieldGroup.fields.length - 1])
+  },
+
+  /** ラベル → キー自動生成（手動編集されていない場合のみ） */
+  onFieldLabelInput(field: FieldDefinition) {
+    const f = field as any
+    if (f._keyEdited) return
+    const slug = (field.label || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+    const idx = this.currentFieldGroup?.fields.indexOf(field) ?? 0
+    field.key = slug || `field${idx + 1}`
+  },
+
+  /** フィールドタイプ選択ピッカーを開く */
+  openTypePicker(field: FieldDefinition) {
+    this.typePickerTarget = field
+  },
+
+  /** タイプを選択して適用（タイプ固有の初期値も用意） */
+  selectFieldType(id: string) {
+    const f = this.typePickerTarget as any
+    if (!f) return
+    f.type = id
+    if (['select', 'multiselect', 'radio'].includes(id) && (!f.options || !f.options.length)) {
+      f.options = ['']
+    }
+    if (id === 'repeater' && !f.subFields) f.subFields = []
+    // 選択肢・サブフィールドの設定が必要なタイプは詳細を自動展開して気づけるようにする
+    if (['select', 'multiselect', 'radio', 'repeater'].includes(id)) f._expanded = true
+    this.typePickerTarget = null
+  },
+
+  /** タイプ id → 日本語ラベル */
+  fieldTypeLabel(id: string): string {
+    return this.fieldTypes.find((t) => t.id === id)?.label || id
+  },
+
+  /** タイプ id → Lucide アイコン名 */
+  fieldTypeIcon(id: string): string {
+    return this.fieldTypes.find((t) => t.id === id)?.icon || 'type'
+  },
+
+  /** 投稿タイプ編集モーダルからフィールド画面へスムーズに移動 */
+  async goEditFieldGroup(id?: string) {
+    this.showTypeEditor = false
+    this.editingType = null
+    await this.loadFieldGroupEditor()
+    if (id) {
+      const g = this.fieldGroups.find((x) => x.id === id)
+      if (g) this.openFieldGroup(g)
+    } else {
+      this.createFieldGroup()
+    }
   },
 
   removeFieldFromGroup(idx: number) {
@@ -238,8 +299,9 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     // UI用プロパティを除去
     const cleanedFields = g.fields.map((f: any) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { _expanded, showIf_field, showIf_value, showIf: _showIf, ...rest } = f
+      const { _expanded, _keyEdited, showIf_field, showIf_value, showIf: _showIf, ...rest } = f
       const field: any = { ...rest }
+      if (!field.description || !field.description.trim()) delete field.description
       if (showIf_field?.trim()) {
         let val: unknown = showIf_value
         if (showIf_value === 'true') val = true

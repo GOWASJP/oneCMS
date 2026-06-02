@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CmsComponent } from './types.ts'
-import { type ContentData, type ContentType } from '../types.ts'
+import { type ContentData, type ContentType, type FieldDefinition } from '../types.ts'
 import { createEditor, editorJsonToHtml, htmlToEditorJson, type EditorData } from '../editor.ts'
 import { saveImage } from '../image.ts'
 import { PATH_PAGES_CONFIG, PATH_ASSETS_FILES } from '../constants.ts'
@@ -407,6 +407,28 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   },
 
   /** relation フィールドの候補リストを返す（指定コンテンツタイプの現言語公開済みアイテム） */
+  /** 編集画面でカスタム項目をフィールドグループ単位のセクションに分けて返す。
+   *  title / body は本文・タイトル欄で扱うため除外する。 */
+  fieldSections(): Array<{ label: string; fields: FieldDefinition[] }> {
+    const type = this.currentType
+    if (!type) return []
+    const omit = (fields: FieldDefinition[]) =>
+      (fields || []).filter((f) => f.key !== 'title' && f.key !== 'body')
+    const sections: Array<{ label: string; fields: FieldDefinition[] }> = []
+    const ids = type.fieldGroupIds || []
+    if (ids.length) {
+      for (const id of ids) {
+        const g = this.fieldGroups.find((x) => x.id === id)
+        const fields = omit(g?.fields || [])
+        if (fields.length) sections.push({ label: g?.label || '', fields })
+      }
+    } else if (type.fields?.length) {
+      const fields = omit(type.fields)
+      if (fields.length) sections.push({ label: '', fields })
+    }
+    return sections
+  },
+
   relationCandidates(typeId: string): ContentData[] {
     if (!typeId) return []
     const key = `${typeId}:${this.currentLang}`

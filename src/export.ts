@@ -355,6 +355,24 @@ export class Exporter {
       nav: menuData.menus?.[0]?.items || siteConfig.nav || [],
     }
 
+    // 固定ページ・コンテンツを言語別に一度だけ並列読込してキャッシュする。
+    // 従来は生成と検索インデックスで最大3回読んでいた I/O を1回に集約し、言語横断で並列化する。
+    const pagesCache = new Map<string, ContentData[]>()
+    const rawItemsCache = new Map<string, Map<string, ContentData[]>>()
+    await Promise.all(
+      locales.map(async (locale) => {
+        const lang = locale.code
+        const [langPages, ...typeLists] = await Promise.all([
+          this.fs.readPages(lang),
+          ...contentTypes.map((t) => this.fs.readContentList(t.id, lang)),
+        ])
+        pagesCache.set(lang, langPages)
+        const byType = new Map<string, ContentData[]>()
+        contentTypes.forEach((t, i) => byType.set(t.id, typeLists[i]))
+        rawItemsCache.set(lang, byType)
+      }),
+    )
+
     // コンテンツタイプのアイテムを言語別に事前取得（Handlebarsヘルパーから同期参照するため）
     const typeItemsCache = new Map<string, Map<string, ContentData[]>>()
     for (const locale of locales) {
@@ -362,7 +380,7 @@ export class Exporter {
       const prefix = lang === defaultLang ? '' : `${lang}/`
       const byType = new Map<string, ContentData[]>()
       for (const type of contentTypes) {
-        const items = await this.fs.readContentList(type.id, lang)
+        const items = rawItemsCache.get(lang)?.get(type.id) || []
         const published = items
           .filter((i) => i.status === 'published' || !i.status)
           .sort((a, b) =>
@@ -393,7 +411,7 @@ export class Exporter {
       const prefix = lang === defaultLang ? '' : `${lang}/`
 
       // 固定ページ書き出し（published または status 未指定のみ）
-      const langPages = await this.fs.readPages(lang)
+      const langPages = pagesCache.get(lang) || []
       // 親子チェーンのルックアップマップ（id → page）
       const pageById = new Map(langPages.map((p) => [p.id, p]))
       // ページの最終URLパス（親チェーンを辿って / 区切りで連結）
@@ -480,7 +498,7 @@ export class Exporter {
 
       // コンテンツタイプ書き出し
       for (const type of contentTypes) {
-        const items = await this.fs.readContentList(type.id, lang)
+        const items = rawItemsCache.get(lang)?.get(type.id) || []
         const published = items.filter((i) => i.status === 'published' || !i.status)
 
         const perPage = type.pagination || 10
@@ -641,7 +659,12 @@ export class Exporter {
     })
 
     // 検索インデックス生成
-    const searchIndex = await this.buildSearchIndex(languages, contentTypes)
+    const searchIndex = await this.buildSearchIndex(
+      languages,
+      contentTypes,
+      pagesCache,
+      rawItemsCache,
+    )
     files.push({
       path: 'search-index.json',
       content: JSON.stringify(searchIndex),
@@ -660,6 +683,8 @@ export class Exporter {
   private async buildSearchIndex(
     languages: Languages,
     contentTypes: ContentType[],
+    pagesCache: Map<string, ContentData[]>,
+    rawItemsCache: Map<string, Map<string, ContentData[]>>,
   ): Promise<Array<Record<string, string>>> {
     const index: Array<Record<string, string>> = []
     const defaultLang = languages.default || 'ja'
@@ -668,8 +693,8 @@ export class Exporter {
       const lang = locale.code
       const prefix = lang === defaultLang ? '' : `${lang}/`
 
-      // 固定ページ（親チェーンで URL 構築）
-      const pages = await this.fs.readPages(lang)
+      // 固定ページ（親チェーンで URL 構築）。読込済みキャッシュを再利用
+      const pages = pagesCache.get(lang) || []
       const pageById = new Map(pages.map((p) => [p.id, p]))
       const resolvePagePath = (page: ContentData): string[] => {
         const slugOf = (p: ContentData): string => p.slug || p.id
@@ -704,7 +729,7 @@ export class Exporter {
 
       // コンテンツタイプ
       for (const type of contentTypes) {
-        const items = await this.fs.readContentList(type.id, lang)
+        const items = rawItemsCache.get(lang)?.get(type.id) || []
         for (const item of items) {
           if (item.status && item.status !== 'published') continue
           index.push({

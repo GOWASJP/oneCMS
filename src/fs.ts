@@ -20,6 +20,23 @@ async function collectEntries(
   return result
 }
 
+/** 同時に開くファイル数の上限。読み取りを並列化しつつハンドルの過剰確保を防ぐ。 */
+const READ_CONCURRENCY = 32
+
+/** 配列を一定数ずつ並列処理する（読み取り専用の高速化用） */
+async function mapBatched<T, R>(
+  items: T[],
+  size: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const out: R[] = []
+  for (let i = 0; i < items.length; i += size) {
+    const batch = await Promise.all(items.slice(i, i + size).map(fn))
+    out.push(...batch)
+  }
+  return out
+}
+
 /**
  * File System Access API ラッパー
  */
@@ -149,49 +166,46 @@ export class FileSystem {
     return types
   }
 
-  /** 固定ページ一覧を読み込み */
+  /** 固定ページ一覧を読み込み（ファイル読み取りを並列化） */
   async readPages(lang: string): Promise<ContentData[]> {
     const dir = await this.getDir('content/pages')
     if (!dir) return []
     const entries = await collectEntries(dir)
-    const pages: ContentData[] = []
-    for (const [name, handle] of entries) {
-      if (handle.kind === 'directory') {
-        try {
-          const subDir = handle as FileSystemDirectoryHandle
-          const fileHandle = await subDir.getFileHandle(`${lang}.json`)
-          const file = await fileHandle.getFile()
-          const text = await file.text()
-          const parsed = ContentDataSchema.safeParse({ ...JSON.parse(text), id: name })
-          if (parsed.success) pages.push(parsed.data)
-        } catch {
-          // skip
-        }
+    const dirs = entries.filter(([, handle]) => handle.kind === 'directory')
+    const results = await mapBatched(dirs, READ_CONCURRENCY, async ([name, handle]) => {
+      try {
+        const subDir = handle as FileSystemDirectoryHandle
+        const fileHandle = await subDir.getFileHandle(`${lang}.json`)
+        const file = await fileHandle.getFile()
+        const text = await file.text()
+        const parsed = ContentDataSchema.safeParse({ ...JSON.parse(text), id: name })
+        return parsed.success ? parsed.data : null
+      } catch {
+        return null
       }
-    }
-    return pages
+    })
+    return results.filter((p): p is ContentData => p !== null)
   }
 
-  /** コンテンツ一覧を読み込み */
+  /** コンテンツ一覧を読み込み（ファイル読み取りを並列化） */
   async readContentList(typeId: string, lang: string): Promise<ContentData[]> {
     const dir = await this.getDir(`content/${typeId}`)
     if (!dir) return []
     const entries = await collectEntries(dir)
-    const items: ContentData[] = []
-    for (const [name, handle] of entries) {
-      if (handle.kind === 'directory') {
-        try {
-          const subDir = handle as FileSystemDirectoryHandle
-          const fileHandle = await subDir.getFileHandle(`${lang}.json`)
-          const file = await fileHandle.getFile()
-          const text = await file.text()
-          const parsed = ContentDataSchema.safeParse({ ...JSON.parse(text), id: name })
-          if (parsed.success) items.push(parsed.data)
-        } catch {
-          // skip
-        }
+    const dirs = entries.filter(([, handle]) => handle.kind === 'directory')
+    const results = await mapBatched(dirs, READ_CONCURRENCY, async ([name, handle]) => {
+      try {
+        const subDir = handle as FileSystemDirectoryHandle
+        const fileHandle = await subDir.getFileHandle(`${lang}.json`)
+        const file = await fileHandle.getFile()
+        const text = await file.text()
+        const parsed = ContentDataSchema.safeParse({ ...JSON.parse(text), id: name })
+        return parsed.success ? parsed.data : null
+      } catch {
+        return null
       }
-    }
+    })
+    const items = results.filter((i): i is ContentData => i !== null)
     items.sort((a, b) =>
       (b.publishedAt || b._meta?.createdAt || '').localeCompare(
         a.publishedAt || a._meta?.createdAt || '',

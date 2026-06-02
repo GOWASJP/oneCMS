@@ -23,7 +23,7 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
     toast: null,
 
     // データ
-    siteConfig: { name: '', url: '', description: '', services: {}, theme: {} } as SiteConfig,
+    siteConfig: { name: '', url: '', description: '', theme: {} } as SiteConfig,
 
     languages: {
       default: 'ja',

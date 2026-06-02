@@ -508,17 +508,6 @@ export const TEMPLATE_REFERENCE_GROUPS = [
 </div>`,
       },
       {
-        label: 'お問い合わせフォーム雛形',
-        code: `{{#if site.services.formUrl}}
-<form action="{{site.services.formUrl}}" method="POST">
-  <label>お名前 <input type="text" name="name" required></label>
-  <label>メール <input type="email" name="email" required></label>
-  <label>本文 <textarea name="message" required></textarea></label>
-  <button type="submit">送信</button>
-</form>
-{{/if}}`,
-      },
-      {
         label: 'ページネーション',
         code: `{{#if (gt total 1)}}
 <nav class="pagination">
@@ -573,7 +562,6 @@ export const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'styles.hbs': '共通 CSS（<style> タグでまとめて出力）',
   'accordion.hbs': 'アコーディオン UI',
   'card-list.hbs': 'カード形式のリスト',
-  'contact-form.hbs': 'お問い合わせフォーム雛形',
   'gallery.hbs': '画像ギャラリー',
   'hero.hbs': 'ヒーローセクション',
   'tabs.hbs': 'タブ UI',

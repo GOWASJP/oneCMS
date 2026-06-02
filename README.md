@@ -57,7 +57,7 @@ my-site/
 │   └── {type}/             投稿データ
 ├── templates/              ← Handlebarsテンプレート
 │   ├── _base.hbs           共通レイアウト
-│   ├── _components/        コンポーネント（11種）
+│   ├── _components/        コンポーネント（14種）
 │   ├── page.hbs            固定ページ用
 │   ├── list.hbs            一覧用
 │   └── detail.hbs          詳細用
@@ -109,13 +109,7 @@ my-site/
 - カラーテーマ選択（5色）
 - フォント選択（システムフォント / Noto Sans JP / 明朝体）
 - CSS カスタムプロパティで書き出し時に反映
-- 10種のHBSコンポーネント（hero/accordion/tabs/timeline/card-list/gallery等）
-
-### 外部サービス連携
-
-- フォームバックエンド設定（Formrun / Web3Forms / GAS）
-- 翻訳API設定（DeepL / Google翻訳）
-- お問い合わせフォームコンポーネント
+- 9種のHBSコンポーネント（hero/accordion/tabs/timeline/card-list/gallery等）
 
 ## 開発
 

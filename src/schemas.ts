@@ -20,14 +20,6 @@ export const SiteConfigSchema = z.object({
       fontCdn: z.string().optional(),
     })
     .optional(),
-  services: z
-    .object({
-      formBackend: z.string().optional(),
-      formUrl: z.string().optional(),
-      translator: z.string().optional(),
-      translatorApiKey: z.string().optional(),
-    })
-    .optional(),
   nav: z
     .array(
       z.object({

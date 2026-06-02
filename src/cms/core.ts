@@ -329,7 +329,6 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       name: '',
       url: '',
       description: '',
-      services: {},
       theme: {},
     }
     // 管理画面のブラウザタブと設定プレビュー用にファビコン Blob URL を生成

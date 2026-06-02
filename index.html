@@ -2917,63 +2917,6 @@
                       公開サイトで利用する言語の追加・削除、デフォルト言語の設定を行います
                     </p>
                   </div>
-
-                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
-                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">
-                    外部サービス連携
-                  </h2>
-
-                  <!-- フォームバックエンド -->
-                  <div>
-                    <label class="gh-label">フォームバックエンド</label>
-                    <div class="flex gap-2 mb-2">
-                      <template
-                        x-for="fb in [{id:'formrun',label:'Formrun'},{id:'web3forms',label:'Web3Forms'},{id:'gas',label:'GAS'},{id:'custom',label:'独自'}]"
-                        :key="fb.id"
-                      >
-                        <button
-                          @click="siteConfig.services = {...(siteConfig.services||{}), formBackend: fb.id}"
-                          class="px-3 py-1.5 rounded-md border text-xs transition-all"
-                          :class="(siteConfig.services?.formBackend || '') === fb.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-600)]/5 font-semibold' : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'"
-                          x-text="fb.label"
-                        ></button>
-                      </template>
-                    </div>
-                    <input
-                      type="url"
-                      x-model="siteConfig.services.formUrl"
-                      placeholder="フォーム送信先URL"
-                      class="gh-input-light w-full"
-                    />
-                  </div>
-
-                  <!-- 自動翻訳 -->
-                  <div>
-                    <label class="gh-label">自動翻訳API</label>
-                    <div class="flex gap-2 mb-2">
-                      <template
-                        x-for="tr in [{id:'none',label:'なし'},{id:'deepl',label:'DeepL'},{id:'google',label:'Google翻訳'}]"
-                        :key="tr.id"
-                      >
-                        <button
-                          @click="siteConfig.services = {...(siteConfig.services||{}), translator: tr.id}"
-                          class="px-3 py-1.5 rounded-md border text-xs transition-all"
-                          :class="(siteConfig.services?.translator || 'none') === tr.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-600)]/5 font-semibold' : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'"
-                          x-text="tr.label"
-                        ></button>
-                      </template>
-                    </div>
-                    <template
-                      x-if="siteConfig.services?.translator && siteConfig.services.translator !== 'none'"
-                    >
-                      <input
-                        type="text"
-                        x-model="siteConfig.services.translatorApiKey"
-                        placeholder="APIキー"
-                        class="gh-input-light w-full"
-                      />
-                    </template>
-                  </div>
                 </div>
               </div>
             </template>
@@ -2986,7 +2929,7 @@
                 </div>
                 <p class="text-xs text-[var(--ds-text-muted)] mb-6">
                   この画面は ONE CMS
-                  自体の動作設定です。サイトに関する情報（サイト名・カラーテーマ・外部サービス連携など）はサイドバーの「サイト情報」から編集してください。
+                  自体の動作設定です。サイトに関する情報（サイト名・カラーテーマなど）はサイドバーの「サイト情報」から編集してください。
                 </p>
                 <div class="space-y-5">
                   <h2 class="text-base font-bold text-[var(--ds-text-heading)]">表示</h2>

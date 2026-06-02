@@ -1,5 +1,120 @@
 // テンプレートエディタの右パネル用リファレンスデータ・スニペット（純粋な静的データ）
 
+/** フィールドタイプ選択ピッカーのカテゴリ（非エンジニア向けの分類） */
+export const FIELD_TYPE_CATEGORIES = [
+  { id: 'text', label: 'テキスト' },
+  { id: 'choice', label: '選択' },
+  { id: 'media', label: 'メディア' },
+  { id: 'datenum', label: '日付・数値' },
+  { id: 'advanced', label: 'リンク・高度' },
+]
+
+/** フィールドタイプのカタログ。
+ *  id は内部値、label は日本語名、icon は Lucide 名（data-lucide）、desc は一言説明、category は分類。 */
+export const FIELD_TYPES = [
+  {
+    id: 'text',
+    label: '1行テキスト',
+    icon: 'type',
+    desc: '短い文章・見出しなど',
+    category: 'text',
+  },
+  {
+    id: 'textarea',
+    label: '複数行テキスト',
+    icon: 'align-left',
+    desc: '改行を含む説明文',
+    category: 'text',
+  },
+  {
+    id: 'richtext',
+    label: 'リッチテキスト',
+    icon: 'file-text',
+    desc: '装飾・画像付きの本文',
+    category: 'text',
+  },
+  {
+    id: 'select',
+    label: 'プルダウン',
+    icon: 'chevron-down-square',
+    desc: '一覧から1つ選ぶ',
+    category: 'choice',
+  },
+  {
+    id: 'radio',
+    label: 'ラジオボタン',
+    icon: 'circle-dot',
+    desc: '並べて1つ選ぶ',
+    category: 'choice',
+  },
+  {
+    id: 'checkbox',
+    label: 'チェックボックス',
+    icon: 'square-check',
+    desc: 'ON / OFF の切り替え',
+    category: 'choice',
+  },
+  {
+    id: 'toggle',
+    label: 'トグル',
+    icon: 'toggle-left',
+    desc: 'ON / OFF スイッチ',
+    category: 'choice',
+  },
+  {
+    id: 'multiselect',
+    label: '複数選択',
+    icon: 'list-checks',
+    desc: '複数をまとめて選ぶ',
+    category: 'choice',
+  },
+  { id: 'image', label: '画像', icon: 'image', desc: '1枚の画像', category: 'media' },
+  { id: 'imagelist', label: '画像リスト', icon: 'images', desc: '複数の画像', category: 'media' },
+  { id: 'file', label: 'ファイル', icon: 'paperclip', desc: 'PDF などの添付', category: 'media' },
+  { id: 'date', label: '日付', icon: 'calendar', desc: '年月日', category: 'datenum' },
+  {
+    id: 'datetime',
+    label: '日時',
+    icon: 'calendar-clock',
+    desc: '年月日＋時刻',
+    category: 'datenum',
+  },
+  {
+    id: 'daterange',
+    label: '期間',
+    icon: 'calendar-range',
+    desc: '開始〜終了',
+    category: 'datenum',
+  },
+  { id: 'year', label: '年', icon: 'calendar-days', desc: '西暦の年のみ', category: 'datenum' },
+  { id: 'number', label: '数値', icon: 'hash', desc: '数字', category: 'datenum' },
+  { id: 'color', label: 'カラー', icon: 'palette', desc: '色を選ぶ', category: 'datenum' },
+  { id: 'url', label: 'URL', icon: 'link', desc: 'リンク先アドレス', category: 'advanced' },
+  { id: 'email', label: 'メール', icon: 'mail', desc: 'メールアドレス', category: 'advanced' },
+  {
+    id: 'relation',
+    label: '関連コンテンツ',
+    icon: 'link-2',
+    desc: '他の投稿と紐付け',
+    category: 'advanced',
+  },
+  {
+    id: 'repeater',
+    label: '繰り返し',
+    icon: 'repeat',
+    desc: '同じ項目を複数',
+    category: 'advanced',
+  },
+  { id: 'group', label: 'グループ', icon: 'boxes', desc: '項目のまとまり', category: 'advanced' },
+  {
+    id: 'hidden',
+    label: '隠しフィールド',
+    icon: 'eye-off',
+    desc: '画面に出さない値',
+    category: 'advanced',
+  },
+]
+
 export const CATEGORY_SNIPPETS = [
   { label: '現在の記事のカテゴリ', code: '{{page.category}}' },
   {

@@ -202,6 +202,18 @@ export interface CmsComponent {
   deleteFieldGroup(): Promise<void>
   resolveFields(fieldGroupIds?: string[], fallbackFields?: FieldDefinition[]): FieldDefinition[]
   getFieldTemplateCode(type?: ContentType): string
+  // フィールドタイプ選択ピッカー（非エンジニア向け）
+  fieldTypes: Array<{ id: string; label: string; icon: string; desc: string; category: string }>
+  fieldTypeCategories: Array<{ id: string; label: string }>
+  typePickerTarget: FieldDefinition | null
+  openTypePicker(field: FieldDefinition): void
+  selectFieldType(id: string): void
+  fieldTypeLabel(id: string): string
+  fieldTypeIcon(id: string): string
+  onFieldLabelInput(field: FieldDefinition): void
+  goEditFieldGroup(id?: string): Promise<void>
+  // 編集画面でカスタム項目をグループ単位のセクションに分けて表示
+  fieldSections(): Array<{ label: string; fields: FieldDefinition[] }>
   // タクソノミー管理
   showTaxonomyEditor: boolean
   taxonomyData: {

@@ -1,7 +1,13 @@
 import type { CmsComponent } from './types.ts'
 import { type SiteConfig, type ContentData, type FieldGroup } from '../types.ts'
 import { STORAGE_AUTHOR_KEY, STORAGE_THEME_KEY, type ThemeMode } from '../constants.ts'
-import { TEMPLATE_REFERENCE_GROUPS, CATEGORY_SNIPPETS, TAG_SNIPPETS } from './template-reference.ts'
+import {
+  TEMPLATE_REFERENCE_GROUPS,
+  CATEGORY_SNIPPETS,
+  TAG_SNIPPETS,
+  FIELD_TYPES,
+  FIELD_TYPE_CATEGORIES,
+} from './template-reference.ts'
 
 export function createInitialState(): Partial<CmsComponent> & ThisType<CmsComponent> {
   return {
@@ -97,6 +103,11 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
     showTypeEditor: false,
 
     editingType: null,
+
+    // フィールドタイプ選択ピッカー
+    fieldTypes: FIELD_TYPES,
+    fieldTypeCategories: FIELD_TYPE_CATEGORIES,
+    typePickerTarget: null,
 
     // タクソノミー管理
     showTaxonomyEditor: false,

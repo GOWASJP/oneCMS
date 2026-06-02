@@ -92,4 +92,24 @@ export {
 
   // ドキュメント
   BookOpen,
+
+  // フィールドタイプ選択用
+  Type,
+  AlignLeft,
+  Image,
+  Images,
+  ChevronDownSquare,
+  SquareCheck,
+  ToggleLeft,
+  ListChecks,
+  Paperclip,
+  CalendarClock,
+  CalendarRange,
+  CalendarDays,
+  Hash,
+  Palette,
+  Mail,
+  Link2,
+  Repeat,
+  Boxes,
 } from 'lucide'

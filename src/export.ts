@@ -9,7 +9,14 @@ import type {
   MenuData,
   MenuItem,
 } from './types.ts'
-import { PATH_DIST, PATH_EXPORT_SOURCE } from './constants.ts'
+import {
+  PATH_DIST,
+  PATH_EXPORT_SOURCE,
+  EDITION,
+  LICENSE_ID,
+  CANARY,
+  STAMP_VERSION,
+} from './constants.ts'
 
 // Alpine.js CDN ビルド: 公開サイトの dist/assets/js/ に書き出す
 import alpineJs from 'alpinejs/dist/cdn.min.js?raw'
@@ -409,6 +416,8 @@ export class Exporter {
       items: [...rawItemsCache.entries()].map(([lang, m]) => [lang, [...m.entries()]]),
       // アセット（画像・ファイル）の差し替えも検知する（メタ情報のみ）
       assets: [...imageSigs, ...fileSigs],
+      // ビルド識別（エディション/ライセンス/透かし版が変われば再生成して透かしを更新）
+      build: { edition: EDITION, license: LICENSE_ID, stamp: STAMP_VERSION, canary: CANARY },
     })
     this.lastSourceHash = await sha256(sourceSignature)
     if (!force) {
@@ -730,6 +739,18 @@ export class Exporter {
         path: `${prefix}search/index.html`,
         content: this.generateSearchPage(siteConfig, lang),
       })
+    }
+
+    // 透かしの注入：全 HTML の <head> にジェネレータ表記＋ライセンスID＋カナリアを埋め込む。
+    // テンプレートではなく書き出し側で注入するため、テンプレート編集では除去できない。
+    const stamp =
+      `<meta name="generator" content="ONE CMS${EDITION === 'pro' ? ' Pro' : ''}` +
+      `${LICENSE_ID ? ` #${LICENSE_ID}` : ''}">\n<!-- ${CANARY} -->`
+    for (const f of files) {
+      if (!f.path.endsWith('.html')) continue
+      f.content = f.content.includes('</head>')
+        ? f.content.replace('</head>', `${stamp}\n</head>`)
+        : `${stamp}\n${f.content}`
     }
 
     return files

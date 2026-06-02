@@ -5,6 +5,7 @@ import {
   STORAGE_THEME_KEY,
   APP_VERSION,
   EDITION,
+  LICENSE_ID,
   SCHEMA_VERSION,
   type ThemeMode,
 } from '../constants.ts'
@@ -191,6 +192,7 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
     // バージョン・データ移行
     appVersion: APP_VERSION,
     edition: EDITION,
+    licenseId: LICENSE_ID,
     dataSchemaVersion: SCHEMA_VERSION,
     lastBackupPath: null,
     schemaWarning: null,

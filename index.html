@@ -3047,6 +3047,12 @@
                         v
                         <span x-text="dataSchemaVersion"></span>
                       </dd>
+                      <template x-if="licenseId">
+                        <dt class="text-[var(--ds-text-muted)]">ライセンスID</dt>
+                      </template>
+                      <template x-if="licenseId">
+                        <dd class="text-[var(--ds-text-heading)] font-mono" x-text="licenseId"></dd>
+                      </template>
                     </dl>
                     <template x-if="schemaWarning">
                       <p

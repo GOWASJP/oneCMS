@@ -247,4 +247,13 @@ export interface CmsComponent {
   loadTemplateEditor(): Promise<void>
   openTemplateFile(path: string): Promise<void>
   saveTemplateFile(): Promise<void>
+  // 既定テンプレートの差分提案アップデート
+  templateUpdates: Array<{ path: string; name: string; status: 'safe' | 'conflict' }>
+  showTemplateUpdates: boolean
+  selectedUpdatePath: string
+  templateUpdateDiff: string | null
+  checkTemplateUpdates(): Promise<void>
+  viewTemplateUpdateDiff(path: string): Promise<void>
+  applyTemplateUpdate(path: string): Promise<void>
+  applySafeTemplateUpdates(): Promise<void>
 }

@@ -53,6 +53,8 @@ export const PATH_REVISIONS_DIR = '.revisions'
 // CMS メタ情報（スキーマ版・本体版・エディションの記録）と移行前バックアップ
 export const PATH_CMS_META = '.cms/version.json'
 export const PATH_CMS_BACKUP_DIR = '.cms/backup'
+// 既定テンプレートの基準ハッシュ（差分提案アップデートで「未編集」を判定するため）
+export const PATH_TEMPLATES_BASELINE = '.cms/templates-baseline.json'
 export const PATH_ASSETS_IMAGES = 'assets/images'
 export const PATH_ASSETS_FILES = 'assets/files'
 export const PATH_ASSETS_ORIGINALS = 'assets/_originals'

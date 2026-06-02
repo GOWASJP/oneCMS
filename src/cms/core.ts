@@ -18,6 +18,7 @@ import {
   PATH_TAXONOMIES_CATEGORIES,
   PATH_TAXONOMIES_TAGS,
   PATH_ASSETS_FILES,
+  SCHEMA_VERSION,
   type ThemeMode,
 } from '../constants.ts'
 import {
@@ -30,6 +31,7 @@ import {
   hasDir,
 } from './dom.ts'
 import { TEMPLATE_DESCRIPTIONS } from './template-reference.ts'
+import { readMeta, writeMeta, runMigrations, currentMeta } from '../migrations.ts'
 
 /** アップロードファイルの拡張子を判定（MIME タイプ優先、フォールバックでファイル名）。
  *  jpeg は jpg に正規化する。判定できなければ空文字を返す。 */
@@ -324,6 +326,8 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     await this.ensureInitialData()
     // バンドル内のテンプレートで未作成のものがあれば補完（既存ファイルは上書きしない）
     await this.ensureMissingTemplates()
+    // データ形式のバージョン確認・必要なら移行（content/templates を読む前に実行）
+    await this.checkVersionAndMigrate()
 
     this.siteConfig = (await this.fs.readJson<SiteConfig>(PATH_SITE_CONFIG)) || {
       name: '',
@@ -517,6 +521,40 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       if (existing === null) {
         await this.fs.writeText(path, content)
       }
+    }
+  },
+
+  /**
+   * データ形式のバージョンを確認し、必要なら最新へ移行する。
+   * - 旧版/未記録データ → 移行（破壊的変更がある場合は移行前にバックアップ）し、メタを更新
+   * - データの方が新しい（ダウングレード）→ 移行せず警告を表示
+   */
+  async checkVersionAndMigrate() {
+    if (!this.fs) return
+    const meta = await readMeta(this.fs)
+    const from = meta?.schemaVersion ?? 0
+    try {
+      const result = await runMigrations(this.fs, from)
+      if (result.downgrade) {
+        // データが本体より新しい。移行もメタ更新もせず、警告のみ。
+        this.dataSchemaVersion = from
+        this.schemaWarning =
+          `このデータは新しいバージョン（データ形式 v${from}）で作成されています。` +
+          `現在の本体は v${SCHEMA_VERSION} までの対応です。最新の cms.html をご利用ください。`
+        this.showToast('警告: このデータは新しいバージョンで作成されています', 6000)
+        return
+      }
+      this.schemaWarning = null
+      this.dataSchemaVersion = SCHEMA_VERSION
+      this.lastBackupPath = result.backupPath
+      // メタ情報を現行の本体情報で更新（本体バージョン・エディションの記録も兼ねる）
+      await writeMeta(this.fs, currentMeta())
+      if (result.applied.length > 0) {
+        this.showToast(`データを最新形式に移行しました（バックアップ: ${result.backupPath}）`, 6000)
+      }
+    } catch (e) {
+      console.error('[CMS] データ移行に失敗:', e)
+      this.showToast('データ移行中にエラーが発生しました。コンソールを確認してください。', 6000)
     }
   },
 

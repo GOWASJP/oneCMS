@@ -6,6 +6,14 @@
 export const APP_NAME = 'ONE CMS'
 export const APP_VERSION = '1.0.0'
 
+// エディション。Pro ビルドは VITE_EDITION=pro でビルドして上書きする。
+export type Edition = 'free' | 'pro'
+export const EDITION: Edition = import.meta.env.VITE_EDITION === 'pro' ? 'pro' : 'free'
+
+// データ（content/templates）のスキーマバージョン。
+// 破壊的な構造変更を加えたら +1 し、src/migrations.ts にマイグレーションを追加する。
+export const SCHEMA_VERSION = 1
+
 // --- ストレージ ---
 export const STORAGE_DB_NAME = 'one-cms'
 export const STORAGE_HANDLE_KEY = 'rootFolder'
@@ -42,6 +50,9 @@ export const PATH_TAXONOMIES_CATEGORIES = 'content/taxonomies/categories.json'
 export const PATH_TAXONOMIES_TAGS = 'content/taxonomies/tags.json'
 export const PATH_MENUS = 'content/menus.json'
 export const PATH_REVISIONS_DIR = '.revisions'
+// CMS メタ情報（スキーマ版・本体版・エディションの記録）と移行前バックアップ
+export const PATH_CMS_META = '.cms/version.json'
+export const PATH_CMS_BACKUP_DIR = '.cms/backup'
 export const PATH_ASSETS_IMAGES = 'assets/images'
 export const PATH_ASSETS_FILES = 'assets/files'
 export const PATH_ASSETS_ORIGINALS = 'assets/_originals'

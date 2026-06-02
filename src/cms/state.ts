@@ -1,6 +1,13 @@
 import type { CmsComponent } from './types.ts'
 import { type SiteConfig, type ContentData, type FieldGroup } from '../types.ts'
-import { STORAGE_AUTHOR_KEY, STORAGE_THEME_KEY, type ThemeMode } from '../constants.ts'
+import {
+  STORAGE_AUTHOR_KEY,
+  STORAGE_THEME_KEY,
+  APP_VERSION,
+  EDITION,
+  SCHEMA_VERSION,
+  type ThemeMode,
+} from '../constants.ts'
 import {
   TEMPLATE_REFERENCE_GROUPS,
   CATEGORY_SNIPPETS,
@@ -171,6 +178,14 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
 
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
+
+    // バージョン・データ移行
+    appVersion: APP_VERSION,
+    edition: EDITION,
+    dataSchemaVersion: SCHEMA_VERSION,
+    lastBackupPath: null,
+    schemaWarning: null,
+
     categorySnippets: CATEGORY_SNIPPETS,
     tagSnippets: TAG_SNIPPETS,
 

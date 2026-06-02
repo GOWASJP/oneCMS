@@ -3,5 +3,6 @@ build/
 dist/
 changed/
 .revisions/
+.cms/
 .DS_Store
 *.log

@@ -16,7 +16,7 @@ import { FileSystem } from '../fs.ts'
 import { Exporter } from '../export.ts'
 import { DiffEngine } from '../diff.ts'
 import { RevisionManager } from '../revision.ts'
-import { type ThemeMode } from '../constants.ts'
+import { type ThemeMode, type Edition } from '../constants.ts'
 
 export interface CmsComponent {
   authorName: string
@@ -61,6 +61,14 @@ export interface CmsComponent {
   // テーマ
   themeMode: ThemeMode
   setThemeMode(mode: ThemeMode): void
+
+  // バージョン・データ移行
+  appVersion: string
+  edition: Edition
+  dataSchemaVersion: number
+  lastBackupPath: string | null
+  schemaWarning: string | null
+  checkVersionAndMigrate(): Promise<void>
 
   // テンプレート/コンポーネントの役割説明
   templateDescription(name: string): string

@@ -142,6 +142,12 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
 
     templateCode: '',
 
+    // テンプレート差分提案アップデート
+    templateUpdates: [] as Array<{ path: string; name: string; status: 'safe' | 'conflict' }>,
+    showTemplateUpdates: false,
+    selectedUpdatePath: '',
+    templateUpdateDiff: null,
+
     // エディタ
     editor: null,
 

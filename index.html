@@ -2435,6 +2435,18 @@
                   class="w-64 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
                 >
                   <div class="p-3">
+                    <template x-if="templateUpdates.length">
+                      <button
+                        @click="showTemplateUpdates = true"
+                        class="w-full mb-3 flex items-center gap-2 px-2.5 py-2 rounded-md border border-[var(--ds-primary-600)]/40 bg-[var(--ds-primary-600)]/5 text-[var(--ds-primary-600)] text-xs font-medium hover:bg-[var(--ds-primary-600)]/10 transition-all"
+                      >
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span>
+                          <span x-text="templateUpdates.length"></span>
+                          件のテンプレート更新
+                        </span>
+                      </button>
+                    </template>
                     <h3
                       class="text-xs font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mb-2"
                     >
@@ -3423,6 +3435,76 @@
               </button>
               <button @click="saveType()" class="gh-btn-green text-xs">保存</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- テンプレート差分提案アップデート -->
+    <template x-if="showTemplateUpdates">
+      <div
+        class="fixed inset-0 bg-[var(--ds-bg-overlay)] flex items-center justify-center z-[60]"
+        @click.self="showTemplateUpdates = false"
+        @keydown.escape.window="showTemplateUpdates = false"
+      >
+        <div
+          class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-6 text-[var(--ds-text-heading)]"
+        >
+          <div class="flex items-center justify-between mb-1">
+            <h2 class="text-lg font-bold">テンプレートの更新</h2>
+            <button
+              @click="showTemplateUpdates = false"
+              class="text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)]"
+            >
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <p class="text-xs text-[var(--ds-text-muted)] mb-4 leading-relaxed">
+            同梱の新しい既定テンプレートと、お使いのファイルの差分です。「未編集」は安全に取り込めます。「編集済み」は差分を確認のうえ更新してください（あなたの変更は上書きされます）。
+          </p>
+          <template x-if="!templateUpdates.length">
+            <p class="text-sm text-[var(--ds-text-muted)] py-6 text-center">すべて最新です。</p>
+          </template>
+          <template x-if="templateUpdates.some((u) => u.status === 'safe')">
+            <button @click="applySafeTemplateUpdates()" class="gh-btn-green text-xs mb-3">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              未編集をまとめて更新
+            </button>
+          </template>
+          <div class="space-y-2">
+            <template x-for="u in templateUpdates" :key="u.path">
+              <div class="border border-[var(--ds-border-default)] rounded-md">
+                <div class="flex items-center gap-2 p-2.5">
+                  <span
+                    class="font-mono text-xs text-[var(--ds-text-heading)] flex-1 truncate"
+                    x-text="u.path"
+                  ></span>
+                  <span
+                    class="px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0"
+                    :class="u.status === 'safe' ? 'bg-[var(--ds-success-100)] text-[var(--ds-success-600)]' : 'bg-[var(--ds-warning-100)] text-[var(--ds-warning-700)]'"
+                    x-text="u.status === 'safe' ? '未編集' : '編集済み'"
+                  ></span>
+                  <button
+                    @click="viewTemplateUpdateDiff(u.path)"
+                    class="gh-btn-outline text-xs shrink-0"
+                  >
+                    <span x-text="selectedUpdatePath === u.path ? '差分を閉じる' : '差分'"></span>
+                  </button>
+                  <button
+                    @click="applyTemplateUpdate(u.path)"
+                    class="gh-btn-green text-xs shrink-0"
+                  >
+                    更新
+                  </button>
+                </div>
+                <template x-if="selectedUpdatePath === u.path && templateUpdateDiff !== null">
+                  <div
+                    class="border-t border-[var(--ds-border-default)] p-3 bg-[var(--ds-bg-muted)] overflow-auto max-h-72 text-xs revision-diff whitespace-pre-wrap"
+                    x-html="templateUpdateDiff"
+                  ></div>
+                </template>
+              </div>
+            </template>
           </div>
         </div>
       </div>

@@ -14,6 +14,7 @@ import {
   SCHEMA_VERSION,
   APP_VERSION,
   EDITION,
+  LICENSE_ID,
   PATH_CMS_META,
   PATH_CMS_BACKUP_DIR,
   type Edition,
@@ -27,6 +28,8 @@ export interface CmsMeta {
   cmsVersion: string
   /** 最後に扱ったエディション */
   edition: Edition
+  /** ライセンス識別子（配布ビルドに埋め込まれた顧客ID） */
+  licenseId?: string
   /** 最終更新時刻（ISO） */
   updatedAt: string
 }
@@ -57,6 +60,7 @@ export function currentMeta(): CmsMeta {
     schemaVersion: SCHEMA_VERSION,
     cmsVersion: APP_VERSION,
     edition: EDITION,
+    licenseId: LICENSE_ID,
     updatedAt: new Date().toISOString(),
   }
 }

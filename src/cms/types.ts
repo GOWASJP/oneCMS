@@ -68,6 +68,7 @@ export interface CmsComponent {
   // バージョン・データ移行
   appVersion: string
   edition: Edition
+  licenseId: string
   dataSchemaVersion: number
   lastBackupPath: string | null
   schemaWarning: string | null

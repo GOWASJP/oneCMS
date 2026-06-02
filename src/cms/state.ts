@@ -1,0 +1,198 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { CmsComponent } from './types.ts'
+import { type SiteConfig, type ContentData, type FieldGroup } from '../types.ts'
+import { STORAGE_AUTHOR_KEY, STORAGE_THEME_KEY, type ThemeMode } from '../constants.ts'
+import { TEMPLATE_REFERENCE_GROUPS, CATEGORY_SNIPPETS, TAG_SNIPPETS } from './template-reference.ts'
+
+export function createInitialState(): Partial<CmsComponent> & ThisType<CmsComponent> {
+  return {
+    // 状態管理
+    authorName: localStorage.getItem(STORAGE_AUTHOR_KEY) || '',
+
+    authorInput: '',
+
+    folderHandle: null,
+
+    view: 'welcome',
+
+    currentLang: 'ja',
+
+    exporting: false,
+
+    exportResult: null,
+
+    toast: null,
+
+    // データ
+    siteConfig: { name: '', url: '', description: '', services: {}, theme: {} } as SiteConfig,
+
+    languages: {
+      default: 'ja',
+      locales: [{ code: 'ja', label: '日本語', flag: '🇯🇵' }],
+    },
+
+    pages: [],
+
+    contentTypes: [],
+
+    contentItems: [],
+
+    currentPage: null,
+
+    currentType: null,
+
+    currentFields: [],
+
+    editData: { id: '', title: '' },
+
+    // 翻訳ステータス
+    translationStatuses: [],
+
+    // カスタムモーダル
+    modalVisible: false,
+
+    modalTitle: '',
+
+    modalMessage: '',
+
+    modalInput: '',
+
+    modalShowInput: false,
+
+    modalResolve: null as ((value: string | boolean | null) => void) | null,
+
+    // フィールドグループ管理
+    fieldGroups: [] as FieldGroup[],
+
+    currentFieldGroup: null as FieldGroup | null,
+
+    // ページ設定
+    pagesConfig: { hasBody: true, fieldGroupIds: [] } as {
+      hasBody?: boolean
+      fieldGroupIds?: string[]
+    },
+
+    showPagesConfigEditor: false,
+
+    editingPagesConfig: null as {
+      hasBody?: boolean
+      fieldGroupIds?: string[]
+      overrides?: Record<string, { hasBody?: boolean; fieldGroupIds?: string[] }>
+    } | null,
+
+    // メニュー管理
+    menuData: { menus: [] } as any,
+
+    currentMenuId: '',
+
+    currentMenu: null as any,
+
+    // ページ作成
+    showPageCreator: false,
+
+    editingPageId: '',
+
+    editingPageTitle: '',
+
+    // コンテンツタイプ管理
+    showTypeEditor: false,
+
+    editingType: null,
+
+    // タクソノミー管理
+    showTaxonomyEditor: false,
+
+    currentTaxonomyType: 'categories' as 'categories' | 'tags',
+
+    taxonomyData: {
+      categories: [] as Array<{ id: string; label: string }>,
+      tags: [] as Array<{ id: string; label: string }>,
+    },
+
+    availableCategories: [] as Array<{ id: string; label: string }>,
+
+    availableTags: [] as Array<{ id: string; label: string }>,
+
+    // 言語設定
+    showLangEditor: false,
+
+    langEditorData: { default: 'ja', locales: [] },
+
+    // テンプレートエディタ
+    templateFiles: [] as Array<{ name: string; path: string; isComponent: boolean }>,
+
+    currentTemplateFile: '',
+
+    templateCode: '',
+
+    // エディタ
+    editor: null,
+
+    // リビジョン
+    revisions: [],
+
+    selectedRevision: null,
+
+    revisionDiff: null,
+
+    showRevisionPanel: false,
+
+    // プレビュー
+    previewHtml: '',
+
+    showPreviewPanel: false,
+
+    // 自動保存・離脱警告
+    isDirty: false,
+
+    suppressDirty: false,
+
+    autoSaving: false,
+
+    autoSaveTimer: null,
+
+    lastAutoSavedAt: null,
+
+    // ファビコンプレビュー用 Blob URL
+    faviconBlobUrl: '',
+
+    // ロゴプレビュー用 Blob URL
+    logoBlobUrl: '',
+
+    // テーマ（light / dark / system）
+    themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
+    categorySnippets: CATEGORY_SNIPPETS,
+    tagSnippets: TAG_SNIPPETS,
+
+    // テンプレートエディタの右パネル開閉状態（デフォルトで variables のみ展開）
+    templateRefOpenSection: {
+      variables: true,
+      page: false,
+      helpers: false,
+      conditions: false,
+      types: false,
+      snippets: false,
+    } as Record<string, boolean>,
+
+    // 投稿タイプリファレンス用に選択中のタイプ ID
+    templateRefSelectedTypeId: '',
+    templateReferenceGroups: TEMPLATE_REFERENCE_GROUPS,
+
+    // relation フィールドの候補リストキャッシュ
+    relationCandidatesCache: {} as Record<string, ContentData[]>,
+
+    // FS / エンジン
+    fs: null,
+
+    exporter: null,
+
+    diffEngine: null,
+
+    revisionMgr: null,
+
+    // Alpine runtime placeholders
+    $nextTick(_fn: () => void) {},
+
+    $watch(_expression: string, _callback: (value: unknown) => void) {},
+  }
+}

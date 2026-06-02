@@ -1,0 +1,637 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { CmsComponent } from './types.ts'
+import { type SiteConfig, type Languages } from '../types.ts'
+import { FileSystem } from '../fs.ts'
+import { Exporter } from '../export.ts'
+import { DiffEngine } from '../diff.ts'
+import { RevisionManager } from '../revision.ts'
+import { saveFolderHandle, restoreFolderHandle } from '../storage.ts'
+import { INITIAL_TEMPLATES } from '../initial-templates.ts'
+import {
+  STORAGE_AUTHOR_KEY,
+  STORAGE_THEME_KEY,
+  TOAST_DURATION,
+  AUTOSAVE_DEBOUNCE_MS,
+  PATH_SITE_CONFIG,
+  PATH_LANGUAGES,
+  PATH_PAGES_CONFIG,
+  PATH_TAXONOMIES_CATEGORIES,
+  PATH_TAXONOMIES_TAGS,
+  PATH_ASSETS_FILES,
+  type ThemeMode,
+} from '../constants.ts'
+import {
+  applyTheme,
+  loadFaviconBlobUrl,
+  applyFaviconLink,
+  clearFaviconBlobUrl,
+  loadAssetBlobUrl,
+  hasFile,
+  hasDir,
+} from './dom.ts'
+import { TEMPLATE_DESCRIPTIONS } from './template-reference.ts'
+
+export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
+  /** テンプレート/コンポーネントの役割説明（ファイル名 → 説明） */
+  templateDescription(name: string): string {
+    return TEMPLATE_DESCRIPTIONS[name] || ''
+  },
+
+  /** Alpine init — ページ読み込み時に前回のフォルダを自動復元 */
+  async init() {
+    // テーマ適用（localStorage に保存されたモード、または prefers-color-scheme）
+    applyTheme(this.themeMode)
+    // system モード時はOSのテーマ変更に追随
+    const mql = window.matchMedia('(prefers-color-scheme: dark)')
+    mql.addEventListener('change', () => {
+      if (this.themeMode === 'system') applyTheme('system')
+    })
+
+    // 離脱警告: 未保存変更がある場合は確認ダイアログを出す
+    window.addEventListener('beforeunload', (e: BeforeUnloadEvent) => {
+      if (this.isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    })
+
+    // editData の変更を監視して dirty フラグを立てる
+    this.$watch('editData', () => {
+      if (this.suppressDirty) return
+      if (this.view !== 'page-edit' && this.view !== 'content-edit') return
+      this.markDirty()
+    })
+
+    if (!this.authorName) return
+    const handle = await restoreFolderHandle()
+    if (!handle) return
+
+    // 誤って content/ を選択していた場合は復元しない
+    const isContentDir = (await hasFile(handle, 'site.json')) && !(await hasDir(handle, 'content'))
+    if (isContentDir) return
+
+    this.folderHandle = handle
+    this.fs = new FileSystem(handle)
+    this.exporter = new Exporter(this.fs)
+    this.diffEngine = new DiffEngine(this.fs)
+    this.revisionMgr = new RevisionManager(this.fs)
+    await this.loadSiteData()
+    await this.restoreFromHash()
+  },
+
+  /** 未保存変更をマーク・自動保存タイマーを起動 */
+  markDirty() {
+    this.isDirty = true
+    this.scheduleAutoSave()
+  },
+
+  /** dirty 状態をクリア */
+  resetDirty() {
+    this.isDirty = false
+    if (this.autoSaveTimer !== null) {
+      clearTimeout(this.autoSaveTimer)
+      this.autoSaveTimer = null
+    }
+  },
+
+  /** 自動保存をデバウンス予約 */
+  scheduleAutoSave() {
+    if (this.autoSaveTimer !== null) {
+      clearTimeout(this.autoSaveTimer)
+    }
+    this.autoSaveTimer = window.setTimeout(() => {
+      this.autoSaveTimer = null
+      void this.autoSave()
+    }, AUTOSAVE_DEBOUNCE_MS)
+  },
+
+  /** 自動保存本体（タイトル未入力・書き出し中・編集画面以外ではスキップ） */
+  async autoSave() {
+    if (this.autoSaving || this.exporting) return
+    if (this.view !== 'page-edit' && this.view !== 'content-edit') return
+    if (!this.editData.title?.trim()) return
+    const currentPageId = this.currentPage?.id || this.editData.id
+    if (!currentPageId) return
+    this.autoSaving = true
+    try {
+      await this.savePage({ silent: true })
+      this.lastAutoSavedAt = Date.now()
+    } catch (e) {
+      console.error('自動保存エラー:', e)
+    } finally {
+      this.autoSaving = false
+    }
+  },
+
+  /** URLハッシュを現在のビュー状態で更新 */
+  updateHash() {
+    let hash = ''
+    if (this.view === 'page-edit' && this.currentPage?.id === 'index') {
+      hash = '#/home'
+    } else if (this.view === 'page-list') {
+      hash = '#/pages'
+    } else if (this.view === 'page-edit' && this.currentPage) {
+      hash = `#/pages/${this.currentPage.id}`
+    } else if (this.view === 'content-list' && this.currentType) {
+      hash = `#/content/${this.currentType.id}`
+    } else if (this.view === 'content-edit' && this.currentType && this.currentPage) {
+      hash = `#/content/${this.currentType.id}/${this.currentPage.id}`
+    } else if (this.view === 'settings') {
+      hash = '#/settings'
+    } else if (this.view === 'site-info') {
+      hash = '#/site-info'
+    } else if (this.view === 'menus') {
+      hash = '#/menus'
+    } else if (this.view === 'templates') {
+      hash = '#/templates'
+    } else if (this.view === 'field-groups') {
+      hash = '#/field-groups'
+    } else if (this.view === 'taxonomy-categories') {
+      hash = '#/categories'
+    } else if (this.view === 'taxonomy-tags') {
+      hash = '#/tags'
+    }
+    if (hash) {
+      history.replaceState(null, '', hash)
+    }
+  },
+
+  /** URLハッシュからビューを復元 */
+  async restoreFromHash() {
+    const hash = location.hash
+    if (!hash || !this.fs) return
+
+    const parts = hash.replace('#/', '').split('/')
+
+    if (parts[0] === 'home') {
+      await this.openHomePage()
+    } else if (parts[0] === 'settings') {
+      this.view = 'settings'
+    } else if (parts[0] === 'site-info') {
+      this.view = 'site-info'
+    } else if (parts[0] === 'templates') {
+      await this.loadTemplateEditor()
+    } else if (parts[0] === 'field-groups') {
+      await this.loadFieldGroupEditor()
+    } else if (parts[0] === 'categories') {
+      await this.loadTaxonomy('categories')
+    } else if (parts[0] === 'tags') {
+      await this.loadTaxonomy('tags')
+    } else if (parts[0] === 'menus') {
+      await this.loadMenus()
+    } else if (parts[0] === 'pages' && parts[1]) {
+      const page = this.pages.find((p) => p.id === parts[1])
+      if (page) await this.openPage(page)
+    } else if (parts[0] === 'pages') {
+      await this.loadPageList()
+    } else if (parts[0] === 'content' && parts[1]) {
+      const type = this.contentTypes.find((t) => t.id === parts[1])
+      if (type) {
+        await this.openContentType(type)
+        if (parts[2]) {
+          const item = this.contentItems.find((i) => i.id === parts[2])
+          if (item) await this.openContent(item)
+        }
+      }
+    }
+  },
+
+  setAuthor() {
+    const name = this.authorInput.trim()
+    if (!name) return
+    this.authorName = name
+    localStorage.setItem(STORAGE_AUTHOR_KEY, name)
+  },
+
+  setThemeMode(mode: ThemeMode) {
+    this.themeMode = mode
+    localStorage.setItem(STORAGE_THEME_KEY, mode)
+    applyTheme(mode)
+  },
+
+  showToast(message: string, duration = TOAST_DURATION) {
+    this.toast = message
+    setTimeout(() => {
+      this.toast = null
+    }, duration)
+  },
+
+  showConfirm(message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.modalTitle = '確認'
+      this.modalMessage = message
+      this.modalShowInput = false
+      this.modalInput = ''
+      this.modalResolve = resolve as any
+      this.modalVisible = true
+    })
+  },
+
+  showPrompt(title: string, defaultValue = ''): Promise<string | null> {
+    return new Promise((resolve) => {
+      this.modalTitle = title
+      this.modalMessage = ''
+      this.modalShowInput = true
+      this.modalInput = defaultValue
+      this.modalResolve = resolve as any
+      this.modalVisible = true
+    })
+  },
+
+  modalOk() {
+    this.modalVisible = false
+    if (this.modalResolve) {
+      this.modalResolve(this.modalShowInput ? this.modalInput : true)
+      this.modalResolve = null
+    }
+  },
+
+  modalCancel() {
+    this.modalVisible = false
+    if (this.modalResolve) {
+      this.modalResolve(this.modalShowInput ? null : false)
+      this.modalResolve = null
+    }
+  },
+
+  // --- フォルダ選択・データ読み込み ---
+
+  async selectFolder() {
+    try {
+      const handle = await window.showDirectoryPicker({ mode: 'readwrite' })
+
+      // content/ フォルダを直接選んでしまった場合の検出
+      // site.json がルート直下にあり、かつ content/ サブフォルダがない = content/ を選んだ
+      const hasRootSiteJson = await hasFile(handle, 'site.json')
+      const hasContentDir = await hasDir(handle, 'content')
+      if (hasRootSiteJson && !hasContentDir) {
+        this.showToast('content/ ではなくプロジェクトのルートフォルダを選択してください', 5000)
+        return
+      }
+
+      this.folderHandle = handle
+      this.fs = new FileSystem(handle)
+      this.exporter = new Exporter(this.fs)
+      this.diffEngine = new DiffEngine(this.fs)
+      this.revisionMgr = new RevisionManager(this.fs)
+      await saveFolderHandle(handle)
+      await this.loadSiteData()
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name !== 'AbortError') console.error('フォルダ選択エラー:', e)
+    }
+  },
+
+  async loadSiteData() {
+    if (!this.fs) return
+
+    // 初回起動時に初期データを自動生成
+    await this.ensureInitialData()
+    // バンドル内のテンプレートで未作成のものがあれば補完（既存ファイルは上書きしない）
+    await this.ensureMissingTemplates()
+
+    this.siteConfig = (await this.fs.readJson<SiteConfig>(PATH_SITE_CONFIG)) || {
+      name: '',
+      url: '',
+      description: '',
+      services: {},
+      theme: {},
+    }
+    // 管理画面のブラウザタブと設定プレビュー用にファビコン Blob URL を生成
+    this.faviconBlobUrl = await loadFaviconBlobUrl(this.fs, this.siteConfig.favicon)
+    applyFaviconLink(this.faviconBlobUrl)
+    // ロゴプレビュー用 Blob URL を生成
+    this.logoBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.logo)
+    this.languages = (await this.fs.readJson<Languages>(PATH_LANGUAGES)) || this.languages
+    this.currentLang = this.languages.default || 'ja'
+    this.contentTypes = await this.fs.readContentTypes()
+    this.fieldGroups = await this.fs.readFieldGroups()
+    this.pagesConfig = (await this.fs.readJson<{
+      hasBody?: boolean
+      fieldGroupIds?: string[]
+      overrides?: Record<string, { hasBody?: boolean; fieldGroupIds?: string[] }>
+    }>(PATH_PAGES_CONFIG)) || { hasBody: true, fieldGroupIds: [] }
+    this.pages = await this.fs.readPages(this.currentLang)
+    // カテゴリ・タグ読み込み
+    const cats = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
+      PATH_TAXONOMIES_CATEGORIES,
+    )
+    const tags = await this.fs.readJson<{ items: Array<{ id: string; label: string }> }>(
+      PATH_TAXONOMIES_TAGS,
+    )
+    this.availableCategories = cats?.items || []
+    this.availableTags = tags?.items || []
+  },
+
+  /** 初回起動時に必要なフォルダ・ファイルを自動作成 */
+  async ensureInitialData() {
+    if (!this.fs) return
+
+    // site.json がなければ初期データ一式を作成
+    const existing = await this.fs.readJson(PATH_SITE_CONFIG)
+    if (existing) return
+
+    // site.json
+    await this.fs.writeJson(PATH_SITE_CONFIG, {
+      name: 'マイサイト',
+      url: '',
+      description: '',
+      nav: [
+        { label: 'ホーム', url: '/' },
+        { label: '会社概要', url: '/about/' },
+      ],
+    })
+
+    // languages.json
+    await this.fs.writeJson(PATH_LANGUAGES, {
+      default: 'ja',
+      locales: [
+        { code: 'ja', label: '日本語', flag: '🇯🇵' },
+        { code: 'en', label: 'English', flag: '🇺🇸' },
+      ],
+    })
+
+    // コンテンツタイプ: お知らせ
+    await this.fs.writeJson('content/_types/news.json', {
+      id: 'news',
+      label: 'お知らせ',
+      icon: '📢',
+      slug: 'news',
+      order: 'date_desc',
+      hasCategory: true,
+      hasTag: true,
+      hasThumbnail: true,
+      hasDate: true,
+      pagination: 10,
+      fields: [
+        { key: 'title', label: 'タイトル', type: 'text', required: true },
+        { key: 'body', label: '本文', type: 'richtext' },
+        { key: 'image', label: '画像', type: 'image' },
+      ],
+    })
+
+    // 固定ページ: トップ（タイトルは site.name が自動反映される）
+    await this.fs.writeJson('content/pages/index/ja.json', {
+      title: 'マイサイト',
+      status: 'published',
+      heroHeading: 'ようこそ',
+      heroSubheading: 'サイトの特徴やサービスをここで紹介します。',
+      carousel: [],
+      featuredNews: [],
+      banners: [],
+      _meta: {
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
+        author: this.authorName,
+      },
+    })
+
+    // 固定ページ: 会社概要
+    await this.fs.writeJson('content/pages/about/ja.json', {
+      title: '会社概要',
+      body: '<p>会社概要のページです。</p>',
+      status: 'published',
+      _meta: {
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
+        author: this.authorName,
+      },
+    })
+
+    // ページ設定: 共通は hasBody=true、トップページ(index)はフィールドベースに上書き
+    await this.fs.writeJson(PATH_PAGES_CONFIG, {
+      hasBody: true,
+      fieldGroupIds: [],
+      overrides: {
+        index: {
+          hasBody: false,
+          fieldGroupIds: ['home-hero', 'home-carousel', 'home-featured-news', 'home-banners'],
+        },
+      },
+    })
+
+    // フィールドグループ: トップページ用サンプル（製作者が自由に編集・追加・削除可能）
+    await this.fs.writeJson('content/_fieldGroups/home-hero.json', {
+      id: 'home-hero',
+      label: 'ヒーロー',
+      fields: [
+        { key: 'heroHeading', label: '見出し', type: 'text' },
+        { key: 'heroSubheading', label: 'サブ見出し', type: 'textarea' },
+        { key: 'heroImage', label: '背景画像', type: 'image' },
+      ],
+    })
+    await this.fs.writeJson('content/_fieldGroups/home-carousel.json', {
+      id: 'home-carousel',
+      label: 'カルーセル',
+      fields: [
+        {
+          key: 'carousel',
+          label: 'スライド',
+          type: 'repeater',
+          subFields: [
+            { key: 'image', label: '画像', type: 'image' },
+            { key: 'caption', label: 'キャプション', type: 'text' },
+            { key: 'link', label: 'リンク先', type: 'url' },
+          ],
+        },
+      ],
+    })
+    await this.fs.writeJson('content/_fieldGroups/home-featured-news.json', {
+      id: 'home-featured-news',
+      label: '注目のお知らせ',
+      fields: [
+        {
+          key: 'featuredNews',
+          label: '掲載するお知らせ',
+          type: 'relation',
+          relationType: 'news',
+          relationMultiple: true,
+        },
+      ],
+    })
+    await this.fs.writeJson('content/_fieldGroups/home-banners.json', {
+      id: 'home-banners',
+      label: 'バナーエリア',
+      fields: [
+        {
+          key: 'banners',
+          label: 'バナー',
+          type: 'repeater',
+          subFields: [
+            { key: 'image', label: '画像', type: 'image' },
+            { key: 'alt', label: '代替テキスト', type: 'text' },
+            { key: 'link', label: 'リンク先', type: 'url' },
+          ],
+        },
+      ],
+    })
+
+    // 初期テンプレート一式を書き出し（INITIAL_TEMPLATES は templates/ 配下の実ファイルから
+    // Vite の ?raw import で取り込んだもの）。製作者はインストール後に自由にカスタマイズ可能
+    for (const [path, content] of Object.entries(INITIAL_TEMPLATES)) {
+      await this.fs.writeText(path, content)
+    }
+  },
+
+  /** バンドル内のテンプレートで、ユーザーフォルダに存在しないファイルだけ補完。
+   *  既存ファイルは絶対に上書きしない。新しいテンプレートが ONE CMS に追加されたとき、
+   *  既存プロジェクトにも自動で反映されるための仕組み。 */
+  async ensureMissingTemplates() {
+    if (!this.fs) return
+    for (const [path, content] of Object.entries(INITIAL_TEMPLATES)) {
+      const existing = await this.fs.readText(path)
+      if (existing === null) {
+        await this.fs.writeText(path, content)
+      }
+    }
+  },
+
+  /** ファビコンアップロード: assets/files/favicon.<ext> に保存し、siteConfig.favicon にパスを記録 */
+  async handleFaviconUpload(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file || !this.fs) return
+    // 拡張子判定（MIMEタイプ優先、フォールバックでファイル名）
+    const mimeExtMap: Record<string, string> = {
+      'image/x-icon': 'ico',
+      'image/vnd.microsoft.icon': 'ico',
+      'image/png': 'png',
+      'image/svg+xml': 'svg',
+      'image/webp': 'webp',
+    }
+    let ext = mimeExtMap[file.type]
+    if (!ext) {
+      const match = file.name.match(/\.(ico|png|svg|webp)$/i)
+      ext = match ? match[1].toLowerCase() : ''
+    }
+    if (!ext) {
+      this.showToast('ico / png / svg / webp 形式のみアップロードできます', 5000)
+      input.value = ''
+      return
+    }
+    try {
+      // 古い拡張子のファビコンが残っていたら削除（拡張子切替時）
+      const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+      if (filesDir) {
+        for (const oldExt of ['ico', 'png', 'svg', 'webp']) {
+          if (oldExt === ext) continue
+          try {
+            await filesDir.removeEntry(`favicon.${oldExt}`)
+          } catch {
+            /* skip */
+          }
+        }
+      }
+      const buffer = await file.arrayBuffer()
+      const path = `${PATH_ASSETS_FILES}/favicon.${ext}`
+      await this.fs.writeBlob(path, new Blob([buffer]))
+      this.siteConfig.favicon = `/${path}`
+      await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+      this.faviconBlobUrl = await loadFaviconBlobUrl(this.fs, this.siteConfig.favicon)
+      applyFaviconLink(this.faviconBlobUrl)
+      this.showToast('ファビコンをアップロードしました')
+    } catch (e) {
+      console.error('ファビコンアップロードエラー:', e)
+      this.showToast('ファビコンの処理に失敗しました')
+    } finally {
+      input.value = ''
+    }
+  },
+
+  /** ファビコン削除 */
+  async removeFavicon() {
+    if (!this.fs) return
+    if (!(await this.showConfirm('ファビコンを削除しますか？'))) return
+    const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+    if (filesDir) {
+      for (const ext of ['ico', 'png', 'svg', 'webp']) {
+        try {
+          await filesDir.removeEntry(`favicon.${ext}`)
+        } catch {
+          /* skip */
+        }
+      }
+    }
+    delete (this.siteConfig as any).favicon
+    await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+    clearFaviconBlobUrl()
+    this.faviconBlobUrl = ''
+    applyFaviconLink('')
+    this.showToast('ファビコンを削除しました')
+  },
+
+  /** サイトロゴアップロード: assets/files/logo.<ext> に保存し、siteConfig.logo にパスを記録 */
+  async handleLogoUpload(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file || !this.fs) return
+    const mimeExtMap: Record<string, string> = {
+      'image/png': 'png',
+      'image/svg+xml': 'svg',
+      'image/webp': 'webp',
+      'image/jpeg': 'jpg',
+    }
+    let ext = mimeExtMap[file.type]
+    if (!ext) {
+      const match = file.name.match(/\.(png|svg|webp|jpe?g)$/i)
+      ext = match ? match[1].toLowerCase().replace('jpeg', 'jpg') : ''
+    }
+    if (!ext) {
+      this.showToast('png / svg / webp / jpg 形式のみアップロードできます', 5000)
+      input.value = ''
+      return
+    }
+    try {
+      // 古い拡張子のロゴが残っていたら削除（拡張子切替時）
+      const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+      if (filesDir) {
+        for (const oldExt of ['png', 'svg', 'webp', 'jpg']) {
+          if (oldExt === ext) continue
+          try {
+            await filesDir.removeEntry(`logo.${oldExt}`)
+          } catch {
+            /* skip */
+          }
+        }
+      }
+      const buffer = await file.arrayBuffer()
+      const path = `${PATH_ASSETS_FILES}/logo.${ext}`
+      await this.fs.writeBlob(path, new Blob([buffer]))
+      this.siteConfig.logo = `/${path}`
+      await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+      this.logoBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.logo)
+      this.showToast('ロゴをアップロードしました')
+    } catch (e) {
+      console.error('ロゴアップロードエラー:', e)
+      this.showToast('ロゴの処理に失敗しました')
+    } finally {
+      input.value = ''
+    }
+  },
+
+  /** ロゴ削除 */
+  async removeLogo() {
+    if (!this.fs) return
+    if (!(await this.showConfirm('ロゴを削除しますか？'))) return
+    const filesDir = await this.fs.getDir(PATH_ASSETS_FILES)
+    if (filesDir) {
+      for (const ext of ['png', 'svg', 'webp', 'jpg']) {
+        try {
+          await filesDir.removeEntry(`logo.${ext}`)
+        } catch {
+          /* skip */
+        }
+      }
+    }
+    delete (this.siteConfig as any).logo
+    await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+    if (this.logoBlobUrl) URL.revokeObjectURL(this.logoBlobUrl)
+    this.logoBlobUrl = ''
+    this.showToast('ロゴを削除しました')
+  },
+
+  async saveSiteConfig() {
+    if (!this.fs) return
+    await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+    this.showToast('サイト設定を保存しました')
+  },
+}

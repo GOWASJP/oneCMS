@@ -1,31 +1,16 @@
-{{!-- トップページ用テンプレート（サンプル） --}}
-{{!-- 製作者はこのファイルを自由に書き換えてデザインを構築できます --}}
+{{!-- フロントページ用テンプレート（サンプル） --}}
+{{!-- 設定で「フロントページ」に選んだ固定ページが / にマップされ、このテンプレートで描画されます。 --}}
+{{!-- フロントページも通常ページなので、本文（page.body）がそのまま入ります。 --}}
+{{!-- 製作者はこのファイルを自由に書き換えてデザインを構築できます。home.hbs が無ければ page.hbs が使われます。 --}}
 
-<section class="home-hero">
-  {{#if page.heroImage}}<img src="{{page.heroImage}}" alt="">{{/if}}
+<article class="home">
   <div class="container">
-    {{#if page.heroHeading}}<h1>{{page.heroHeading}}</h1>{{/if}}
-    {{#if page.heroSubheading}}<p>{{page.heroSubheading}}</p>{{/if}}
+    {{#if page.title}}<h1>{{page.title}}</h1>{{/if}}
+    {{{page.body}}}
   </div>
-</section>
+</article>
 
-{{#if page.carousel.length}}
-<section class="home-carousel">
-  <div class="container">
-    <div class="carousel-track">
-      {{#each page.carousel}}
-        <figure class="carousel-slide">
-          {{#if link}}<a href="{{link}}">{{/if}}
-          {{#if image}}<img src="{{image}}" alt="{{caption}}">{{/if}}
-          {{#if caption}}<figcaption>{{caption}}</figcaption>{{/if}}
-          {{#if link}}</a>{{/if}}
-        </figure>
-      {{/each}}
-    </div>
-  </div>
-</section>
-{{/if}}
-
+{{!-- サンプル: 最新のお知らせ一覧（不要なら削除してください） --}}
 <section class="home-news">
   <div class="container">
     <h2>お知らせ</h2>
@@ -42,17 +27,3 @@
     <p class="news-more"><a href="/{{#unless (eq lang defaultLang)}}{{lang}}/{{/unless}}news/">すべて見る</a></p>
   </div>
 </section>
-
-{{#if page.banners.length}}
-<section class="home-banners">
-  <div class="container">
-    <ul class="banner-grid">
-      {{#each page.banners}}
-        <li>
-          <a href="{{link}}"><img src="{{image}}" alt="{{alt}}"></a>
-        </li>
-      {{/each}}
-    </ul>
-  </div>
-</section>
-{{/if}}

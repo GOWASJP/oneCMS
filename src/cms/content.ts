@@ -59,25 +59,17 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.updateHash()
   },
 
-  /** トップページ（content/pages/index/{lang}.json）を直接編集モードで開く */
+  /** フロントページ（siteConfig.frontPageId が指す固定ページ）を編集モードで開く */
   async openHomePage() {
     if (!this.fs) return
     this.pages = await this.fs.readPages(this.currentLang)
-    let home = this.pages.find((p) => p.id === 'index')
-    if (!home) {
-      home = {
-        id: 'index',
-        title: 'トップページ',
-        body: '',
-        status: 'published',
-        _meta: {
-          createdAt: new Date().toISOString().split('T')[0],
-          updatedAt: new Date().toISOString().split('T')[0],
-          author: this.authorName,
-        },
-      }
+    const front = this.pages.find((p) => p.id === this.frontPageId)
+    if (!front) {
+      this.showToast('フロントページが設定されていません。設定でフロントページを選択してください')
+      await this.loadPageList()
+      return
     }
-    await this.openPage(home)
+    await this.openPage(front)
   },
 
   openPagesConfigEditor() {
@@ -119,9 +111,9 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
         ;(this.editData as any)[f.key] = []
       }
     }
-    // トップページ（index）は常に Editor.js 無効、それ以外は effectiveHasBody に従う
-    const isHome = page.id === 'index'
-    if (!isHome && effectiveHasBody) {
+    // Editor.js の有効/無効は effectiveHasBody（pagesConfig / ページ別 override）だけで決める。
+    // フロントページも通常ページと同じ扱い（特別扱いしない）。
+    if (effectiveHasBody) {
       this.initEditor((page as any)._editorJson || page.body || '')
     } else if (this.editor) {
       this.editor.destroy()
@@ -328,10 +320,6 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     if (this.editor) {
       this.editData.body = await this.getEditorHtml()
     }
-    // トップページはタイトルを意識しない：site.name を自動セット
-    if (this.currentPage?.id === 'index') {
-      this.editData.title = this.siteConfig.name || 'ホーム'
-    }
     // 必須フィールドバリデーション
     if (!this.editData.title?.trim()) {
       if (!silent) this.showToast('タイトルを入力してください')
@@ -475,12 +463,13 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
 
   /** 親ページとして選択可能なページ一覧を返す
    *  - 自身と自身の子孫を除外して循環参照を防ぐ
-   *  - トップページ(index)はルート専用なので選択肢から除外
+   *  - フロントページはルート(/)専用なので親候補から除外
    */
   availableParentPages(): ContentData[] {
     const currentId = this.currentPage?.id || ''
-    const excludeIndex = (p: ContentData): boolean => p.id !== 'index'
-    if (!currentId) return this.pages.filter(excludeIndex)
+    const frontId = this.frontPageId
+    const excludeFront = (p: ContentData): boolean => p.id !== frontId
+    if (!currentId) return this.pages.filter(excludeFront)
     // currentId の子孫 id 集合を計算（BFS）
     const descendants = new Set<string>()
     const queue: string[] = [currentId]
@@ -494,15 +483,15 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       }
     }
     return this.pages.filter(
-      (p) => p.id !== currentId && p.id !== 'index' && !descendants.has(p.id),
+      (p) => p.id !== currentId && p.id !== frontId && !descendants.has(p.id),
     )
   },
 
   /** ページ一覧を親子ツリー構造の順序（DFS）で depth 付きで返す
-   *  トップページ(index)は独立メニューから編集するため一覧からは除外
+   *  フロントページも通常ページとして一覧に表示する（バッジで区別）
    */
   pagesTree(): Array<ContentData & { depth: number }> {
-    const visiblePages = this.pages.filter((p) => p.id !== 'index')
+    const visiblePages = this.pages
     const byParent = new Map<string, ContentData[]>()
     for (const p of visiblePages) {
       const parent = (p.parent as string | undefined) || ''
@@ -538,12 +527,14 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   },
 
   /** 編集中ページの最終的な URL パスを親チェーンから計算してプレビュー表示
-   *  `index` は常にルート `/` にマップするため、親チェーンからは除外する。
+   *  フロントページは常にルート `/` にマップするため、親チェーンからは除外する。
    */
   pagePathPreview(): string {
+    const frontId = this.frontPageId
     const slugOf = (p: ContentData): string => p.slug || p.id
+    const currentId = this.editData.id || ''
     const currentSlug = this.editData.slug || this.editData.id || ''
-    if (!currentSlug || currentSlug === 'index') return '/'
+    if (!currentSlug || currentId === frontId) return '/'
     const chain: string[] = []
     let parentId = (this.editData.parent as string | undefined) || ''
     const visited = new Set<string>()
@@ -551,9 +542,8 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       visited.add(parentId)
       const parent = this.pages.find((p) => p.id === parentId)
       if (!parent) break
-      const parentSlug = slugOf(parent)
-      // index（トップページ）は / にマップされるのでパスには含めない
-      if (parentSlug !== 'index') chain.unshift(parentSlug)
+      // フロントページは / にマップされるのでパスには含めない
+      if (parent.id !== frontId) chain.unshift(slugOf(parent))
       parentId = (parent.parent as string | undefined) || ''
     }
     chain.push(currentSlug)

@@ -73,8 +73,17 @@ export interface CmsComponent {
   lastBackupPath: string | null
   schemaWarning: string | null
   checkVersionAndMigrate(): Promise<void>
+  // フロントページ（/ にマップする固定ページ id）。siteConfig.frontPageId || 'index'
+  readonly frontPageId: string
   // 拡張（Pro/プラグイン）が追加するサイドバー項目
-  extensionNavItems: Array<{ id: string; label: string; icon: string; view: string }>
+  extensionNavItems: Array<{
+    id: string
+    label: string
+    icon: string
+    view: string
+    // サイドバー配置。'top' は最上部（ダッシュボード等）、未指定/その他は「点検・ツール」セクション。
+    placement?: 'top' | 'tools'
+  }>
 
   // テンプレート/コンポーネントの役割説明
   templateDescription(name: string): string

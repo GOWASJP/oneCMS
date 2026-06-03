@@ -83,9 +83,10 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
 
       // pagePath を計算（カレント判定で使用）
       const pageSlug = pageData.slug || pageData.id || ''
+      const isHome = !this.currentType && pageData.id === this.frontPageId
       const previewPagePath = this.currentType
         ? `${this.currentType.slug}/${pageSlug}/`
-        : pageSlug === 'index'
+        : isHome
           ? ''
           : `${pageSlug}/`
 
@@ -98,6 +99,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
         locales: this.languages.locales,
         defaultLang: this.languages.default,
         pagePath: previewPagePath,
+        isHome,
         breadcrumb: [
           { label: this.siteConfig.name || 'Home', url: '/' },
           ...(this.currentType ? [{ label: this.currentType.label, url: '#' }] : []),

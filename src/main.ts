@@ -36,6 +36,11 @@ Alpine.data('cms', () => {
     // Pro / プラグインの拡張（無料コアでは空。Pro ビルドが alias で差し替える）
     ...extensionMixin,
 
+    // フロントページ（/ にマップする固定ページ id）。未設定サイトは 'index' にフォールバック。
+    get frontPageId(): string {
+      return this.siteConfig?.frontPageId || 'index'
+    },
+
     get viewTitle(): string {
       if (this.view === 'page-edit' && this.currentPage)
         return this.currentPage.title || this.currentPage.id

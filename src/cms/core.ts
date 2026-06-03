@@ -168,9 +168,7 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   /** URLハッシュを現在のビュー状態で更新 */
   updateHash() {
     let hash = ''
-    if (this.view === 'page-edit' && this.currentPage?.id === 'index') {
-      hash = '#/home'
-    } else if (this.view === 'page-list') {
+    if (this.view === 'page-list') {
       hash = '#/pages'
     } else if (this.view === 'page-edit' && this.currentPage) {
       hash = `#/pages/${this.currentPage.id}`
@@ -378,6 +376,7 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       name: 'マイサイト',
       url: '',
       description: '',
+      frontPageId: 'index',
       nav: [
         { label: 'ホーム', url: '/' },
         { label: '会社概要', url: '/about/' },
@@ -412,15 +411,11 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       ],
     })
 
-    // 固定ページ: トップ（タイトルは site.name が自動反映される）
+    // 固定ページ: トップ（フロントページ。通常ページとして本文を編集する）
     await this.fs.writeJson('content/pages/index/ja.json', {
-      title: 'マイサイト',
+      title: 'ホーム',
+      body: '<p>ようこそ。サイトの特徴やサービスをここで紹介します。</p>',
       status: 'published',
-      heroHeading: 'ようこそ',
-      heroSubheading: 'サイトの特徴やサービスをここで紹介します。',
-      carousel: [],
-      featuredNews: [],
-      banners: [],
       _meta: {
         createdAt: new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0],
@@ -440,16 +435,13 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       },
     })
 
-    // ページ設定: 共通は hasBody=true、トップページ(index)はフィールドベースに上書き
+    // ページ設定: すべての固定ページは既定で hasBody=true（本文編集）。
+    // フロントページも通常ページ扱い（特別な override は持たせない）。
+    // ※ home-* のフィールドグループはサンプルとして別途用意され、必要なら任意のページに割当可能。
     await this.fs.writeJson(PATH_PAGES_CONFIG, {
       hasBody: true,
       fieldGroupIds: [],
-      overrides: {
-        index: {
-          hasBody: false,
-          fieldGroupIds: ['home-hero', 'home-carousel', 'home-featured-news', 'home-banners'],
-        },
-      },
+      overrides: {},
     })
 
     // フィールドグループ: トップページ用サンプル（製作者が自由に編集・追加・削除可能）

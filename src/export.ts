@@ -472,8 +472,10 @@ export class Exporter {
       const langPages = pagesCache.get(lang) || []
       // 親子チェーンのルックアップマップ（id → page）
       const pageById = new Map(langPages.map((p) => [p.id, p]))
+      // フロントページ（/ にマップする固定ページ id）。未設定サイトは 'index' にフォールバック。
+      const frontPageId = siteConfig.frontPageId || 'index'
       // ページの最終URLパス（親チェーンを辿って / 区切りで連結）
-      // `index` はトップページ扱いで / にマップされるため、親チェーンからは除外する
+      // フロントページは / にマップされるため、親チェーンからは除外する
       const resolvePagePath = (page: ContentData): string[] => {
         const slugOf = (p: ContentData): string => p.slug || p.id
         const chain: string[] = []
@@ -483,8 +485,8 @@ export class Exporter {
         while (current && !visited.has(current.id)) {
           visited.add(current.id)
           const slug = slugOf(current)
-          // 親チェーンに index が含まれた場合は省略（自身が index の場合のみ残す）
-          if (isSelf || slug !== 'index') chain.unshift(slug)
+          // 親チェーンにフロントページが含まれた場合は省略（自身がフロントの場合のみ残す）
+          if (isSelf || current.id !== frontPageId) chain.unshift(slug)
           isSelf = false
           const parentId: string = (current.parent as string | undefined) || ''
           current = parentId ? pageById.get(parentId) : undefined
@@ -509,7 +511,7 @@ export class Exporter {
         }
         for (const ancestor of ancestors) {
           const segs = resolvePagePath(ancestor)
-          const url = segs[0] === 'index' ? '/' : `/${prefix}${segs.join('/')}/`
+          const url = ancestor.id === frontPageId ? '/' : `/${prefix}${segs.join('/')}/`
           crumbs.push({ label: ancestor.title, url })
         }
         crumbs.push({ label: page.title })
@@ -521,7 +523,7 @@ export class Exporter {
 
         const breadcrumb = resolveBreadcrumb(page)
         const segments = resolvePagePath(page)
-        const isIndex = segments.length === 1 && segments[0] === 'index'
+        const isIndex = page.id === frontPageId
         const pagePath = isIndex ? '' : `${segments.join('/')}/`
 
         const ctx = {
@@ -533,9 +535,11 @@ export class Exporter {
           locales,
           defaultLang,
           pagePath,
+          // フロントページかどうか（テンプレートで {{#if isHome}} 判定に使う）
+          isHome: isIndex,
         }
 
-        // トップページは home.hbs が存在すれば優先、無ければ page.hbs にフォールバック
+        // フロントページは home.hbs が存在すれば優先、無ければ page.hbs にフォールバック
         const activeTemplate = isIndex && homeTemplate ? homeTemplate : pageTemplate
         const pageHtml = activeTemplate
           ? activeTemplate(ctx)
@@ -727,6 +731,7 @@ export class Exporter {
       contentTypes,
       pagesCache,
       rawItemsCache,
+      siteConfig.frontPageId || 'index',
     )
     for (const locale of locales) {
       const lang = locale.code
@@ -762,6 +767,7 @@ export class Exporter {
     contentTypes: ContentType[],
     pagesCache: Map<string, ContentData[]>,
     rawItemsCache: Map<string, Map<string, ContentData[]>>,
+    frontPageId: string,
   ): Promise<Map<string, Array<Record<string, string>>>> {
     const byLang = new Map<string, Array<Record<string, string>>>()
     const defaultLang = languages.default || 'ja'
@@ -784,7 +790,7 @@ export class Exporter {
         while (current && !visited.has(current.id)) {
           visited.add(current.id)
           const slug = slugOf(current)
-          if (isSelf || slug !== 'index') chain.unshift(slug)
+          if (isSelf || current.id !== frontPageId) chain.unshift(slug)
           isSelf = false
           const parentId: string = (current.parent as string | undefined) || ''
           current = parentId ? pageById.get(parentId) : undefined
@@ -794,7 +800,7 @@ export class Exporter {
       for (const page of pages) {
         if (page.status && page.status !== 'published') continue
         const segs = resolvePagePath(page)
-        const isIndex = segs.length === 1 && segs[0] === 'index'
+        const isIndex = page.id === frontPageId
         const url = isIndex ? `/${prefix}` : `/${prefix}${segs.join('/')}/`
         index.push({
           title: page.title,

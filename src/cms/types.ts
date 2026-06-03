@@ -73,6 +73,8 @@ export interface CmsComponent {
   lastBackupPath: string | null
   schemaWarning: string | null
   checkVersionAndMigrate(): Promise<void>
+  // フロントページ（/ にマップする固定ページ id）。siteConfig.frontPageId || 'index'
+  readonly frontPageId: string
   // 拡張（Pro/プラグイン）が追加するサイドバー項目
   extensionNavItems: Array<{
     id: string

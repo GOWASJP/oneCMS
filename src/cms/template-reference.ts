@@ -186,6 +186,11 @@ export const TEMPLATE_REFERENCE_GROUPS = [
       { label: 'タイトル', code: '{{page.title}}' },
       { label: 'スラッグ', code: '{{page.slug}}' },
       {
+        label: 'フロントページか',
+        code: '{{#if isHome}}…{{/if}}',
+        note: '設定で選んだ / にマップされるページのとき true',
+      },
+      {
         label: '本文 HTML',
         code: '{{{page.body}}}',
         note: '三重括弧でエスケープせず HTML として出力',
@@ -556,11 +561,11 @@ export const TEMPLATE_REFERENCE_GROUPS = [
 {{/if}}`,
       },
       {
-        label: 'トップページかどうか',
-        code: `{{#if (eq page.id "index")}}
-  {{!-- トップページ --}}
+        label: 'フロントページかどうか',
+        code: `{{#if isHome}}
+  {{!-- フロントページ（/ にマップされるページ） --}}
 {{else}}
-  {{!-- トップページ以外 --}}
+  {{!-- フロントページ以外 --}}
 {{/if}}`,
       },
     ],
@@ -661,7 +666,7 @@ export const TEMPLATE_REFERENCE_GROUPS = [
 export const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   // テンプレート（最上位）
   '_base.hbs': '全ページ共通の HTML レイアウト枠',
-  'home.hbs': 'トップページ',
+  'home.hbs': 'フロントページ（設定で選んだ / にマップされるページ。無ければ page.hbs を使用）',
   'page.hbs': '固定ページ（会社概要・利用規約など）',
   'list.hbs': '投稿タイプの一覧ページ',
   'detail.hbs': '投稿タイプの詳細ページ',

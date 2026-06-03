@@ -44,29 +44,104 @@
       <div class="flex h-screen">
         <!-- サイドバー -->
         <aside class="gh-sidebar w-56 flex flex-col shrink-0">
-          <!-- サイト名 -->
-          <div class="px-5 py-4 border-b border-[var(--ds-border-subtle)]">
-            <div class="flex items-center gap-2.5">
+          <!-- サイト名（クリックでサイト切替メニュー） -->
+          <div
+            class="px-3 py-3 border-b border-[var(--ds-border-subtle)] relative"
+            x-data="{ siteMenuOpen: false }"
+            @keydown.escape="siteMenuOpen = false"
+          >
+            <button
+              @click="siteMenuOpen = !siteMenuOpen"
+              class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md transition hover:bg-[var(--ds-bg-hover)]"
+              :class="siteMenuOpen ? 'bg-[var(--ds-bg-hover)]' : ''"
+              title="サイトを切り替え"
+            >
               <div
-                class="w-8 h-8 bg-[var(--ds-primary-600)] text-white rounded-md flex items-center justify-center text-sm font-bold"
+                class="w-8 h-8 bg-[var(--ds-primary-600)] text-white rounded-md flex items-center justify-center text-sm font-bold shrink-0"
                 x-text="(siteConfig.name || 'G')[0]"
               ></div>
               <span
-                class="text-[13px] font-semibold truncate text-[var(--ds-text-heading)]"
+                class="text-[13px] font-semibold truncate text-[var(--ds-text-heading)] flex-1 text-left"
                 x-text="siteConfig.name || 'ONE CMS'"
               ></span>
+              <!-- 永続シェル要素のため Lucide(createIcons の発火タイミング依存)ではなくインライン SVG -->
+              <svg
+                x-show="!siteMenuOpen"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-4 h-4 text-[var(--ds-text-muted)] shrink-0"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+              <svg
+                x-show="siteMenuOpen"
+                x-cloak
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-4 h-4 text-[var(--ds-text-muted)] shrink-0"
+              >
+                <path d="m18 15-6-6-6 6" />
+              </svg>
+            </button>
+            <div
+              x-show="siteMenuOpen"
+              x-cloak
+              x-transition
+              @click.outside="siteMenuOpen = false"
+              class="absolute left-3 right-3 top-full mt-1 z-50 py-1 bg-[var(--ds-bg-surface)] border border-[var(--ds-border-default)] rounded-md shadow-[var(--ds-shadow-popup)]"
+            >
+              <button
+                @click="siteMenuOpen = false; selectFolder()"
+                class="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--ds-text-body)] hover:bg-[var(--ds-bg-hover)] transition text-left"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-4 h-4 text-[var(--ds-text-muted)] shrink-0"
+                >
+                  <path
+                    d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"
+                  />
+                </svg>
+                <span x-text="folderHandle ? 'サイトを変更' : 'サイトを選択'"></span>
+              </button>
             </div>
           </div>
 
           <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-            <button @click="selectFolder()" class="gh-nav-item w-full">
-              <i data-lucide="folder-open" class="w-[18px] h-[18px]"></i>
-              <span x-text="folderHandle ? 'フォルダ変更' : 'フォルダを選択'"></span>
-            </button>
-
             <template x-if="folderHandle">
               <div class="space-y-0.5">
-                <div class="gh-nav-section">ページ</div>
+                <!-- ダッシュボード（拡張: placement === 'top'）。無料コアでは空 -->
+                <template
+                  x-for="ext in extensionNavItems.filter((e) => e.placement === 'top')"
+                  :key="ext.id"
+                >
+                  <button
+                    @click="view = ext.view; updateHash()"
+                    :class="view === ext.view ? 'gh-nav-active' : ''"
+                    class="gh-nav-item w-full"
+                  >
+                    <i :data-lucide="ext.icon" class="w-[18px] h-[18px]"></i>
+                    <span x-text="ext.label"></span>
+                  </button>
+                </template>
+
+                <div class="gh-nav-section">つくる</div>
                 <button
                   @click="openHomePage()"
                   :class="view === 'page-edit' && currentPage?.id === 'index' ? 'gh-nav-active' : ''"
@@ -84,7 +159,6 @@
                   <span>ページ一覧</span>
                 </button>
 
-                <div class="gh-nav-section">投稿タイプ</div>
                 <template x-for="type in contentTypes" :key="type.id">
                   <button
                     @click="openContentType(type)"
@@ -103,8 +177,7 @@
                   <span>タイプ追加</span>
                 </button>
 
-                <div class="h-px bg-[var(--ds-border-default)] my-3"></div>
-
+                <div class="gh-nav-section">ととのえる</div>
                 <button
                   @click="loadMenus()"
                   :class="view === 'menus' ? 'gh-nav-active' : ''"
@@ -148,6 +221,26 @@
                     <span>テンプレート</span>
                   </button>
                 </template>
+
+                <!-- 点検・ツール（拡張: placement !== 'top'）。項目があるときだけ見出し -->
+                <template x-if="extensionNavItems.some((e) => e.placement !== 'top')">
+                  <div class="gh-nav-section">点検・ツール</div>
+                </template>
+                <template
+                  x-for="ext in extensionNavItems.filter((e) => e.placement !== 'top')"
+                  :key="ext.id"
+                >
+                  <button
+                    @click="view = ext.view; updateHash()"
+                    :class="view === ext.view ? 'gh-nav-active' : ''"
+                    class="gh-nav-item w-full"
+                  >
+                    <i :data-lucide="ext.icon" class="w-[18px] h-[18px]"></i>
+                    <span x-text="ext.label"></span>
+                  </button>
+                </template>
+
+                <div class="gh-nav-section">設定</div>
                 <button
                   @click="view = 'site-info'; updateHash()"
                   :class="view === 'site-info' ? 'gh-nav-active' : ''"
@@ -164,17 +257,6 @@
                   <i data-lucide="settings" class="w-[18px] h-[18px]"></i>
                   <span>設定</span>
                 </button>
-                <!-- 拡張（Pro/プラグイン）が追加するナビ項目。無料コアでは空 -->
-                <template x-for="ext in extensionNavItems" :key="ext.id">
-                  <button
-                    @click="view = ext.view; updateHash()"
-                    :class="view === ext.view ? 'gh-nav-active' : ''"
-                    class="gh-nav-item w-full"
-                  >
-                    <i :data-lucide="ext.icon" class="w-[18px] h-[18px]"></i>
-                    <span x-text="ext.label"></span>
-                  </button>
-                </template>
               </div>
             </template>
           </nav>

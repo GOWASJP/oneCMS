@@ -214,6 +214,15 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'export.changedFilesLabel': '更新ファイル（changed/）',
     'export.deletedFiles': '削除ファイル',
     'export.step3': '公開サイトに反映されます（差分のみのアップロードで完了）',
+    'export.completedNotePre': '更新分は選択中フォルダの',
+    'export.completedNotePost': 'に出力されています。FTPでこの中身をアップロードしてください。',
+    'export.step1Pre': 'FTPソフトで、選択中フォルダ内の',
+    'export.step1Post': 'を開く',
+    'export.step2Pre': '',
+    'export.step2Post':
+      'の中身を、サーバーの公開ディレクトリにアップロード（既存ファイルに上書き）',
+    'export.finderNote':
+      'ブラウザの仕様上、フォルダを Finder / エクスプローラーで自動表示することはできません。FTP が使えない場合は、下の「ZIPでダウンロード」で更新分をまとめて取り出せます。',
     'export.inProgress': '書き出し中...',
     'menu.nameLabel': 'メニュー名',
     'menu.structure': 'メニュー構造',
@@ -381,6 +390,41 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'fieldTypeCat.media': 'メディア',
     'fieldTypeCat.datenum': '日付・数値',
     'fieldTypeCat.advanced': 'リンク・高度',
+    // 複数行の注記・バナー
+    'note.frontPageBanner':
+      'このページはフロントページ（サイトの / トップ）に設定されています。書き出すと URL のルートに公開されます。フロントページは「設定 → サイト情報」で変更できます。',
+    'note.frontPageUrl':
+      'フロントページは常にサイトのルート（/）に配置されます。フロントページの変更は「設定 → サイト情報」から。',
+    'note.customScriptInsert': 'このページの </body> 直前に挿入',
+    'note.headInsert': '全ページの <head> 内に挿入されます',
+    'note.bodyInsert': '全ページの </body> 直前に挿入。Alpine.js より後に実行されます',
+    'note.frontPageSelect':
+      'サイトのルート（/）に公開する固定ページを選びます。選んだページは「ページ一覧」で「フロントページ」と表示され、書き出すと / に配置されます（公開状態のページを選んでください）。',
+    'note.logoFormat':
+      'png / svg / webp / jpg 形式。ヘッダー等で表示されます（推奨: SVG または横長の透過 PNG）',
+    'note.faviconFormat':
+      'ico / png / svg / webp 形式（推奨: 32×32 または 64×64 の png、もしくは svg）',
+    'note.templateDiff':
+      '同梱の新しい既定テンプレートと、お使いのファイルの差分です。「未編集」は安全に取り込めます。「編集済み」は差分を確認のうえ更新してください（あなたの変更は上書きされます）。',
+    'note.themeDevEdit':
+      '現在のテーマの Handlebars テンプレートを直接編集します。右の「テーマの構成と作り方」「ページ種別ごとの変数」やヘルパ一覧を参照しながら組み立ててください。',
+    'note.partial': '{{> name}} で他のテンプレートから呼び出せる再利用パーシャル',
+    'note.updateApp':
+      '新版へは新しい onecms.html をダウンロードして差し替えてください。フォルダ側のコンテンツ・テンプレートは保持され、必要に応じて自動で新形式へ移行されます（移行前にバックアップを作成）。',
+    'note.folderPermission':
+      'ブラウザから「このサイトに変更の保存を許可する場所を選択してください」と表示されますが、これは CMS がファイルを読み書きするフォルダを指定するためのものです。安全にご利用いただけます。',
+    'note.themeDevDesc': '現在のテーマの Handlebars テンプレートを直接編集します。',
+    'note.themeBannerPre': '公開サイトのテーマ（見た目のテンプレート一式）は、左メニューの',
+    'note.themeBannerPost':
+      'で選べます。色やフォントなどの見た目は、テーマ内のテンプレート（CSS）で直接調整します。',
+    'note.childPageUrl': '子ページは親ページのURL構造を引き継ぎます。現在のURL:',
+    'note.templateUpdateCount': '{count} 件のテンプレート更新',
+    'note.themePkg1': 'テーマは保存先フォルダの',
+    'note.themePkg2': 'に置かれた差し替え可能なパッケージです。',
+    'note.themePkg3': 'を含む新しいテーマフォルダを追加すると、ここに表示されます。',
+    'note.typeFieldGroupPre':
+      'カスタム入力項目は「フィールド」画面でフィールドグループを作成し、各グループの',
+    'note.typeFieldGroupPost': 'でこの投稿タイプを指定すると、編集画面に表示されます。',
   },
   en: {
     'nav.section.create': 'Create',
@@ -571,6 +615,14 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'export.changedFilesLabel': 'Updated files (changed/)',
     'export.deletedFiles': 'Deleted files',
     'export.step3': 'Reflected on the published site (incremental upload only)',
+    'export.completedNotePre': 'The updated files have been written to',
+    'export.completedNotePost': 'in the selected folder. Upload its contents via FTP.',
+    'export.step1Pre': 'In your FTP client, open',
+    'export.step1Post': 'inside the selected folder',
+    'export.step2Pre': 'Upload the contents of',
+    'export.step2Post': 'to the public directory on your server (overwriting existing files)',
+    'export.finderNote':
+      'Due to browser limitations, the folder cannot be opened automatically in Finder/Explorer. If you cannot use FTP, use “Download as ZIP” below to grab all the changes at once.',
     'export.inProgress': 'Exporting...',
     'menu.nameLabel': 'Menu name',
     'menu.structure': 'Menu structure',
@@ -735,5 +787,38 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'fieldTypeCat.media': 'Media',
     'fieldTypeCat.datenum': 'Date & number',
     'fieldTypeCat.advanced': 'Link & advanced',
+    'note.frontPageBanner':
+      'This page is set as the front page (the site root /). When exported, it is published at the URL root. You can change the front page in Settings → Site info.',
+    'note.frontPageUrl':
+      'The front page is always placed at the site root (/). Change it in Settings → Site info.',
+    'note.customScriptInsert': 'Inserted just before </body> on this page',
+    'note.headInsert': 'Inserted inside <head> on all pages',
+    'note.bodyInsert': 'Inserted just before </body> on all pages. Runs after Alpine.js.',
+    'note.frontPageSelect':
+      'Choose the page published at the site root (/). The chosen page shows as “Front page” in Pages and is placed at / on export (choose a published page).',
+    'note.logoFormat':
+      'png / svg / webp / jpg. Shown in the header, etc. (recommended: SVG or a wide transparent PNG)',
+    'note.faviconFormat': 'ico / png / svg / webp (recommended: a 32×32 or 64×64 png, or svg)',
+    'note.templateDiff':
+      'Differences between the bundled new default templates and your files. “Unedited” can be applied safely. For “Edited”, review the diff before updating (your changes will be overwritten).',
+    'note.themeDevEdit':
+      'Edit the current theme’s Handlebars templates directly. Build them while referring to “Theme structure” and “Variables by page type” and the helper list on the right.',
+    'note.partial': 'Reusable partials callable from other templates with {{> name}}',
+    'note.updateApp':
+      'To update, download and replace with the new onecms.html. The content and templates in the folder are preserved and migrated to the new format automatically if needed (a backup is created before migration).',
+    'note.folderPermission':
+      'The browser shows “Let this site save changes to the folder you select,” but this is just to specify the folder where the CMS reads and writes files. It is safe to use.',
+    'note.themeDevDesc': 'Edit the current theme’s Handlebars templates directly.',
+    'note.themeBannerPre':
+      'You can choose the public site theme (the set of appearance templates) from the left menu under',
+    'note.themeBannerPost':
+      '. Adjust colors, fonts, and other visuals directly in the theme’s templates (CSS).',
+    'note.childPageUrl': 'A child page inherits the parent page’s URL structure. Current URL:',
+    'note.templateUpdateCount': '{count} template update(s)',
+    'note.themePkg1': 'Themes are swappable packages placed under',
+    'note.themePkg2': 'in the save folder. Add a new theme folder containing',
+    'note.themePkg3': 'and it will appear here.',
+    'note.typeFieldGroupPre': 'Create a field group on the Fields screen, and set its',
+    'note.typeFieldGroupPost': 'to this post type — the fields then appear in the editor.',
   },
 }

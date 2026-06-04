@@ -116,6 +116,8 @@ export interface CmsComponent {
 
   // テンプレート/コンポーネントの役割説明
   templateDescription(name: string): string
+  // ファイル名 → 役割説明（現在の UI 言語に追従）
+  templateDescriptions: Record<string, string>
 
   // タクソノミー管理画面用テンプレートスニペット
   categorySnippets: Array<{ label: string; code: string }>

@@ -814,3 +814,233 @@ export const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'timeline.hbs': 'タイムライン UI',
   'seo.hbs': 'SEO・OGP・構造化データ（head 内）',
 }
+
+/** リファレンスパネルの表示文字列（label / note / desc / ファイル説明）の英訳辞書。
+ *  キーは上の各データに現れる日本語文字列そのもの。code（Handlebars 例）は対象外。
+ *  未収録はフォールバックで日本語のまま表示される。 */
+const REFERENCE_EN: Record<string, string> = {
+  // カテゴリ／タグ スニペット
+  現在の記事のカテゴリ: "Current post's category",
+  'カテゴリバッジ（条件付き）': 'Category badge (conditional)',
+  カテゴリで表示切替: 'Toggle display by category',
+  一覧でカテゴリ付きリスト: 'List with categories in index',
+  現在の記事のタグ一覧: "Current post's tag list",
+  タグがあれば表示: 'Show tags if present',
+  タグをリンク付きで表示: 'Show tags with links',
+  一覧でタグ付きリスト: 'List with tags in index',
+  // グループ見出し
+  テーマの構成と作り方: 'Theme structure & how to build',
+  ページ種別ごとの変数: 'Variables by page type',
+  サイト共通変数: 'Site-wide variables',
+  'ページ・コンテンツ変数': 'Page & content variables',
+  'Handlebars ヘルパー': 'Handlebars helpers',
+  'Alpine.js インタラクション': 'Alpine.js interactions',
+  ナビゲーション: 'Navigation',
+  'カテゴリ・タグ': 'Categories & tags',
+  条件分岐: 'Conditionals',
+  よく使うスニペット: 'Common snippets',
+  // getting-started
+  'テーマの構成（themes/<id>/）': 'Theme structure (themes/<id>/)',
+  '1テーマ＝1フォルダの差し替え可能なパッケージ。CMS はアクティブテーマのフォルダを読んで公開サイトを生成します。':
+    "One theme = one swappable folder package. The CMS reads the active theme's folder to generate the published site.",
+  'theme.json（manifest）': 'theme.json (manifest)',
+  'テーマの識別情報のみ。色やフォントはここではなく styles.hbs(CSS) に直接書きます。':
+    'Identity info only. Define colors and fonts directly in styles.hbs (CSS), not here.',
+  '_base.hbs（共通の外枠）': '_base.hbs (shared outer frame)',
+  '各ページ本体は {{{content}}}（三重括弧）に差し込まれます。<head> には書き出し時に generator/ライセンス透かしも自動注入されます。':
+    'Each page body is injected into {{{content}}} (triple braces). A generator/license watermark is also auto-injected into <head> on export.',
+  'ページ本体（種別ごとに使い分け）': 'Page bodies (one per page type)',
+  'home.hbs が無ければ page.hbs にフォールバック。各種別で使える変数は「ページ種別ごとの変数」を参照。':
+    "If home.hbs is absent, it falls back to page.hbs. See 'Variables by page type' for the variables available in each type.",
+  'コンポーネント（再利用パーシャル）': 'Components (reusable partials)',
+  '_components/<name>.hbs を {{> name}} で呼び出します。テンプレートに無いものは最小デフォルトが補われます。':
+    'Call _components/<name>.hbs with {{> name}}. Anything missing from your templates is filled in with a minimal default.',
+  レンダリングの流れ: 'Rendering flow',
+  'pageType（page / list / detail）で本体テンプレートが選ばれます。':
+    'The body template is chosen by pageType (page / list / detail).',
+  '最小テーマの雛形（_base + page）': 'Minimal theme starter (_base + page)',
+  'ゼロから始めるなら、まず _base.hbs と page.hbs だけでも動きます。':
+    'Starting from scratch, just _base.hbs and page.hbs is enough to run.',
+  '色・フォントの定義（styles.hbs）': 'Defining colors & fonts (styles.hbs)',
+  '見た目は CMS 設定ではなくテーマ内の CSS で直接定義します（_components/styles.hbs など）。':
+    "Appearance is defined directly in the theme's CSS (e.g. _components/styles.hbs), not in CMS settings.",
+  // page-types
+  全種別で共通: 'Common to all types',
+  'site / lang / defaultLang / pagePath / breadcrumb / locales はどのページでも使えます。':
+    'site / lang / defaultLang / pagePath / breadcrumb / locales are available on every page.',
+  '固定ページ（home.hbs / page.hbs）': 'Static pages (home.hbs / page.hbs)',
+  'page（title / slug / body / _meta.updatedAt / _meta.author …）と、フロントページか判定する isHome。':
+    "page (title / slug / body / _meta.updatedAt / _meta.author …) and isHome to tell whether it's the front page.",
+  '一覧（list.hbs）': 'List (list.hbs)',
+  'type / items / current / total / pages / prevUrl / nextUrl。':
+    'type / items / current / total / pages / prevUrl / nextUrl.',
+  '詳細（detail.hbs）': 'Detail (detail.hbs)',
+  'page = そのコンテンツ項目。投稿タイプで定義したフィールドも page.<キー> で参照できます。':
+    'page = that content item. Fields defined on the post type are also accessible as page.<key>.',
+  // variables
+  サイト名: 'Site name',
+  サイトURL: 'Site URL',
+  説明: 'Description',
+  'サイトロゴ（フォールバック付き）': 'Site logo (with fallback)',
+  'ファビコン パス': 'Favicon path',
+  現在の言語コード: 'Current language code',
+  デフォルト言語コード: 'Default language code',
+  現在のページパス: 'Current page path',
+  'メニュー（ID 指定で取得）': 'Menu (fetch by ID)',
+  'main を任意のメニュー ID に置き換え': 'Replace main with any menu ID',
+  // page
+  タイトル: 'Title',
+  スラッグ: 'Slug',
+  フロントページか: 'Is front page',
+  '設定で選んだ / にマップされるページのとき true': 'True for the page mapped to / in settings',
+  '本文 HTML': 'Body HTML',
+  '三重括弧でエスケープせず HTML として出力': 'Triple braces output as HTML without escaping',
+  公開日: 'Publish date',
+  カテゴリ: 'Category',
+  'タグ（ループ）': 'Tags (loop)',
+  メイン画像: 'Main image',
+  更新日: 'Updated date',
+  著者: 'Author',
+  パンくず: 'Breadcrumb',
+  // helpers
+  'formatDate（日付フォーマット）': 'formatDate (date format)',
+  'YYYY / MM / DD のプレースホルダ': 'YYYY / MM / DD placeholders',
+  'truncate（文字数制限）': 'truncate (length limit)',
+  'HTML タグを除去して指定文字数まで': 'Strips HTML tags, then truncates to the given length',
+  'eq / gt / lt（比較）': 'eq / gt / lt (comparison)',
+  'faviconTag（link rel="icon"）': 'faviconTag (link rel="icon")',
+  'head 内推奨。MIME タイプも自動付与':
+    'Recommended inside head. The MIME type is added automatically',
+  'hreflangTags（SEO）': 'hreflangTags (SEO)',
+  '多言語サイトの hreflang を head 内に': 'Outputs hreflang for multilingual sites inside head',
+  'langSwitcher（言語切替リンク）': 'langSwitcher (language-switch links)',
+  'breadcrumbJsonLd（JSON-LD）': 'breadcrumbJsonLd (JSON-LD)',
+  '構造化データ。head 内推奨': 'Structured data. Recommended inside head',
+  'articleJsonLd（記事 JSON-LD）': 'articleJsonLd (article JSON-LD)',
+  'autoDescription（自動 description）': 'autoDescription (auto description)',
+  'meta description / og:description を自動生成':
+    'Auto-generates meta description / og:description',
+  'latestItems（コンテンツタイプ最新N件）': 'latestItems (latest N of a content type)',
+  '第1引数: タイプ id, 第2引数: 件数, 第3引数: lang': 'Arg 1: type id, arg 2: count, arg 3: lang',
+  // alpine
+  ハンバーガーメニュー: 'Hamburger menu',
+  'スマホ向け。CSS で @media + display:none と組み合わせてPC時は常時表示にする':
+    'For mobile. Combine with CSS @media + display:none to always show on desktop',
+  ドロップダウン: 'Dropdown',
+  モーダル: 'Modal',
+  'アコーディオン / FAQ': 'Accordion / FAQ',
+  'x-collapse は Alpine Collapse プラグインが必要。無ければ x-show + x-transition で代用':
+    'x-collapse needs the Alpine Collapse plugin; otherwise substitute x-show + x-transition',
+  タブ切替: 'Tabs',
+  トップに戻るボタン: 'Back-to-top button',
+  // navigation
+  'メニューツリー（サブメニュー対応）': 'Menu tree (with submenus)',
+  'menuTree でメニューの親子関係をツリーに展開。site.nav または site.menus.xxx を渡す':
+    "menuTree expands the menu's parent/child relations into a tree. Pass site.nav or site.menus.xxx",
+  カレントページ判定: 'Current page detection',
+  'メニュー項目の url と現在の pagePath が一致すれば true':
+    "True when a menu item's url matches the current pagePath",
+  カレントまたは親パス判定: 'Current or ancestor path detection',
+  '子ページにいるとき親メニューもハイライトする。例: /service/ の子 /service/sub/ にいるとき /service/ が true':
+    'Highlights the parent menu when on a child page. e.g. on /service/sub/, /service/ is true',
+  'メニュー（ID指定・フラット）': 'Menu (by ID, flat)',
+  'サブメニュー不要の場合はフラットにループ。main はメニュー ID':
+    "Loop flat when submenus aren't needed. main is the menu ID",
+  フッターナビ: 'Footer nav',
+  'フッター用メニューを別メニュー ID で管理': 'Manage the footer menu under a separate menu ID',
+  // taxonomy（スニペットと重複しない固有分）
+  カテゴリで表示を切替: 'Toggle display by category',
+  カテゴリ名をそのまま比較: 'Compares the category name as-is',
+  'タグ一覧（ループ）': 'Tag list (loop)',
+  '静的サイトではフィルタリングは JS 側で実装が必要':
+    'On a static site, filtering must be implemented in JS',
+  '一覧でカテゴリ＋タグ表示': 'Category + tags in index',
+  'list.hbs の items ループ内で使用': 'Use inside the items loop in list.hbs',
+  // conditions
+  'ページ種別で分岐（_base.hbs 等で使用）': 'Branch by page type (e.g. in _base.hbs)',
+  'pageType は page / detail / list のいずれか': 'pageType is one of page / detail / list',
+  特定の固定ページだけ表示: 'Show only a specific static page',
+  特定の投稿タイプだけ表示: 'Show only a specific post type',
+  'detail.hbs / list.hbs で使用。type.id でタイプを判定':
+    'Use in detail.hbs / list.hbs. Identify the type by type.id',
+  'サイドバー付きレイアウト（特定タイプのみ）': 'Layout with sidebar (specific type only)',
+  '_base.hbs で使用。news のみサイドバー付き': 'Use in _base.hbs. Only news gets a sidebar',
+  'ギャラリーレイアウト（特定タイプ）': 'Gallery layout (specific type)',
+  'detail.hbs で works タイプはギャラリー、他は通常の本文':
+    'In detail.hbs, the works type renders a gallery; others render the normal body',
+  フィールドの有無で表示切替: 'Toggle by whether a field exists',
+  言語で分岐: 'Branch by language',
+  '複数条件（and / or）': 'Multiple conditions (and / or)',
+  フロントページかどうか: "Whether it's the front page",
+  // snippets
+  お知らせ最新リスト: 'Latest news list',
+  '画像 + キャプション（条件付き）': 'Image + caption (conditional)',
+  ヒーローセクション: 'Hero section',
+  バナーグリッド: 'Banner grid',
+  カルーセル: 'Carousel',
+  ページネーション: 'Pagination',
+  '言語切替（インライン）': 'Language switch (inline)',
+  'langSwitcher ヘルパーを使わずに直接書く例':
+    'Example written directly, without the langSwitcher helper',
+  // ファイル説明（TEMPLATE_DESCRIPTIONS）
+  '全ページ共通の HTML レイアウト枠': 'Shared HTML layout frame for all pages',
+  'フロントページ（設定で選んだ / にマップされるページ。無ければ page.hbs を使用）':
+    'Front page (the page mapped to / in settings; falls back to page.hbs if absent)',
+  '固定ページ（会社概要・利用規約など）': 'Static pages (About, Terms, etc.)',
+  投稿タイプの一覧ページ: 'Post type list page',
+  投稿タイプの詳細ページ: 'Post type detail page',
+  'テーマ manifest（名前/版/作者＋カラー・フォントの選択肢を宣言。Theme API 版を示す apiVersion）':
+    'Theme manifest (declares name/version/author and color/font options; apiVersion indicates the Theme API version)',
+  '<head> 内の meta タグ・SEO・スタイル': 'meta tags, SEO, and styles inside <head>',
+  'サイトヘッダー（ロゴ・ナビ）': 'Site header (logo, nav)',
+  サイトフッター: 'Site footer',
+  グローバルナビゲーション: 'Global navigation',
+  パンくずリスト: 'Breadcrumb list',
+  '共通 CSS（<style> タグでまとめて出力）': 'Shared CSS (output together in a <style> tag)',
+  'アコーディオン UI': 'Accordion UI',
+  カード形式のリスト: 'Card-style list',
+  画像ギャラリー: 'Image gallery',
+  'タブ UI': 'Tab UI',
+  'タイムライン UI': 'Timeline UI',
+  'SEO・OGP・構造化データ（head 内）': 'SEO, OGP, and structured data (inside head)',
+}
+
+function trRef(s: string): string {
+  return REFERENCE_EN[s] ?? s
+}
+
+/** label / note / desc 文字列だけを英訳に差し替えた深いコピーを返す（code 等はそのまま）。 */
+function deepLocalizeRef<T>(node: T): T {
+  if (Array.isArray(node)) return node.map((n) => deepLocalizeRef(n)) as unknown as T
+  if (node && typeof node === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      if ((k === 'label' || k === 'note' || k === 'desc') && typeof v === 'string')
+        out[k] = trRef(v)
+      else out[k] = deepLocalizeRef(v)
+    }
+    return out as T
+  }
+  return node
+}
+
+/** UI 言語に応じたリファレンスパネル用データ一式を返す。
+ *  日本語は原本をそのまま、英語は label/note/desc とファイル説明を英訳して返す。 */
+export function getLocalizedReference(locale: string) {
+  if (locale !== 'en') {
+    return {
+      categorySnippets: CATEGORY_SNIPPETS,
+      tagSnippets: TAG_SNIPPETS,
+      templateReferenceGroups: TEMPLATE_REFERENCE_GROUPS,
+      templateDescriptions: TEMPLATE_DESCRIPTIONS,
+    }
+  }
+  const templateDescriptions: Record<string, string> = {}
+  for (const [k, v] of Object.entries(TEMPLATE_DESCRIPTIONS)) templateDescriptions[k] = trRef(v)
+  return {
+    categorySnippets: deepLocalizeRef(CATEGORY_SNIPPETS),
+    tagSnippets: deepLocalizeRef(TAG_SNIPPETS),
+    templateReferenceGroups: deepLocalizeRef(TEMPLATE_REFERENCE_GROUPS),
+    templateDescriptions,
+  }
+}

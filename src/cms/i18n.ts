@@ -1,6 +1,7 @@
 import type { CmsComponent } from './types.ts'
 import { STORAGE_UI_LOCALE_KEY, PATH_I18N_DIR, DEFAULT_TIMEZONE } from '../constants.ts'
 import { DEFAULT_UI_CATALOGS } from '../i18n-catalogs.ts'
+import { getLocalizedReference } from './template-reference.ts'
 
 export const i18nMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   /** 翻訳: シンボリックキー → 現在のUI言語の訳。
@@ -32,6 +33,12 @@ export const i18nMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       cat = await this.fs.readJson<Record<string, string>>(`${PATH_I18N_DIR}/${this.uiLocale}.json`)
     }
     this.uiCatalog = cat || DEFAULT_UI_CATALOGS[this.uiLocale] || DEFAULT_UI_CATALOGS.ja || {}
+    // テンプレートリファレンス等の静的データも現在の UI 言語に合わせて差し替える
+    const ref = getLocalizedReference(this.uiLocale)
+    this.categorySnippets = ref.categorySnippets
+    this.tagSnippets = ref.tagSnippets
+    this.templateReferenceGroups = ref.templateReferenceGroups
+    this.templateDescriptions = ref.templateDescriptions
   },
 
   /** 翻訳カタログ＋テンプレートをプロジェクトに用意。

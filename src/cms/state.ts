@@ -12,15 +12,11 @@ import {
   type ThemeMode,
 } from '../constants.ts'
 import { DEFAULT_UI_CATALOGS } from '../i18n-catalogs.ts'
-import {
-  TEMPLATE_REFERENCE_GROUPS,
-  CATEGORY_SNIPPETS,
-  TAG_SNIPPETS,
-  FIELD_TYPES,
-  FIELD_TYPE_CATEGORIES,
-} from './template-reference.ts'
+import { FIELD_TYPES, FIELD_TYPE_CATEGORIES, getLocalizedReference } from './template-reference.ts'
 
 export function createInitialState(): Partial<CmsComponent> & ThisType<CmsComponent> {
+  // 初期描画時点の UI 言語でリファレンスデータを用意（言語切替時は loadUiCatalog で差し替え）
+  const ref = getLocalizedReference(localStorage.getItem(STORAGE_UI_LOCALE_KEY) || 'ja')
   return {
     // 状態管理
     authorName: localStorage.getItem(STORAGE_AUTHOR_KEY) || '',
@@ -203,8 +199,9 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
     // 拡張（Pro/プラグイン）が追加するサイドバー項目（無料コアでは空）
     extensionNavItems,
 
-    categorySnippets: CATEGORY_SNIPPETS,
-    tagSnippets: TAG_SNIPPETS,
+    categorySnippets: ref.categorySnippets,
+    tagSnippets: ref.tagSnippets,
+    templateDescriptions: ref.templateDescriptions,
 
     // テンプレートエディタの右パネル開閉状態（デフォルトで「テーマの構成と作り方」を展開）
     templateRefOpenSection: {
@@ -220,7 +217,7 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
 
     // 投稿タイプリファレンス用に選択中のタイプ ID
     templateRefSelectedTypeId: '',
-    templateReferenceGroups: TEMPLATE_REFERENCE_GROUPS,
+    templateReferenceGroups: ref.templateReferenceGroups,
 
     // relation フィールドの候補リストキャッシュ
     relationCandidatesCache: {} as Record<string, ContentData[]>,

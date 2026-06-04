@@ -72,7 +72,7 @@ const LOGO_EXTS = ['png', 'svg', 'webp', 'jpg']
 export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   /** テンプレート/コンポーネントの役割説明（ファイル名 → 説明） */
   templateDescription(name: string): string {
-    return TEMPLATE_DESCRIPTIONS[name] || ''
+    return (this.templateDescriptions || TEMPLATE_DESCRIPTIONS)[name] || ''
   },
 
   /** Alpine init — ページ読み込み時に前回のフォルダを自動復元 */

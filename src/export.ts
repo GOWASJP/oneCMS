@@ -456,186 +456,37 @@ export class Exporter {
       },
     )
 
+    // フロントページ（/ にマップする固定ページ id）。未設定サイトは 'index' にフォールバック。
+    const frontPageId = siteConfig.frontPageId || 'index'
+    const rc: RenderCtx = {
+      siteConfig,
+      site,
+      locales,
+      defaultLang,
+      base: baseTemplate,
+      page: pageTemplate,
+      home: homeTemplate,
+      list: listTemplate,
+      detail: detailTemplate,
+    }
+
     for (const locale of locales) {
       const lang = locale.code
       const prefix = lang === defaultLang ? '' : `${lang}/`
 
-      // 固定ページ書き出し（published または status 未指定のみ）
+      // 固定ページ書き出し
       const langPages = pagesCache.get(lang) || []
-      // 親子チェーンのルックアップマップ（id → page）
-      const pageById = new Map(langPages.map((p) => [p.id, p]))
-      // フロントページ（/ にマップする固定ページ id）。未設定サイトは 'index' にフォールバック。
-      const frontPageId = siteConfig.frontPageId || 'index'
-      // ページの最終URLパス（親チェーンを辿って / 区切りで連結）
-      const pagePathOf = (page: ContentData): string[] =>
-        resolvePagePath(page, pageById, frontPageId)
-      // ページのパンくずを親チェーンから構築
-      const resolveBreadcrumb = (page: ContentData): Array<{ label: string; url?: string }> => {
-        const crumbs: Array<{ label: string; url?: string }> = [
-          { label: siteConfig.name || 'Home', url: '/' },
-        ]
-        // 親チェーン（自身を除く）をルート→自身の順に
-        const ancestors: ContentData[] = []
-        let parentId: string = (page.parent as string | undefined) || ''
-        const visited = new Set<string>()
-        while (parentId && !visited.has(parentId)) {
-          visited.add(parentId)
-          const parent = pageById.get(parentId)
-          if (!parent) break
-          ancestors.unshift(parent)
-          parentId = (parent.parent as string | undefined) || ''
-        }
-        for (const ancestor of ancestors) {
-          const segs = pagePathOf(ancestor)
-          const url = ancestor.id === frontPageId ? '/' : `/${prefix}${segs.join('/')}/`
-          crumbs.push({ label: ancestor.title, url })
-        }
-        crumbs.push({ label: page.title })
-        return crumbs
-      }
-
-      for (const page of langPages) {
-        if (!isPublished(page)) continue
-
-        const breadcrumb = resolveBreadcrumb(page)
-        const segments = pagePathOf(page)
-        const isIndex = page.id === frontPageId
-        const pagePath = isIndex ? '' : `${segments.join('/')}/`
-
-        const ctx = {
-          page,
-          pageType: 'page' as const,
-          site,
-          lang,
-          breadcrumb,
-          locales,
-          defaultLang,
-          pagePath,
-          // フロントページかどうか（テンプレートで {{#if isHome}} 判定に使う）
-          isHome: isIndex,
-        }
-
-        // フロントページは home.hbs が存在すれば優先、無ければ page.hbs にフォールバック
-        const activeTemplate = isIndex && homeTemplate ? homeTemplate : pageTemplate
-        const pageHtml = activeTemplate
-          ? activeTemplate(ctx)
-          : `<h1>${page.title}</h1>${page.body || ''}`
-
-        const fullHtml = baseTemplate
-          ? baseTemplate({ ...ctx, content: new Handlebars.SafeString(pageHtml) })
-          : wrapHtml(page.title, siteConfig, lang, pageHtml)
-
-        const filePath = isIndex
-          ? `${prefix}index.html`
-          : `${prefix}${segments.join('/')}/index.html`
-
-        files.push({ path: filePath, content: fullHtml })
-      }
+      files.push(...this.renderFixedPages(rc, lang, prefix, langPages, frontPageId))
       step++
       if (onProgress) onProgress(step, totalSteps)
       await yieldToMain()
 
-      // コンテンツタイプ書き出し
+      // コンテンツタイプ書き出し（一覧＋詳細）
       for (const type of contentTypes) {
         const items = rawItemsCache.get(lang)?.get(type.id) || []
         const published = items.filter(isPublished)
-
-        const perPage = type.pagination || DEFAULT_PAGINATION
-        const totalPages = Math.max(1, Math.ceil(published.length / perPage))
-
-        for (let p = 1; p <= totalPages; p++) {
-          const start = (p - 1) * perPage
-          const pageItems = published.slice(start, start + perPage).map((item) => ({
-            ...item,
-            url: `/${prefix}${type.slug}/${item.slug || item.id}/`,
-          }))
-
-          const paginationPages = []
-          for (let i = 1; i <= totalPages; i++) {
-            paginationPages.push({
-              number: i,
-              url: i === 1 ? `/${prefix}${type.slug}/` : `/${prefix}${type.slug}/page/${i}/`,
-            })
-          }
-
-          const listPagePath = `${type.slug}/`
-          const listCtx = {
-            pageType: 'list' as const,
-            type,
-            items: pageItems,
-            site,
-            lang,
-            current: p,
-            total: totalPages,
-            pages: paginationPages,
-            prevUrl:
-              p > 1
-                ? p === 2
-                  ? `/${prefix}${type.slug}/`
-                  : `/${prefix}${type.slug}/page/${p - 1}/`
-                : null,
-            nextUrl: p < totalPages ? `/${prefix}${type.slug}/page/${p + 1}/` : null,
-            breadcrumb: [{ label: siteConfig.name || 'Home', url: '/' }, { label: type.label }],
-            locales,
-            defaultLang,
-            pagePath: listPagePath,
-          }
-
-          const listHtml = listTemplate ? listTemplate(listCtx) : ''
-
-          const fullHtml = baseTemplate
-            ? baseTemplate({
-                ...listCtx,
-                page: { title: type.label, description: '' },
-                content: new Handlebars.SafeString(listHtml),
-              })
-            : wrapHtml(type.label, siteConfig, lang, listHtml)
-
-          const listPath =
-            p === 1
-              ? `${prefix}${type.slug}/index.html`
-              : `${prefix}${type.slug}/page/${p}/index.html`
-
-          files.push({ path: listPath, content: fullHtml })
-        }
-
-        // 詳細ページ書き出し
-        let detailCount = 0
-        for (const item of published) {
-          const itemSlug = item.slug || item.id
-          const detailPagePath = `${type.slug}/${itemSlug}/`
-          const detailCtx = {
-            pageType: 'detail' as const,
-            page: item,
-            type,
-            site,
-            lang,
-            breadcrumb: [
-              { label: siteConfig.name || 'Home', url: '/' },
-              { label: type.label, url: `/${prefix}${type.slug}/` },
-              { label: item.title },
-            ],
-            locales,
-            defaultLang,
-            pagePath: detailPagePath,
-          }
-
-          const detailHtml = detailTemplate
-            ? detailTemplate(detailCtx)
-            : `<h1>${item.title}</h1>${item.body || ''}`
-
-          const fullHtml = baseTemplate
-            ? baseTemplate({ ...detailCtx, content: new Handlebars.SafeString(detailHtml) })
-            : wrapHtml(item.title, siteConfig, lang, detailHtml)
-
-          files.push({
-            path: `${prefix}${type.slug}/${itemSlug}/index.html`,
-            content: fullHtml,
-          })
-          // 大量件数でも UI が固まらないよう一定間隔でメインスレッドを解放
-          if (++detailCount % EXPORT_YIELD_INTERVAL === 0) await yieldToMain()
-        }
-
+        files.push(...this.renderTypeListPages(rc, lang, prefix, type, published))
+        files.push(...(await this.renderTypeDetailPages(rc, lang, prefix, type, published)))
         step++
         if (onProgress) onProgress(step, totalSteps)
         await yieldToMain()
@@ -648,39 +499,7 @@ export class Exporter {
     }
 
     // 404ページ書き出し（各言語・sitemap の後に追加して sitemap から除外）
-    for (const locale of locales) {
-      const lang = locale.code
-      const prefix = lang === defaultLang ? '' : `${lang}/`
-      const messages = notFoundMessages[lang] || notFoundMessages.ja
-      const homeHref = lang === defaultLang ? '/' : `/${lang}/`
-      const notFoundPage = {
-        id: '404',
-        title: messages.title,
-        body: `<p>${messages.body}</p><p><a href="${homeHref}">${messages.home}</a></p>`,
-        status: 'published',
-      }
-      const ctx = {
-        page: notFoundPage,
-        pageType: 'page' as const,
-        site,
-        lang,
-        breadcrumb: [
-          { label: siteConfig.name || 'Home', url: homeHref },
-          { label: messages.title },
-        ],
-        locales,
-        defaultLang,
-        pagePath: '404.html',
-        notFound: true,
-      }
-      const pageHtml = pageTemplate
-        ? pageTemplate(ctx)
-        : `<h1>${messages.title}</h1>${notFoundPage.body}`
-      const fullHtml = baseTemplate
-        ? baseTemplate({ ...ctx, content: new Handlebars.SafeString(pageHtml) })
-        : wrapHtml(messages.title, siteConfig, lang, pageHtml)
-      files.push({ path: `${prefix}404.html`, content: fullHtml })
-    }
+    files.push(...this.renderNotFoundPages(rc))
 
     // robots.txt
     files.push({
@@ -718,6 +537,219 @@ export class Exporter {
     // 透かしを全 HTML に注入
     injectStamp(files)
 
+    return files
+  }
+
+  /** 固定ページ群を書き出し（published のみ）。親チェーンでパス／パンくずを解決する。 */
+  private renderFixedPages(
+    rc: RenderCtx,
+    lang: string,
+    prefix: string,
+    langPages: ContentData[],
+    frontPageId: string,
+  ): ExportFile[] {
+    const files: ExportFile[] = []
+    const pageById = new Map(langPages.map((p) => [p.id, p]))
+    const pagePathOf = (page: ContentData): string[] => resolvePagePath(page, pageById, frontPageId)
+    // ページのパンくずを親チェーンから構築
+    const resolveBreadcrumb = (page: ContentData): Array<{ label: string; url?: string }> => {
+      const crumbs: Array<{ label: string; url?: string }> = [
+        { label: rc.siteConfig.name || 'Home', url: '/' },
+      ]
+      const ancestors: ContentData[] = []
+      let parentId: string = (page.parent as string | undefined) || ''
+      const visited = new Set<string>()
+      while (parentId && !visited.has(parentId)) {
+        visited.add(parentId)
+        const parent = pageById.get(parentId)
+        if (!parent) break
+        ancestors.unshift(parent)
+        parentId = (parent.parent as string | undefined) || ''
+      }
+      for (const ancestor of ancestors) {
+        const segs = pagePathOf(ancestor)
+        const url = ancestor.id === frontPageId ? '/' : `/${prefix}${segs.join('/')}/`
+        crumbs.push({ label: ancestor.title, url })
+      }
+      crumbs.push({ label: page.title })
+      return crumbs
+    }
+
+    for (const page of langPages) {
+      if (!isPublished(page)) continue
+      const breadcrumb = resolveBreadcrumb(page)
+      const segments = pagePathOf(page)
+      const isIndex = page.id === frontPageId
+      const pagePath = isIndex ? '' : `${segments.join('/')}/`
+      const ctx = {
+        page,
+        pageType: 'page' as const,
+        site: rc.site,
+        lang,
+        breadcrumb,
+        locales: rc.locales,
+        defaultLang: rc.defaultLang,
+        pagePath,
+        // フロントページかどうか（テンプレートで {{#if isHome}} 判定に使う）
+        isHome: isIndex,
+      }
+      // フロントページは home.hbs が存在すれば優先、無ければ page.hbs にフォールバック
+      const activeTemplate = isIndex && rc.home ? rc.home : rc.page
+      const pageHtml = activeTemplate
+        ? activeTemplate(ctx)
+        : `<h1>${page.title}</h1>${page.body || ''}`
+      const fullHtml = renderWithBase(rc.base, ctx, pageHtml, page.title, rc.siteConfig, lang)
+      const filePath = isIndex ? `${prefix}index.html` : `${prefix}${segments.join('/')}/index.html`
+      files.push({ path: filePath, content: fullHtml })
+    }
+    return files
+  }
+
+  /** コンテンツタイプの一覧ページ（ページネーション含む）を書き出し。 */
+  private renderTypeListPages(
+    rc: RenderCtx,
+    lang: string,
+    prefix: string,
+    type: ContentType,
+    published: ContentData[],
+  ): ExportFile[] {
+    const files: ExportFile[] = []
+    const perPage = type.pagination || DEFAULT_PAGINATION
+    const totalPages = Math.max(1, Math.ceil(published.length / perPage))
+
+    for (let p = 1; p <= totalPages; p++) {
+      const start = (p - 1) * perPage
+      const pageItems = published.slice(start, start + perPage).map((item) => ({
+        ...item,
+        url: `/${prefix}${type.slug}/${item.slug || item.id}/`,
+      }))
+
+      const paginationPages = []
+      for (let i = 1; i <= totalPages; i++) {
+        paginationPages.push({
+          number: i,
+          url: i === 1 ? `/${prefix}${type.slug}/` : `/${prefix}${type.slug}/page/${i}/`,
+        })
+      }
+
+      const listCtx = {
+        pageType: 'list' as const,
+        type,
+        items: pageItems,
+        site: rc.site,
+        lang,
+        current: p,
+        total: totalPages,
+        pages: paginationPages,
+        prevUrl:
+          p > 1
+            ? p === 2
+              ? `/${prefix}${type.slug}/`
+              : `/${prefix}${type.slug}/page/${p - 1}/`
+            : null,
+        nextUrl: p < totalPages ? `/${prefix}${type.slug}/page/${p + 1}/` : null,
+        breadcrumb: [{ label: rc.siteConfig.name || 'Home', url: '/' }, { label: type.label }],
+        locales: rc.locales,
+        defaultLang: rc.defaultLang,
+        pagePath: `${type.slug}/`,
+      }
+
+      const listHtml = rc.list ? rc.list(listCtx) : ''
+      const fullHtml = renderWithBase(
+        rc.base,
+        { ...listCtx, page: { title: type.label, description: '' } },
+        listHtml,
+        type.label,
+        rc.siteConfig,
+        lang,
+      )
+      const listPath =
+        p === 1 ? `${prefix}${type.slug}/index.html` : `${prefix}${type.slug}/page/${p}/index.html`
+      files.push({ path: listPath, content: fullHtml })
+    }
+    return files
+  }
+
+  /** コンテンツタイプの詳細ページを書き出し（大量件数では一定間隔で UI を解放）。 */
+  private async renderTypeDetailPages(
+    rc: RenderCtx,
+    lang: string,
+    prefix: string,
+    type: ContentType,
+    published: ContentData[],
+  ): Promise<ExportFile[]> {
+    const files: ExportFile[] = []
+    let detailCount = 0
+    for (const item of published) {
+      const itemSlug = item.slug || item.id
+      const detailCtx = {
+        pageType: 'detail' as const,
+        page: item,
+        type,
+        site: rc.site,
+        lang,
+        breadcrumb: [
+          { label: rc.siteConfig.name || 'Home', url: '/' },
+          { label: type.label, url: `/${prefix}${type.slug}/` },
+          { label: item.title },
+        ],
+        locales: rc.locales,
+        defaultLang: rc.defaultLang,
+        pagePath: `${type.slug}/${itemSlug}/`,
+      }
+      const detailHtml = rc.detail
+        ? rc.detail(detailCtx)
+        : `<h1>${item.title}</h1>${item.body || ''}`
+      const fullHtml = renderWithBase(
+        rc.base,
+        detailCtx,
+        detailHtml,
+        item.title,
+        rc.siteConfig,
+        lang,
+      )
+      files.push({
+        path: `${prefix}${type.slug}/${itemSlug}/index.html`,
+        content: fullHtml,
+      })
+      // 大量件数でも UI が固まらないよう一定間隔でメインスレッドを解放
+      if (++detailCount % EXPORT_YIELD_INTERVAL === 0) await yieldToMain()
+    }
+    return files
+  }
+
+  /** 各言語の 404 ページを書き出し（sitemap には含めない）。 */
+  private renderNotFoundPages(rc: RenderCtx): ExportFile[] {
+    const files: ExportFile[] = []
+    for (const locale of rc.locales) {
+      const lang = locale.code
+      const prefix = lang === rc.defaultLang ? '' : `${lang}/`
+      const messages = notFoundMessages[lang] || notFoundMessages.ja
+      const homeHref = lang === rc.defaultLang ? '/' : `/${lang}/`
+      const notFoundPage = {
+        id: '404',
+        title: messages.title,
+        body: `<p>${messages.body}</p><p><a href="${homeHref}">${messages.home}</a></p>`,
+        status: 'published',
+      }
+      const ctx = {
+        page: notFoundPage,
+        pageType: 'page' as const,
+        site: rc.site,
+        lang,
+        breadcrumb: [
+          { label: rc.siteConfig.name || 'Home', url: homeHref },
+          { label: messages.title },
+        ],
+        locales: rc.locales,
+        defaultLang: rc.defaultLang,
+        pagePath: '404.html',
+        notFound: true,
+      }
+      const pageHtml = rc.page ? rc.page(ctx) : `<h1>${messages.title}</h1>${notFoundPage.body}`
+      const fullHtml = renderWithBase(rc.base, ctx, pageHtml, messages.title, rc.siteConfig, lang)
+      files.push({ path: `${prefix}404.html`, content: fullHtml })
+    }
     return files
   }
 
@@ -897,6 +929,33 @@ function injectStamp(files: ExportFile[]): void {
       ? f.content.replace('</head>', `${stamp}\n</head>`)
       : `${stamp}\n${f.content}`
   }
+}
+
+/** ベーステンプレートがあれば content を差し込んで描画、無ければ最小限の HTML で包む。 */
+function renderWithBase(
+  base: TemplateFunction | null,
+  ctx: Record<string, unknown>,
+  innerHtml: string,
+  fallbackTitle: string,
+  siteConfig: SiteConfig,
+  lang: string,
+): string {
+  return base
+    ? base({ ...ctx, content: new Handlebars.SafeString(innerHtml) })
+    : wrapHtml(fallbackTitle, siteConfig, lang, innerHtml)
+}
+
+/** 1回の書き出し全体で共有する描画コンテキスト（サイト・言語・各テンプレート）。 */
+interface RenderCtx {
+  siteConfig: SiteConfig
+  site: ReturnType<typeof buildSiteObject>
+  locales: Languages['locales']
+  defaultLang: string
+  base: TemplateFunction | null
+  page: TemplateFunction | null
+  home: TemplateFunction | null
+  list: TemplateFunction | null
+  detail: TemplateFunction | null
 }
 
 function stripHtmlTags(html: string): string {

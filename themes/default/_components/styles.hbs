@@ -1,4 +1,23 @@
 <style>
+  /* テーマの配色・フォント（このテーマ内で直接編集してください） */
+  :root {
+    --color-primary: #2563eb;
+    --color-secondary: #1e40af;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-heading: var(--font-body);
+  }
+  body {
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
+
   /* Reset & Base */
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);color:#1a1a1a;line-height:1.7;background:#fff}

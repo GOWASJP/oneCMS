@@ -176,22 +176,6 @@ export class Exporter {
       return new Handlebars.SafeString(`<link rel="icon"${typeAttr} href="${favicon}">`)
     })
 
-    // テーマCSS変数
-    hbs.registerHelper('themeStyles', function (site: Record<string, unknown>) {
-      const theme = (site?.theme as Record<string, string | undefined> | undefined) || {}
-      const primary = theme.primary || '#2563eb'
-      const secondary = theme.secondary || '#1e40af'
-      const fontFamily =
-        theme.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-      const fontCdn = theme.fontCdn || ''
-
-      let css = `<style>:root{--color-primary:${primary};--color-secondary:${secondary};--font-body:${fontFamily};--font-heading:${fontFamily}}body{font-family:var(--font-body)}h1,h2,h3,h4,h5,h6{font-family:var(--font-heading)}</style>`
-      if (fontCdn) {
-        css = `<link rel="stylesheet" href="${fontCdn}">\n${css}`
-      }
-      return new Handlebars.SafeString(css)
-    })
-
     // hreflangタグ生成
     hbs.registerHelper(
       'hreflangTags',
@@ -316,7 +300,6 @@ export class Exporter {
       this.handlebars.registerPartial(
         'seo',
         [
-          '{{themeStyles site}}',
           '{{autoDescription page}}',
           '{{faviconTag site}}',
           '<meta property="og:title" content="{{page.title}}">',

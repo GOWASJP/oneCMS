@@ -238,11 +238,6 @@ export const TEMPLATE_REFERENCE_GROUPS = [
         note: 'head 内推奨。MIME タイプも自動付与',
       },
       {
-        label: 'themeStyles（CSS 変数）',
-        code: '{{themeStyles site}}',
-        note: '--color-primary / --font-body などを <style> で出力',
-      },
-      {
         label: 'hreflangTags（SEO）',
         code: '{{hreflangTags pagePath locales defaultLang site.url}}',
         note: '多言語サイトの hreflang を head 内に',

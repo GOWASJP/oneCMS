@@ -77,7 +77,7 @@ export interface CmsComponent {
   readonly frontPageId: string
   // アクティブテーマ id（themes/<id>/）。siteConfig.themeId || 'default'
   readonly activeThemeId: string
-  // アクティブテーマの manifest（theme.json）。色/フォントの選択肢を供給する。
+  // アクティブテーマの manifest（theme.json）。識別情報のみ（見た目はテーマ内で直接コーディング）。
   activeThemeManifest: {
     id?: string
     name?: string
@@ -85,8 +85,6 @@ export interface CmsComponent {
     author?: string
     description?: string
     apiVersion?: string
-    colors?: Array<{ id: string; label: string; primary: string; secondary?: string }>
-    fonts?: Array<{ id: string; label: string; family: string; cdn?: string }>
   } | null
   // インストール済みテーマ一覧（themes/ をスキャン）
   installedThemes: Array<{ id: string; name: string; version?: string; author?: string }>

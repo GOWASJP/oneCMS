@@ -14,16 +14,6 @@ export const SiteConfigSchema = z.object({
   logo: z.string().optional(),
   customHeadScript: z.string().optional(),
   customBodyScript: z.string().optional(),
-  theme: z
-    .object({
-      id: z.string().optional(),
-      primary: z.string().optional(),
-      secondary: z.string().optional(),
-      fontId: z.string().optional(),
-      fontFamily: z.string().optional(),
-      fontCdn: z.string().optional(),
-    })
-    .optional(),
   nav: z
     .array(
       z.object({

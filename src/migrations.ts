@@ -73,8 +73,6 @@ export const MIGRATIONS: Migration[] = [
             name?: string
             description?: string
             author?: string
-            themes?: unknown[]
-            fonts?: unknown[]
           }>('themes/default/config.json')) || {}
         await fs.writeJson('themes/default/theme.json', {
           id: 'default',
@@ -84,8 +82,6 @@ export const MIGRATIONS: Migration[] = [
           description: old.description || '',
           engine: old.engine || 'handlebars',
           apiVersion: '1',
-          colors: old.themes || [],
-          fonts: old.fonts || [],
         })
       }
       // アクティブテーマを default に設定

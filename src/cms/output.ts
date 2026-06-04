@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CmsComponent } from './types.ts'
 import Handlebars from 'handlebars'
 import DiffMatchPatch from 'diff-match-patch'
-import { type RevisionEntry } from '../types.ts'
+import { type RevisionEntry, type MenuData } from '../types.ts'
+import { type EditorData } from '../editor.ts'
 import { zipSync } from 'fflate'
 import { INITIAL_TEMPLATES } from '../initial-templates.ts'
 import { PATH_TEMPLATES_BASELINE, PATH_EXPORT_SOURCE, PATH_CHANGED } from '../constants.ts'
@@ -45,7 +45,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.editData = { ...this.editData, ...data }
     if (this.editor && data.body) {
       // Editor.jsを再初期化してリビジョンデータをロード
-      this.initEditor((data as any)._editorJson || data.body || '')
+      this.initEditor((data._editorJson as EditorData | undefined) || data.body || '')
     }
     this.showRevisionPanel = false
     // 復元内容は未保存状態扱い（ユーザーが確認して保存ボタンを押せるように）
@@ -72,7 +72,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
 
       const pageType = this.currentType ? 'detail' : 'page'
       // プレビュー用に site にメニューデータを注入
-      const menuData = (await this.fs?.readJson<any>('content/menus.json')) || { menus: [] }
+      const menuData = (await this.fs?.readJson<MenuData>('content/menus.json')) || { menus: [] }
       const menus: Record<string, unknown[]> = {}
       for (const menu of menuData.menus || []) {
         menus[menu.id] = menu.items || []

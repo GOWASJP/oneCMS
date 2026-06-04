@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CmsComponent } from './types.ts'
 import { type ContentData, type ContentType, type FieldDefinition } from '../types.ts'
 import { createEditor, editorJsonToHtml, htmlToEditorJson, type EditorData } from '../editor.ts'
@@ -87,7 +86,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     // カスタムフィールドの初期値（配列系は []、group はオブジェクト）を注入
     this.ensureFieldDefaults()
     // フロントページも通常ページと同じ扱い（特別扱いしない）。本文エディタは常に有効。
-    this.initEditor((page as any)._editorJson || page.body || '')
+    this.initEditor((page._editorJson as EditorData | undefined) || page.body || '')
     this.updateHash()
     this.refreshTranslationStatus()
     this.$nextTick(() => {
@@ -144,7 +143,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     // Alpine template x-if の入れ子展開を待つ
     setTimeout(() => {
       // 本文は全タイプ共通の既定項目なので常に初期化
-      this.initEditor((data as any)._editorJson || data.body || '')
+      this.initEditor((data._editorJson as EditorData | undefined) || data.body || '')
       this.resetDirty()
       this.suppressDirty = false
     }, 100)
@@ -312,16 +311,20 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
    *  - 配列系（relation/repeater/imagelist/multiselect）: 未定義なら []
    *  - group: オブジェクト化し、各サブフィールドキーを '' で初期化 */
   ensureFieldDefaults() {
+    const data = this.editData as Record<string, unknown>
     for (const f of this.currentFields || []) {
-      const cur = (this.editData as any)[f.key]
+      const cur = data[f.key]
       if (['relation', 'repeater', 'imagelist', 'multiselect'].includes(f.type)) {
-        if (cur === undefined || cur === null) (this.editData as any)[f.key] = []
+        if (cur === undefined || cur === null) data[f.key] = []
       } else if (f.type === 'group') {
-        const obj = cur && typeof cur === 'object' && !Array.isArray(cur) ? cur : {}
-        for (const sf of (f as any).subFields || []) {
+        const obj: Record<string, unknown> =
+          cur && typeof cur === 'object' && !Array.isArray(cur)
+            ? (cur as Record<string, unknown>)
+            : {}
+        for (const sf of f.subFields || []) {
           if (obj[sf.key] === undefined) obj[sf.key] = ''
         }
-        ;(this.editData as any)[f.key] = obj
+        data[f.key] = obj
       }
     }
   },
@@ -336,7 +339,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       if (f.type !== 'richtext') continue
       const holder = `editorjs-f-${f.key}`
       if (!document.getElementById(holder)) continue
-      const html = (this.editData as any)[f.key]
+      const html = (this.editData as Record<string, unknown>)[f.key]
       const data = typeof html === 'string' && html.trim() ? htmlToEditorJson(html) : null
       this.fieldEditors[f.key] = createEditor(holder, data, this.fs, () => {
         if (this.suppressDirty) return
@@ -361,7 +364,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     for (const key of Object.keys(this.fieldEditors)) {
       try {
         const out = await this.fieldEditors[key].save()
-        ;(this.editData as any)[key] = editorJsonToHtml(out as EditorData)
+        ;(this.editData as Record<string, unknown>)[key] = editorJsonToHtml(out as EditorData)
       } catch {
         /* skip */
       }
@@ -388,7 +391,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       const missing = (this.currentFields || [])
         .filter((f) => f.required && f.key !== 'title')
         .filter((f) => {
-          const val = (this.editData as any)[f.key]
+          const val = (this.editData as Record<string, unknown>)[f.key]
           return val === undefined || val === null || val === ''
         })
       if (missing.length > 0) {

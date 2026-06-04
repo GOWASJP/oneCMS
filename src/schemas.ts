@@ -72,6 +72,8 @@ export const ContentDataSchema = z
     /** 同じ親を持つ兄弟間での並び順（小さい順。未指定は最後） */
     menuOrder: z.number().optional(),
     fieldGroupIds: z.array(z.string()).optional(),
+    /** 本文の Editor.js 元 JSON（再編集時の往復用。HTML 化前の生データ） */
+    _editorJson: z.unknown().optional(),
     _meta: ContentMetaSchema.optional(),
     _revision: z
       .object({

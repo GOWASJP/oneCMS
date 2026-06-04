@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CmsComponent } from './types.ts'
 import {
   type ContentType,
@@ -6,6 +5,14 @@ import {
   type FieldGroup,
   type LocationRule,
 } from '../types.ts'
+
+/** 編集 UI でフィールドに一時付与する内部プロパティ（保存前に除去する）。 */
+interface UiFieldDefinition extends FieldDefinition {
+  _expanded?: boolean
+  _keyEdited?: boolean
+  showIf_field?: string
+  showIf_value?: string
+}
 
 export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   /** 選択中の投稿タイプから {{page.xxx}} 形式のリファレンスを生成 */
@@ -84,16 +91,14 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
           note: 'リッチテキスト（HTML 出力）',
         })
       } else if (f.type === 'repeater') {
-        const inner = ((f as any).subFields || []).map((sf: any) => `  {{${sf.key}}}`).join('\n')
+        const inner = (f.subFields || []).map((sf) => `  {{${sf.key}}}`).join('\n')
         result.push({
           label: f.label,
           code: `{{#each page.${f.key}}}\n${inner || '  <!-- 各要素 -->'}\n{{/each}}`,
           note: 'リピーター（配列）',
         })
       } else if (f.type === 'group') {
-        const inner = ((f as any).subFields || [])
-          .map((sf: any) => `  {{page.${f.key}.${sf.key}}}`)
-          .join('\n')
+        const inner = (f.subFields || []).map((sf) => `  {{page.${f.key}.${sf.key}}}`).join('\n')
         result.push({
           label: f.label,
           code: inner || `{{page.${f.key}}}`,
@@ -158,7 +163,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
       showIf_field: '',
       showIf_value: '',
       options: [],
-    } as any)
+    } as UiFieldDefinition)
   },
 
   removeFieldFromType(idx: number) {
@@ -225,7 +230,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     this.currentFieldGroup = structuredClone(group)
     if (!this.currentFieldGroup!.locations) this.currentFieldGroup!.locations = []
     // UI用プロパティ付与
-    this.currentFieldGroup!.fields = this.currentFieldGroup!.fields.map((f: any) => ({
+    this.currentFieldGroup!.fields = this.currentFieldGroup!.fields.map((f) => ({
       ...f,
       _expanded: false,
       // 既存フィールドはキー確定済みとして扱い、ラベル変更で上書きしない
@@ -272,14 +277,14 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
       showIf_field: '',
       showIf_value: '',
       options: [],
-    } as any)
+    } as UiFieldDefinition)
     // 新規フィールドはタイプピッカーをすぐ開いて選んでもらう
     this.openTypePicker(this.currentFieldGroup.fields[this.currentFieldGroup.fields.length - 1])
   },
 
   /** ラベル → キー自動生成（手動編集されていない場合のみ） */
   onFieldLabelInput(field: FieldDefinition) {
-    const f = field as any
+    const f = field as UiFieldDefinition
     if (f._keyEdited) return
     const slug = (field.label || '')
       .trim()
@@ -297,9 +302,9 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
 
   /** タイプを選択して適用（タイプ固有の初期値も用意） */
   selectFieldType(id: string) {
-    const f = this.typePickerTarget as any
+    const f = this.typePickerTarget as UiFieldDefinition | null
     if (!f) return
-    f.type = id
+    f.type = id as FieldDefinition['type']
     if (['select', 'multiselect', 'radio'].includes(id) && (!f.options || !f.options.length)) {
       f.options = ['']
     }
@@ -353,10 +358,10 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
         .replace(/-+/g, '-')
     }
     // UI用プロパティを除去
-    const cleanedFields = g.fields.map((f: any) => {
+    const cleanedFields = g.fields.map((f: UiFieldDefinition) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { _expanded, _keyEdited, showIf_field, showIf_value, showIf: _showIf, ...rest } = f
-      const field: any = { ...rest }
+      const field: Partial<FieldDefinition> = { ...rest }
       if (!field.description || !field.description.trim()) delete field.description
       if (showIf_field?.trim()) {
         let val: unknown = showIf_value
@@ -462,8 +467,8 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
         lines.push(`{{/each}}`)
       } else if (f.type === 'repeater') {
         lines.push(`{{#each page.${f.key}}}`)
-        if ((f as any).subFields?.length) {
-          for (const sf of (f as any).subFields) {
+        if (f.subFields?.length) {
+          for (const sf of f.subFields) {
             if (sf.type === 'image') {
               lines.push(`  {{#if this.${sf.key}}}<img src="{{this.${sf.key}}}" alt="">{{/if}}`)
             } else {
@@ -503,7 +508,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     }
     if (!t.slug) t.slug = t.id
     // fieldGroupIds で保存（旧 fields は除去）
-    const saveData: any = { ...t }
+    const saveData: Partial<ContentType> = { ...t }
     delete saveData.fields
     if (!saveData.fieldGroupIds?.length) delete saveData.fieldGroupIds
     await this.fs.writeJson(`content/_types/${t.id}.json`, saveData)

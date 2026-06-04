@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CmsComponent } from './types.ts'
 import { type ContentData, type MenuData } from '../types.ts'
+import { type EditorData } from '../editor.ts'
 import {
   PATH_LANGUAGES,
   PATH_MENUS,
@@ -94,7 +94,7 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
         author: this.authorName,
       },
     }
-    this.initEditor((sourceData as any)._editorJson || sourceData.body || '')
+    this.initEditor((sourceData._editorJson as EditorData | undefined) || sourceData.body || '')
     this.$nextTick(() => {
       this.suppressDirty = false
       this.markDirty()

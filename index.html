@@ -22,7 +22,7 @@
               <i data-lucide="pencil" class="w-5 h-5 text-white"></i>
             </div>
             <h1 class="text-lg font-semibold">ONE CMS</h1>
-            <p class="text-sm text-[var(--ds-text-muted)] mt-1">担当者名を入力して開始</p>
+            <p class="text-sm text-[var(--ds-text-muted)] mt-1" x-text="t('welcome.start')"></p>
           </div>
           <input
             type="text"
@@ -353,7 +353,10 @@
               </template>
               <template x-if="view === 'templates'">
                 <span class="flex items-center gap-1.5">
-                  <span class="text-[var(--ds-text-heading)] font-medium">テンプレート</span>
+                  <span
+                    class="text-[var(--ds-text-heading)] font-medium"
+                    x-text="t('tpl.templates')"
+                  ></span>
                   <template x-if="currentTemplateFile">
                     <span class="flex items-center gap-1.5">
                       <i data-lucide="chevron-right" class="w-3 h-3"></i>
@@ -1184,7 +1187,7 @@
               <div class="flex-1 overflow-y-auto">
                 <div class="px-8 py-0">
                   <div class="gh-editor-header">
-                    <h2 class="text-sm font-bold">ページ</h2>
+                    <h2 class="text-sm font-bold" x-text="t('nav.pages')"></h2>
                     <div class="flex-1"></div>
                     <button @click="createPage()" class="gh-btn-green text-[13px]">
                       <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -1977,7 +1980,7 @@
                   >
                     <i data-lucide="circle-check" class="w-6 h-6 text-[var(--ds-primary-600)]"></i>
                   </div>
-                  <h2 class="text-xl font-bold">書き出しが完了しました</h2>
+                  <h2 class="text-xl font-bold" x-text="t('export.completed')"></h2>
                   <p class="text-sm text-[var(--ds-text-muted)] mt-1">
                     更新分は選択中フォルダの
                     <code class="font-mono text-[var(--ds-text-heading)]">changed/</code>
@@ -1991,7 +1994,10 @@
                     class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-lg p-3 text-center"
                   >
                     <div class="text-2xl font-bold" x-text="exportResult?.totalFiles ?? 0"></div>
-                    <div class="text-xs text-[var(--ds-text-muted)] mt-0.5">総ファイル</div>
+                    <div
+                      class="text-xs text-[var(--ds-text-muted)] mt-0.5"
+                      x-text="t('export.totalFiles')"
+                    ></div>
                   </div>
                   <div
                     class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-lg p-3 text-center"
@@ -2000,7 +2006,10 @@
                       class="text-2xl font-bold text-[var(--ds-primary-600)]"
                       x-text="exportResult?.changedFiles ?? 0"
                     ></div>
-                    <div class="text-xs text-[var(--ds-text-muted)] mt-0.5">更新</div>
+                    <div
+                      class="text-xs text-[var(--ds-text-muted)] mt-0.5"
+                      x-text="t('export.updated')"
+                    ></div>
                   </div>
                   <div
                     class="bg-[var(--ds-bg-muted)] border border-[var(--ds-border-default)] rounded-lg p-3 text-center"
@@ -2019,7 +2028,7 @@
                 <!-- 更新ファイル一覧（changed/） -->
                 <div class="mb-4">
                   <div class="flex items-center justify-between mb-1.5">
-                    <h3 class="text-sm font-bold">更新ファイル（changed/）</h3>
+                    <h3 class="text-sm font-bold" x-text="t('export.changedFilesLabel')"></h3>
                     <button
                       type="button"
                       x-show="(exportResult?.changedPaths || []).length"
@@ -2057,7 +2066,7 @@
                 <!-- 削除ファイル一覧 -->
                 <template x-if="(exportResult?.removedPaths || []).length">
                   <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-1.5">削除ファイル</h3>
+                    <h3 class="text-sm font-bold mb-1.5" x-text="t('export.deletedFiles')"></h3>
                     <ul
                       class="border border-[var(--ds-border-default)] rounded-lg divide-y divide-[var(--ds-border-default)] max-h-40 overflow-y-auto bg-[var(--ds-bg-surface)]"
                     >
@@ -2088,7 +2097,7 @@
                       <code class="font-mono">changed/</code>
                       の中身を、サーバーの公開ディレクトリにアップロード（既存ファイルに上書き）
                     </li>
-                    <li>公開サイトに反映されます（差分のみのアップロードで完了）</li>
+                    <li x-text="t('export.step3')"></li>
                   </ol>
                   <p class="text-[11px] text-[var(--ds-text-muted)] mt-2 leading-snug">
                     ※ ブラウザの仕様上、フォルダを Finder /
@@ -2252,7 +2261,7 @@
 
                       <div class="space-y-4">
                         <div>
-                          <label class="gh-label">メニュー名</label>
+                          <label class="gh-label" x-text="t('menu.nameLabel')"></label>
                           <input
                             type="text"
                             x-model="currentMenu.name"
@@ -2261,7 +2270,7 @@
                         </div>
 
                         <div>
-                          <h3 class="text-sm font-bold mb-2">メニュー構造</h3>
+                          <h3 class="text-sm font-bold mb-2" x-text="t('menu.structure')"></h3>
                           <p class="text-xs text-[var(--ds-text-placeholder)] mb-3">
                             ドラッグまたは矢印ボタンで並び替え。
                           </p>
@@ -2374,7 +2383,7 @@
 
                         <!-- テンプレートコード -->
                         <div class="border-t border-[var(--ds-border-default)] pt-4">
-                          <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                          <h3 class="text-sm font-bold mb-2" x-text="t('tpl.code')"></h3>
                           <p class="text-xs text-[var(--ds-text-muted)] mb-3">
                             テンプレートに以下のコードを貼り付けてこのメニューを表示できます。
                           </p>
@@ -2429,7 +2438,10 @@
                         class="flex gap-3 items-center border border-[var(--ds-border-default)] rounded p-3"
                       >
                         <div class="flex-1">
-                          <label class="text-xs text-[var(--ds-text-muted)]">名前</label>
+                          <label
+                            class="text-xs text-[var(--ds-text-muted)]"
+                            x-text="t('common.name')"
+                          ></label>
                           <input
                             type="text"
                             x-model="cat.label"
@@ -2467,7 +2479,7 @@
 
                   <!-- テンプレートコード -->
                   <div class="border-t border-[var(--ds-border-default)] mt-6 pt-4">
-                    <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                    <h3 class="text-sm font-bold mb-2" x-text="t('tpl.code')"></h3>
                     <p class="text-xs text-[var(--ds-text-muted)] mb-3">
                       テンプレートファイルに貼り付けてカテゴリを表示できます。各ブロックをクリックでコピー。
                     </p>
@@ -2520,7 +2532,10 @@
                         class="flex gap-3 items-center border border-[var(--ds-border-default)] rounded p-3"
                       >
                         <div class="flex-1">
-                          <label class="text-xs text-[var(--ds-text-muted)]">名前</label>
+                          <label
+                            class="text-xs text-[var(--ds-text-muted)]"
+                            x-text="t('common.name')"
+                          ></label>
                           <input
                             type="text"
                             x-model="tag.label"
@@ -2558,7 +2573,7 @@
 
                   <!-- テンプレートコード -->
                   <div class="border-t border-[var(--ds-border-default)] mt-6 pt-4">
-                    <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                    <h3 class="text-sm font-bold mb-2" x-text="t('tpl.code')"></h3>
                     <p class="text-xs text-[var(--ds-text-muted)] mb-3">
                       テンプレートファイルに貼り付けてタグを表示できます。各ブロックをクリックでコピー。
                     </p>
@@ -2647,7 +2662,7 @@
                         <!-- グループ基本情報 -->
                         <div class="flex gap-4">
                           <div class="flex-1">
-                            <label class="gh-label">グループ名</label>
+                            <label class="gh-label" x-text="t('fields.groupName')"></label>
                             <input
                               type="text"
                               x-model="currentFieldGroup.label"
@@ -2655,7 +2670,7 @@
                             />
                           </div>
                           <div class="w-48" x-show="!currentFieldGroup.id">
-                            <label class="gh-label">ID（自動生成可）</label>
+                            <label class="gh-label" x-text="t('fields.idAuto')"></label>
                             <input
                               type="text"
                               x-model="currentFieldGroup.id"
@@ -2667,7 +2682,10 @@
 
                         <!-- 表示条件（ロケーションルール） -->
                         <div>
-                          <h3 class="text-sm font-bold mb-1">表示条件</h3>
+                          <h3
+                            class="text-sm font-bold mb-1"
+                            x-text="t('fields.locationRules')"
+                          ></h3>
                           <p class="text-xs text-[var(--ds-text-muted)] mb-2">
                             このグループを表示する編集画面を指定します。いずれかの条件に一致する固定ページ・投稿の編集画面に入力項目が表示されます。
                           </p>
@@ -2736,7 +2754,7 @@
 
                         <!-- フィールド定義 -->
                         <div>
-                          <h3 class="text-sm font-bold mb-1">入力項目</h3>
+                          <h3 class="text-sm font-bold mb-1" x-text="t('fields.inputItems')"></h3>
                           <p class="text-xs text-[var(--ds-text-muted)] mb-2">
                             記事の編集画面に表示される入力欄です。「ラベル」と「種類」を決めるだけで追加できます。
                           </p>
@@ -2759,7 +2777,10 @@
                                     />
                                   </div>
                                   <div class="w-44">
-                                    <label class="text-xs text-[var(--ds-text-muted)]">種類</label>
+                                    <label
+                                      class="text-xs text-[var(--ds-text-muted)]"
+                                      x-text="t('fields.fieldType')"
+                                    ></label>
                                     <button
                                       type="button"
                                       @click="openTypePicker(f)"
@@ -2967,7 +2988,7 @@
                         <!-- テンプレートコード -->
                         <template x-if="currentFieldGroup.id && currentFieldGroup.fields?.length">
                           <div class="border-t border-[var(--ds-border-default)] pt-4">
-                            <h3 class="text-sm font-bold mb-2">テンプレートコード</h3>
+                            <h3 class="text-sm font-bold mb-2" x-text="t('tpl.code')"></h3>
                             <p class="text-xs text-[var(--ds-text-muted)] mb-3">
                               テンプレートファイルに貼り付けてフィールドを表示できます。
                             </p>
@@ -3005,7 +3026,7 @@
             <template x-if="view === 'themes'">
               <div class="px-8 pt-0 pb-16 max-w-5xl mx-auto">
                 <div class="gh-editor-header">
-                  <h1 class="text-lg font-bold">テーマ</h1>
+                  <h1 class="text-lg font-bold" x-text="t('nav.themes')"></h1>
                 </div>
 
                 <div class="space-y-6">
@@ -3075,7 +3096,10 @@
                   <div class="p-3">
                     <!-- テーマ開発: 編集中テーマと案内（対象はウェブ制作者） -->
                     <div class="mb-3 pb-3 border-b border-[var(--ds-border-default)]">
-                      <h2 class="text-sm font-bold text-[var(--ds-text-heading)]">テーマ開発</h2>
+                      <h2
+                        class="text-sm font-bold text-[var(--ds-text-heading)]"
+                        x-text="t('nav.themeDev')"
+                      ></h2>
                       <p class="text-[11px] text-[var(--ds-text-muted)] mt-1 leading-snug">
                         編集中:
                         <span
@@ -3334,7 +3358,7 @@
                         @click="templateRefOpenSection['types'] = !templateRefOpenSection['types']"
                         class="w-full flex items-center justify-between px-2 py-1.5 text-xs font-bold text-[var(--ds-text-heading)] hover:bg-[var(--ds-bg-hover)] rounded"
                       >
-                        <span>投稿タイプ別フィールド</span>
+                        <span x-text="t('type.fieldsLabel')"></span>
                         <i
                           data-lucide="chevron-down"
                           class="w-3 h-3 transition-transform"
@@ -3346,7 +3370,7 @@
                           x-model="templateRefSelectedTypeId"
                           class="gh-select-light text-xs w-full mb-2"
                         >
-                          <option value="">タイプを選択...</option>
+                          <option value="" x-text="t('type.selectType')"></option>
                           <template x-for="type in contentTypes" :key="type.id">
                             <option :value="type.id" x-text="type.label"></option>
                           </template>
@@ -3413,7 +3437,7 @@
                 })()"
               >
                 <div class="gh-editor-header">
-                  <h1 class="text-lg font-bold">サイト情報</h1>
+                  <h1 class="text-lg font-bold" x-text="t('nav.siteInfo')"></h1>
                   <div class="flex-1"></div>
                   <button
                     @click="saveSiteConfig()"
@@ -3422,17 +3446,20 @@
                   ></button>
                 </div>
                 <div class="space-y-5">
-                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">基本情報</h2>
+                  <h2
+                    class="text-base font-bold text-[var(--ds-text-heading)]"
+                    x-text="t('site.basicInfo')"
+                  ></h2>
                   <div>
-                    <label class="gh-label">サイト名</label>
+                    <label class="gh-label" x-text="t('site.nameLabel')"></label>
                     <input type="text" x-model="siteConfig.name" class="gh-input-light w-full" />
                   </div>
                   <div>
-                    <label class="gh-label">サイトURL</label>
+                    <label class="gh-label" x-text="t('site.urlLabel')"></label>
                     <input type="url" x-model="siteConfig.url" class="gh-input-light w-full" />
                   </div>
                   <div>
-                    <label class="gh-label">説明</label>
+                    <label class="gh-label" x-text="t('site.descLabel')"></label>
                     <textarea
                       x-model="siteConfig.description"
                       rows="3"
@@ -3442,7 +3469,7 @@
 
                   <!-- フロントページ（/ にマップする固定ページ） -->
                   <div>
-                    <label class="gh-label">フロントページ</label>
+                    <label class="gh-label" x-text="t('site.frontPage')"></label>
                     <select x-model="siteConfig.frontPageId" class="gh-input-light w-full">
                       <template x-for="p in pages" :key="p.id">
                         <option
@@ -3459,7 +3486,7 @@
 
                   <!-- サイトロゴ -->
                   <div>
-                    <label class="gh-label">サイトロゴ</label>
+                    <label class="gh-label" x-text="t('site.logoLabel')"></label>
                     <div class="flex items-start gap-4">
                       <template x-if="logoBlobUrl">
                         <div
@@ -3511,7 +3538,7 @@
 
                   <!-- ファビコン -->
                   <div>
-                    <label class="gh-label">ファビコン</label>
+                    <label class="gh-label" x-text="t('site.faviconLabel')"></label>
                     <div class="flex items-start gap-4">
                       <template x-if="faviconBlobUrl">
                         <div
@@ -3576,7 +3603,7 @@
                   </h2>
 
                   <div>
-                    <label class="gh-label">&lt;HEAD&gt; 内スクリプト（全ページ共通）</label>
+                    <label class="gh-label" x-text="t('site.headScript')"></label>
                     <textarea
                       x-model="siteConfig.customHeadScript"
                       rows="4"
@@ -3589,7 +3616,7 @@
                   </div>
 
                   <div>
-                    <label class="gh-label">&lt;/BODY&gt; 直前スクリプト（全ページ共通）</label>
+                    <label class="gh-label" x-text="t('site.bodyScript')"></label>
                     <textarea
                       x-model="siteConfig.customBodyScript"
                       rows="4"
@@ -3602,10 +3629,13 @@
                   </div>
 
                   <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
-                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">多言語設定</h2>
+                  <h2
+                    class="text-base font-bold text-[var(--ds-text-heading)]"
+                    x-text="t('site.i18nSettings')"
+                  ></h2>
 
                   <div>
-                    <label class="gh-label">公開する言語</label>
+                    <label class="gh-label" x-text="t('site.publishLangs')"></label>
                     <div class="flex flex-wrap gap-2 mb-3">
                       <template x-for="loc in languages.locales" :key="loc.code">
                         <span
@@ -3682,7 +3712,10 @@
                         <span x-text="dataSchemaVersion"></span>
                       </dd>
                       <template x-if="licenseId">
-                        <dt class="text-[var(--ds-text-muted)]">ライセンスID</dt>
+                        <dt
+                          class="text-[var(--ds-text-muted)]"
+                          x-text="t('settings.licenseId')"
+                        ></dt>
                       </template>
                       <template x-if="licenseId">
                         <dd class="text-[var(--ds-text-heading)] font-mono" x-text="licenseId"></dd>
@@ -3848,7 +3881,10 @@
             </template>
             <template x-if="revisionDiff">
               <div class="p-4 border-t border-[var(--ds-border-default)]">
-                <p class="text-xs font-semibold text-[var(--ds-text-muted)] mb-2">変更内容</p>
+                <p
+                  class="text-xs font-semibold text-[var(--ds-text-muted)] mb-2"
+                  x-text="t('revision.changes')"
+                ></p>
                 <div
                   class="text-xs bg-[var(--ds-bg-muted)] rounded p-2 revision-diff overflow-auto max-h-48"
                   x-html="revisionDiff"
@@ -3913,10 +3949,10 @@
       <div
         class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-sm p-6 text-[var(--ds-text-heading)]"
       >
-        <h2 class="text-lg font-bold mb-4">新規ページ</h2>
+        <h2 class="text-lg font-bold mb-4" x-text="t('page.newTitle')"></h2>
         <div class="space-y-3">
           <div>
-            <label class="gh-label">ページタイトル</label>
+            <label class="gh-label" x-text="t('page.titleLabel')"></label>
             <input
               type="text"
               x-model="editingPageTitle"
@@ -3927,7 +3963,7 @@
             />
           </div>
           <div>
-            <label class="gh-label">ページID（URL用）</label>
+            <label class="gh-label" x-text="t('page.idLabel')"></label>
             <input
               type="text"
               x-model="editingPageId"
@@ -3966,11 +4002,11 @@
           ></h2>
           <div class="space-y-3">
             <div>
-              <label class="gh-label">ラベル</label>
+              <label class="gh-label" x-text="t('fields.label')"></label>
               <input type="text" x-model="editingType.label" class="gh-input-light w-full" />
             </div>
             <div>
-              <label class="gh-label">スラッグ (URL用)</label>
+              <label class="gh-label" x-text="t('type.slugLabel')"></label>
               <input
                 type="text"
                 x-model="editingType.slug"
@@ -3979,7 +4015,7 @@
               />
             </div>
             <div>
-              <label class="gh-label">1ページあたりの件数</label>
+              <label class="gh-label" x-text="t('type.paginationLabel')"></label>
               <input type="number" x-model="editingType.pagination" class="gh-input-light w-24" />
             </div>
             <div class="flex flex-wrap gap-4 mt-1">
@@ -3997,10 +4033,10 @@
             </p>
             <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
             <div>
-              <h3 class="text-sm font-bold mb-1">入力項目（フィールドグループ）</h3>
+              <h3 class="text-sm font-bold mb-1" x-text="t('type.fieldGroupsLabel')"></h3>
               <p class="text-[11px] text-[var(--ds-text-muted)] mb-2 leading-snug">
                 カスタム入力項目は「フィールド」画面でフィールドグループを作成し、各グループの
-                <strong>表示条件</strong>
+                <strong x-text="t('fields.locationRules')"></strong>
                 でこの投稿タイプを指定すると、編集画面に表示されます。
               </p>
               <button type="button" @click="goEditFieldGroup()" class="gh-btn-outline text-xs">
@@ -4047,7 +4083,7 @@
           class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-6 text-[var(--ds-text-heading)]"
         >
           <div class="flex items-center justify-between mb-1">
-            <h2 class="text-lg font-bold">テンプレートの更新</h2>
+            <h2 class="text-lg font-bold" x-text="t('tpl.updatesTitle')"></h2>
             <button
               @click="showTemplateUpdates = false"
               class="ds-modal-close"
@@ -4060,7 +4096,10 @@
             同梱の新しい既定テンプレートと、お使いのファイルの差分です。「未編集」は安全に取り込めます。「編集済み」は差分を確認のうえ更新してください（あなたの変更は上書きされます）。
           </p>
           <template x-if="!templateUpdates.length">
-            <p class="text-sm text-[var(--ds-text-muted)] py-6 text-center">すべて最新です。</p>
+            <p
+              class="text-sm text-[var(--ds-text-muted)] py-6 text-center"
+              x-text="t('tpl.allLatest')"
+            ></p>
           </template>
           <template x-if="templateUpdates.some((u) => u.status === 'safe')">
             <button @click="applySafeTemplateUpdates()" class="gh-btn-green text-xs mb-3">
@@ -4120,7 +4159,7 @@
           class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 text-[var(--ds-text-heading)]"
         >
           <div class="flex items-center justify-between mb-1">
-            <h2 class="text-lg font-bold">項目の種類を選ぶ</h2>
+            <h2 class="text-lg font-bold" x-text="t('fieldPicker.title')"></h2>
             <button @click="typePickerTarget=null" class="ds-modal-close" :title="t('title.close')">
               <i data-lucide="x" class="w-5 h-5"></i>
             </button>
@@ -4173,9 +4212,9 @@
       <div
         class="bg-[var(--ds-bg-surface)] rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6 text-[var(--ds-text-heading)]"
       >
-        <h2 class="text-lg font-bold mb-4">言語設定</h2>
+        <h2 class="text-lg font-bold mb-4" x-text="t('lang.settingsTitle')"></h2>
         <div class="mb-3">
-          <label class="gh-label">デフォルト言語コード</label>
+          <label class="gh-label" x-text="t('lang.defaultCodeLabel')"></label>
           <input
             type="text"
             x-model="langEditorData.default"
@@ -4183,7 +4222,7 @@
             placeholder="ja"
           />
         </div>
-        <h3 class="text-sm font-bold mb-2">言語一覧</h3>
+        <h3 class="text-sm font-bold mb-2" x-text="t('lang.listLabel')"></h3>
         <div class="space-y-2 mb-3">
           <template x-for="(loc, idx) in langEditorData.locales" :key="loc.code || idx">
             <div class="flex gap-2 items-center">
@@ -4210,7 +4249,11 @@
               </button>
             </div>
           </template>
-          <button @click="addLangLocale()" class="gh-btn-outline text-xs">+ 言語追加</button>
+          <button
+            @click="addLangLocale()"
+            class="gh-btn-outline text-xs"
+            x-text="t('lang.addBtn')"
+          ></button>
         </div>
         <div class="flex justify-end gap-2 mt-4">
           <button
@@ -4264,7 +4307,7 @@
         <div
           class="animate-spin w-6 h-6 border-2 border-[var(--ds-primary-600)] border-t-transparent rounded-full mx-auto mb-3"
         ></div>
-        <p class="text-sm text-[var(--ds-text-muted)]">書き出し中...</p>
+        <p class="text-sm text-[var(--ds-text-muted)]" x-text="t('export.inProgress')"></p>
         <template x-if="exportProgress && exportProgress.total > 0">
           <div class="mt-3">
             <div class="h-1.5 w-full bg-[var(--ds-border-default)] rounded-full overflow-hidden">

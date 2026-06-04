@@ -1,7 +1,7 @@
 {
-  "name": "localcms",
+  "name": "onecms",
   "version": "1.0.0",
-  "description": "ブラウザ完結型CMS - LocalCMS",
+  "description": "ブラウザ完結型・インストール不要の静的サイトジェネレーター型CMS - ONE CMS",
   "private": true,
   "type": "module",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "keywords": [],
   "author": "GOWAS LLC",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "@editorjs/code": "^2.9.4",
     "@editorjs/delimiter": "^1.4.2",

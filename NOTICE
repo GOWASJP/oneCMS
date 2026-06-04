@@ -1,0 +1,21 @@
+ONE CMS
+Copyright 2026 GOWAS LLC (https://gowas.jp)
+
+This product is licensed under the Apache License, Version 2.0 (see the LICENSE
+file). "ONE CMS" and "OneCMS Pro" are trademarks of GOWAS LLC; the Apache-2.0
+license does not grant any rights to use these names, logos, or trademarks
+except as required for reasonable and customary use in describing the origin of
+the work.
+
+This distribution bundles third-party open-source components, each governed by
+its own license. Notable components include:
+
+  - Editor.js and its official plugins (MIT)
+  - Alpine.js (MIT)
+  - Handlebars.js (MIT)
+  - Zod (MIT)
+  - Lucide icons (ISC)
+  - Tailwind CSS (MIT)
+  - Inter typeface (SIL Open Font License 1.1)
+
+Refer to each project for the full text of its license.

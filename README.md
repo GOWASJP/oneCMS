@@ -179,7 +179,12 @@ npm run build
 
 ## ライセンス
 
-MIT License
+[Apache License 2.0](./LICENSE) © GOWAS LLC
+
+無料版 ONE CMS は Apache-2.0 で提供されます（改変・再配布可）。
+「ONE CMS」「OneCMS Pro」の名称・ロゴは GOWAS LLC の商標です。Apache-2.0
+ライセンスはこれら商標の使用権を付与しません（出所表示としての通常利用を除く）。
+有料版 **OneCMS Pro** は別ライセンス（商用）で提供されます。
 
 ## 作成者
 

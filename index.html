@@ -446,12 +446,15 @@
                     </template>
 
                     <!-- タイトル -->
-                    <input
-                      type="text"
+                    <textarea
                       x-model="editData.title"
                       placeholder="タイトルを追加"
+                      rows="1"
                       class="gh-title-input"
-                    />
+                      @keydown.enter.prevent
+                      @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                      x-effect="editData.title; $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                    ></textarea>
 
                     <!-- 本文エディタ（全ページ共通の既定項目） -->
                     <div id="editorjs" class="gh-editorjs"></div>
@@ -571,20 +574,31 @@
                                     <template x-if="editData[field.key]">
                                       <img
                                         :src="editData[field.key]"
-                                        class="max-h-40 rounded border border-[var(--ds-border-default)] mb-2"
+                                        alt=""
+                                        class="max-h-44 max-w-full rounded-md border border-[var(--ds-border-default)] mb-2 object-contain bg-[var(--ds-bg-muted)]"
                                       />
                                     </template>
-                                    <label class="ds-file-button">
-                                      <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                                      <span
-                                        x-text="editData[field.key] ? '画像を変更' : '画像を選択'"
-                                      ></span>
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        @change="handleImageUpload($event, field.key)"
-                                      />
-                                    </label>
+                                    <div class="flex items-center gap-3">
+                                      <label class="ds-file-button">
+                                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                        <span
+                                          x-text="editData[field.key] ? '画像を変更' : '画像を選択'"
+                                        ></span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          @change="handleImageUpload($event, field.key)"
+                                        />
+                                      </label>
+                                      <button
+                                        type="button"
+                                        x-show="editData[field.key]"
+                                        @click="editData[field.key] = ''"
+                                        class="text-xs text-[var(--ds-danger-600)] hover:underline"
+                                      >
+                                        削除
+                                      </button>
+                                    </div>
                                   </div>
                                 </template>
                                 <template x-if="field.type === 'file'">
@@ -690,21 +704,22 @@
                                 <!-- imagelist -->
                                 <template x-if="field.type === 'imagelist'">
                                   <div>
-                                    <div class="flex flex-wrap gap-2 mb-2">
+                                    <div class="flex flex-wrap gap-3 mb-3 pt-2 pr-2">
                                       <template
                                         x-for="(img, idx) in (editData[field.key] || [])"
                                         :key="idx"
                                       >
-                                        <div class="relative">
-                                          <img
-                                            :src="img"
-                                            class="w-20 h-20 object-cover rounded border border-[var(--ds-border-default)]"
-                                          />
+                                        <div class="relative inline-block">
+                                          <div class="ds-media-thumb">
+                                            <img :src="img" alt="" />
+                                          </div>
                                           <button
-                                            @click="editData[field.key].splice(idx,1)"
-                                            class="absolute -top-1 -right-1 w-4 h-4 bg-[var(--ds-danger-600)] text-white rounded-full text-[10px] flex items-center justify-center"
+                                            type="button"
+                                            @click="editData[field.key].splice(idx, 1)"
+                                            class="ds-media-remove"
+                                            title="削除"
                                           >
-                                            x
+                                            <i data-lucide="x"></i>
                                           </button>
                                         </div>
                                       </template>
@@ -735,10 +750,12 @@
                                             class="border border-[var(--ds-border-default)] rounded p-3 space-y-2 relative"
                                           >
                                             <button
-                                              @click="editData[field.key].splice(idx,1)"
-                                              class="absolute top-1 right-1 text-[var(--ds-danger-600)] text-xs px-1 hover:bg-red-50 rounded"
+                                              type="button"
+                                              @click="editData[field.key].splice(idx, 1)"
+                                              class="absolute top-1.5 right-1.5 w-7 h-7 inline-flex items-center justify-center rounded-md text-[var(--ds-danger-600)] hover:bg-[var(--ds-bg-hover)]"
+                                              title="この行を削除"
                                             >
-                                              &times;
+                                              <i data-lucide="x" class="w-4 h-4"></i>
                                             </button>
                                             <template x-for="sf in field.subFields" :key="sf.key">
                                               <div>
@@ -1286,12 +1303,15 @@
                 <div class="flex-1 overflow-y-auto">
                   <div class="gh-editor-container">
                     <!-- タイトル（Gutenberg風） -->
-                    <input
-                      type="text"
+                    <textarea
                       x-model="editData.title"
                       placeholder="タイトルを追加"
+                      rows="1"
                       class="gh-title-input"
-                    />
+                      @keydown.enter.prevent
+                      @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                      x-effect="editData.title; $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                    ></textarea>
 
                     <!-- 本文（全タイプ共通の既定項目） -->
                     <div class="mb-6">
@@ -1413,20 +1433,31 @@
                                     <template x-if="editData[field.key]">
                                       <img
                                         :src="editData[field.key]"
-                                        class="max-h-40 rounded border border-[var(--ds-border-default)] mb-2"
+                                        alt=""
+                                        class="max-h-44 max-w-full rounded-md border border-[var(--ds-border-default)] mb-2 object-contain bg-[var(--ds-bg-muted)]"
                                       />
                                     </template>
-                                    <label class="ds-file-button">
-                                      <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                                      <span
-                                        x-text="editData[field.key] ? '画像を変更' : '画像を選択'"
-                                      ></span>
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        @change="handleImageUpload($event, field.key)"
-                                      />
-                                    </label>
+                                    <div class="flex items-center gap-3">
+                                      <label class="ds-file-button">
+                                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                        <span
+                                          x-text="editData[field.key] ? '画像を変更' : '画像を選択'"
+                                        ></span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          @change="handleImageUpload($event, field.key)"
+                                        />
+                                      </label>
+                                      <button
+                                        type="button"
+                                        x-show="editData[field.key]"
+                                        @click="editData[field.key] = ''"
+                                        class="text-xs text-[var(--ds-danger-600)] hover:underline"
+                                      >
+                                        削除
+                                      </button>
+                                    </div>
                                   </div>
                                 </template>
                                 <template x-if="field.type === 'file'">
@@ -1532,21 +1563,22 @@
                                 <!-- imagelist -->
                                 <template x-if="field.type === 'imagelist'">
                                   <div>
-                                    <div class="flex flex-wrap gap-2 mb-2">
+                                    <div class="flex flex-wrap gap-3 mb-3 pt-2 pr-2">
                                       <template
                                         x-for="(img, idx) in (editData[field.key] || [])"
                                         :key="idx"
                                       >
-                                        <div class="relative">
-                                          <img
-                                            :src="img"
-                                            class="w-20 h-20 object-cover rounded border border-[var(--ds-border-default)]"
-                                          />
+                                        <div class="relative inline-block">
+                                          <div class="ds-media-thumb">
+                                            <img :src="img" alt="" />
+                                          </div>
                                           <button
-                                            @click="editData[field.key].splice(idx,1)"
-                                            class="absolute -top-1 -right-1 w-4 h-4 bg-[var(--ds-danger-600)] text-white rounded-full text-[10px] flex items-center justify-center"
+                                            type="button"
+                                            @click="editData[field.key].splice(idx, 1)"
+                                            class="ds-media-remove"
+                                            title="削除"
                                           >
-                                            x
+                                            <i data-lucide="x"></i>
                                           </button>
                                         </div>
                                       </template>
@@ -1577,10 +1609,12 @@
                                             class="border border-[var(--ds-border-default)] rounded p-3 space-y-2 relative"
                                           >
                                             <button
-                                              @click="editData[field.key].splice(idx,1)"
-                                              class="absolute top-1 right-1 text-[var(--ds-danger-600)] text-xs px-1 hover:bg-red-50 rounded"
+                                              type="button"
+                                              @click="editData[field.key].splice(idx, 1)"
+                                              class="absolute top-1.5 right-1.5 w-7 h-7 inline-flex items-center justify-center rounded-md text-[var(--ds-danger-600)] hover:bg-[var(--ds-bg-hover)]"
+                                              title="この行を削除"
                                             >
-                                              &times;
+                                              <i data-lucide="x" class="w-4 h-4"></i>
                                             </button>
                                             <template x-for="sf in field.subFields" :key="sf.key">
                                               <div>
@@ -3768,10 +3802,7 @@
         >
           <div class="flex items-center justify-between mb-1">
             <h2 class="text-lg font-bold">テンプレートの更新</h2>
-            <button
-              @click="showTemplateUpdates = false"
-              class="text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)]"
-            >
+            <button @click="showTemplateUpdates = false" class="ds-modal-close" title="閉じる">
               <i data-lucide="x" class="w-5 h-5"></i>
             </button>
           </div>
@@ -3838,10 +3869,7 @@
         >
           <div class="flex items-center justify-between mb-1">
             <h2 class="text-lg font-bold">項目の種類を選ぶ</h2>
-            <button
-              @click="typePickerTarget=null"
-              class="text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)]"
-            >
+            <button @click="typePickerTarget=null" class="ds-modal-close" title="閉じる">
               <i data-lucide="x" class="w-5 h-5"></i>
             </button>
           </div>

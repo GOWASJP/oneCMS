@@ -481,6 +481,80 @@ input[type='file']::file-selector-button:active {
   pointer-events: none;
 }
 
+/* メディア（画像・画像リスト等）の削除ボタン。十分なヒット領域と視認性を確保 */
+.ds-media-remove {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--ds-danger-600);
+  color: #fff;
+  border: 2px solid var(--ds-bg-surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  z-index: 10;
+  transition:
+    transform var(--ds-duration-fast) var(--ds-ease-out),
+    background var(--ds-duration-fast) var(--ds-ease-out);
+}
+.ds-media-remove:hover {
+  background: var(--ds-danger-700);
+  transform: scale(1.1);
+}
+.ds-media-remove:active {
+  transform: scale(0.92);
+}
+.ds-media-remove svg {
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+/* メディアのサムネイル枠（プレビュー失敗時もレイアウトが崩れない） */
+.ds-media-thumb {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-border-default);
+  background: var(--ds-bg-muted);
+  overflow: hidden;
+}
+.ds-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* モーダルの閉じる(×)ボタン。アイコンだけでなく余白込みで広いヒット領域に */
+.ds-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-text-muted);
+  cursor: pointer;
+  transition:
+    background var(--ds-duration-fast) var(--ds-ease-out),
+    color var(--ds-duration-fast) var(--ds-ease-out);
+}
+.ds-modal-close:hover {
+  background: var(--ds-bg-hover);
+  color: var(--ds-text-heading);
+}
+.ds-modal-close svg {
+  pointer-events: none;
+}
+
 .gh-label {
   display: block;
   font-size: var(--ds-text-xs);
@@ -562,17 +636,29 @@ input[type='file']::file-selector-button:active {
 
 .gh-title-input {
   width: 100%;
-  font-size: 42px;
+  font-size: 36px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   border: none;
   outline: none;
   background: transparent;
   color: var(--ds-text-heading);
   padding: 0;
-  margin: 0 0 32px;
+  margin: 0 0 28px;
   font-family: inherit;
   letter-spacing: -0.01em;
+  /* textarea として複数行・自動折り返しに対応（長いタイトルが横にあふれない） */
+  display: block;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+@media (max-width: 640px) {
+  .gh-title-input {
+    font-size: 28px;
+  }
 }
 .gh-title-input::placeholder {
   color: var(--ds-text-placeholder);

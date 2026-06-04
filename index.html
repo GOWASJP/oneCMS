@@ -450,7 +450,10 @@
                       data-lucide="layout-dashboard"
                       class="w-10 h-10 mx-auto mb-3 text-[var(--ds-text-placeholder)]"
                     ></i>
-                    <p class="text-sm text-[var(--ds-text-muted)]">サイドバーからページを選択</p>
+                    <p
+                      class="text-sm text-[var(--ds-text-muted)]"
+                      x-text="t('welcome.selectPage')"
+                    ></p>
                   </div>
                 </template>
               </div>
@@ -571,7 +574,7 @@
                                 </template>
                                 <template x-if="field.type === 'select'">
                                   <select x-model="editData[field.key]" class="gh-select-light">
-                                    <option value="">選択...</option>
+                                    <option value="" x-text="t('field.select')"></option>
                                     <template
                                       x-for="opt in (field.options || [])"
                                       :key="opt.value || opt"
@@ -755,7 +758,7 @@
                                     </div>
                                     <label class="ds-file-button">
                                       <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                                      <span>画像を追加</span>
+                                      <span x-text="t('btn.addImage')"></span>
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -999,7 +1002,7 @@
                   <!-- 翻訳ステータス -->
                   <template x-if="languages.locales.length > 1">
                     <div>
-                      <label class="gh-label">言語</label>
+                      <label class="gh-label" x-text="t('field.language')"></label>
                       <div class="flex items-center gap-1.5 flex-wrap">
                         <template x-for="ts in translationStatuses" :key="ts.code">
                           <button
@@ -1049,7 +1052,7 @@
                     <div class="space-y-5">
                       <!-- スラッグ -->
                       <div>
-                        <label class="gh-label">スラッグ</label>
+                        <label class="gh-label" x-text="t('field.slug')"></label>
                         <input
                           type="text"
                           x-model="editData.slug"
@@ -1064,12 +1067,16 @@
 
                       <!-- 親ページ -->
                       <div>
-                        <label class="gh-label">親ページ</label>
+                        <label class="gh-label" x-text="t('field.parentPage')"></label>
                         <select
                           @change="editData.parent = $event.target.value"
                           class="gh-input-light text-xs w-full"
                         >
-                          <option value="" :selected="!editData.parent">なし（ルート）</option>
+                          <option
+                            value=""
+                            :selected="!editData.parent"
+                            x-text="t('field.noneRoot')"
+                          ></option>
                           <template x-for="p in availableParentPages()" :key="p.id">
                             <option
                               :value="p.id"
@@ -1091,7 +1098,7 @@
 
                   <!-- サムネイル（全ページ共通の既定項目） -->
                   <div>
-                    <label class="gh-label">サムネイル</label>
+                    <label class="gh-label" x-text="t('field.thumbnail')"></label>
                     <img
                       x-show="editData.image"
                       :src="editData.image"
@@ -1112,13 +1119,13 @@
 
                   <!-- カテゴリ（全ページ共通の既定項目） -->
                   <div x-show="availableCategories.length">
-                    <label class="gh-label">カテゴリ</label>
+                    <label class="gh-label" x-text="t('nav.categories')"></label>
                     <select
                       x-model="editData.category"
                       x-effect="$nextTick(() => { if ($el.value !== (editData.category || '')) $el.value = editData.category || '' })"
                       class="gh-select-light text-xs w-full"
                     >
-                      <option value="">未分類</option>
+                      <option value="" x-text="t('field.uncategorized')"></option>
                       <template x-for="cat in availableCategories" :key="cat.id">
                         <option :value="cat.label" x-text="cat.label"></option>
                       </template>
@@ -1127,7 +1134,7 @@
 
                   <!-- タグ（全ページ共通の既定項目） -->
                   <div x-show="availableTags.length">
-                    <label class="gh-label">タグ</label>
+                    <label class="gh-label" x-text="t('nav.tags')"></label>
                     <div class="flex flex-wrap gap-1">
                       <template x-for="tag in availableTags" :key="tag.id">
                         <button
@@ -1143,7 +1150,7 @@
                   <!-- ページ別カスタムスクリプト -->
                   <template x-if="true">
                     <div>
-                      <label class="gh-label">カスタムスクリプト</label>
+                      <label class="gh-label" x-text="t('field.customScript')"></label>
                       <textarea
                         x-model="editData.customScript"
                         rows="3"
@@ -1163,9 +1170,8 @@
                     <button
                       @click="deletePage()"
                       class="text-[var(--ds-danger-600)] text-xs hover:underline w-full text-left"
-                    >
-                      このページを削除
-                    </button>
+                      x-text="t('field.deletePage')"
+                    ></button>
                   </template>
                 </div>
               </div>
@@ -1430,7 +1436,7 @@
                                 </template>
                                 <template x-if="field.type === 'select'">
                                   <select x-model="editData[field.key]" class="gh-select-light">
-                                    <option value="">選択...</option>
+                                    <option value="" x-text="t('field.select')"></option>
                                     <template
                                       x-for="opt in (field.options || [])"
                                       :key="opt.value || opt"
@@ -1614,7 +1620,7 @@
                                     </div>
                                     <label class="ds-file-button">
                                       <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                                      <span>画像を追加</span>
+                                      <span x-text="t('btn.addImage')"></span>
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -1857,18 +1863,18 @@
                 >
                   <!-- ステータス -->
                   <div>
-                    <label class="gh-label">ステータス</label>
+                    <label class="gh-label" x-text="t('field.status')"></label>
                     <select x-model="editData.status" class="gh-select-light text-xs w-full">
-                      <option value="draft">下書き</option>
-                      <option value="published">公開中</option>
-                      <option value="archived">アーカイブ</option>
+                      <option value="draft" x-text="t('contentStatus.draft')"></option>
+                      <option value="published" x-text="t('contentStatus.published')"></option>
+                      <option value="archived" x-text="t('contentStatus.archived')"></option>
                     </select>
                   </div>
 
                   <!-- 投稿日 -->
                   <template x-if="currentType?.hasDate">
                     <div>
-                      <label class="gh-label">投稿日</label>
+                      <label class="gh-label" x-text="t('field.publishDate')"></label>
                       <input
                         type="date"
                         x-model="editData.publishedAt"
@@ -1879,7 +1885,7 @@
 
                   <!-- スラッグ -->
                   <div>
-                    <label class="gh-label">スラッグ</label>
+                    <label class="gh-label" x-text="t('field.slug')"></label>
                     <input
                       type="text"
                       x-model="editData.slug"
@@ -1895,7 +1901,7 @@
                   <!-- サムネイル（全タイプ共通の既定項目） -->
                   <template x-if="true">
                     <div>
-                      <label class="gh-label">サムネイル</label>
+                      <label class="gh-label" x-text="t('field.thumbnail')"></label>
                       <img
                         x-show="editData.image"
                         :src="editData.image"
@@ -1917,13 +1923,13 @@
 
                   <!-- カテゴリ（全タイプ共通の既定項目） -->
                   <div x-show="availableCategories.length">
-                    <label class="gh-label">カテゴリ</label>
+                    <label class="gh-label" x-text="t('nav.categories')"></label>
                     <select
                       x-model="editData.category"
                       x-effect="$nextTick(() => { if ($el.value !== (editData.category || '')) $el.value = editData.category || '' })"
                       class="gh-select-light text-xs w-full"
                     >
-                      <option value="">未分類</option>
+                      <option value="" x-text="t('field.uncategorized')"></option>
                       <template x-for="cat in availableCategories" :key="cat.id">
                         <option :value="cat.label" x-text="cat.label"></option>
                       </template>
@@ -1932,7 +1938,7 @@
 
                   <!-- タグ（全タイプ共通の既定項目） -->
                   <div x-show="availableTags.length">
-                    <label class="gh-label">タグ</label>
+                    <label class="gh-label" x-text="t('nav.tags')"></label>
                     <div class="flex flex-wrap gap-1">
                       <template x-for="tag in availableTags" :key="tag.id">
                         <button
@@ -1951,9 +1957,8 @@
                   <button
                     @click="deleteContent()"
                     class="text-[var(--ds-danger-600)] text-xs hover:underline w-full text-left"
-                  >
-                    この投稿を削除
-                  </button>
+                    x-text="t('field.deleteContent')"
+                  ></button>
                 </div>
               </div>
             </template>
@@ -1999,7 +2004,10 @@
                       class="text-2xl font-bold text-[var(--ds-danger-600)]"
                       x-text="exportResult?.removedFiles ?? 0"
                     ></div>
-                    <div class="text-xs text-[var(--ds-text-muted)] mt-0.5">削除</div>
+                    <div
+                      class="text-xs text-[var(--ds-text-muted)] mt-0.5"
+                      x-text="t('btn.delete')"
+                    ></div>
                   </div>
                 </div>
 
@@ -2094,7 +2102,11 @@
                     <i data-lucide="download" class="w-4 h-4"></i>
                     <span x-text="zipping ? 'ZIP作成中…' : 'changed/ をZIPでダウンロード'"></span>
                   </button>
-                  <button @click="view = 'welcome'" class="gh-btn-green">完了</button>
+                  <button
+                    @click="view = 'welcome'"
+                    class="gh-btn-green"
+                    x-text="t('btn.done')"
+                  ></button>
                 </div>
               </div>
             </template>
@@ -2226,7 +2238,11 @@
                         >
                           削除
                         </button>
-                        <button @click="saveMenus()" class="gh-btn-green text-[13px]">保存</button>
+                        <button
+                          @click="saveMenus()"
+                          class="gh-btn-green text-[13px]"
+                          x-text="t('btn.save')"
+                        ></button>
                       </div>
 
                       <div class="space-y-4">
@@ -2391,9 +2407,13 @@
               <div class="flex-1 overflow-y-auto">
                 <div class="px-8 py-0">
                   <div class="gh-editor-header">
-                    <h2 class="text-sm font-bold">カテゴリ</h2>
+                    <h2 class="text-sm font-bold" x-text="t('nav.categories')"></h2>
                     <div class="flex-1"></div>
-                    <button @click="saveTaxonomies()" class="gh-btn-green text-[13px]">保存</button>
+                    <button
+                      @click="saveTaxonomies()"
+                      class="gh-btn-green text-[13px]"
+                      x-text="t('btn.save')"
+                    ></button>
                   </div>
                   <p class="text-xs text-[var(--ds-text-muted)] mb-4">
                     記事に割り当てるカテゴリを管理します。スラッグはURLに使用されます。
@@ -2413,7 +2433,10 @@
                           />
                         </div>
                         <div class="w-48">
-                          <label class="text-xs text-[var(--ds-text-muted)]">スラッグ</label>
+                          <label
+                            class="text-xs text-[var(--ds-text-muted)]"
+                            x-text="t('field.slug')"
+                          ></label>
                           <input
                             type="text"
                             x-model="cat.slug"
@@ -2475,9 +2498,13 @@
               <div class="flex-1 overflow-y-auto">
                 <div class="px-8 py-0">
                   <div class="gh-editor-header">
-                    <h2 class="text-sm font-bold">タグ</h2>
+                    <h2 class="text-sm font-bold" x-text="t('nav.tags')"></h2>
                     <div class="flex-1"></div>
-                    <button @click="saveTaxonomies()" class="gh-btn-green text-[13px]">保存</button>
+                    <button
+                      @click="saveTaxonomies()"
+                      class="gh-btn-green text-[13px]"
+                      x-text="t('btn.save')"
+                    ></button>
                   </div>
                   <p class="text-xs text-[var(--ds-text-muted)] mb-4">
                     記事に割り当てるタグを管理します。スラッグはURLに使用されます。
@@ -2497,7 +2524,10 @@
                           />
                         </div>
                         <div class="w-48">
-                          <label class="text-xs text-[var(--ds-text-muted)]">スラッグ</label>
+                          <label
+                            class="text-xs text-[var(--ds-text-muted)]"
+                            x-text="t('field.slug')"
+                          ></label>
                           <input
                             type="text"
                             x-model="tag.slug"
@@ -3378,7 +3408,11 @@
                 <div class="gh-editor-header">
                   <h1 class="text-lg font-bold">サイト情報</h1>
                   <div class="flex-1"></div>
-                  <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
+                  <button
+                    @click="saveSiteConfig()"
+                    class="gh-btn-green text-[13px]"
+                    x-text="t('btn.save')"
+                  ></button>
                 </div>
                 <div class="space-y-5">
                   <h2 class="text-base font-bold text-[var(--ds-text-heading)]">基本情報</h2>
@@ -3765,7 +3799,7 @@
           <div
             class="flex items-center justify-between px-4 h-[52px] border-b border-[var(--ds-border-default)] shrink-0 relative z-10"
           >
-            <span class="text-sm font-semibold">履歴</span>
+            <span class="text-sm font-semibold" x-text="t('btn.history')"></span>
             <button
               @click.stop="closePanel()"
               class="w-8 h-8 flex items-center justify-center text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] rounded hover:bg-[var(--ds-bg-hover)]"
@@ -3834,7 +3868,10 @@
           <div
             class="flex items-center justify-between px-4 h-[52px] border-b border-[var(--ds-border-default)] shrink-0 relative z-10"
           >
-            <span class="text-sm font-semibold text-[var(--ds-text-heading)]">プレビュー</span>
+            <span
+              class="text-sm font-semibold text-[var(--ds-text-heading)]"
+              x-text="t('btn.preview')"
+            ></span>
             <button
               @click.stop="closePanel()"
               class="w-8 h-8 flex items-center justify-center text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] rounded hover:bg-[var(--ds-bg-hover)]"
@@ -3893,8 +3930,16 @@
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-6">
-          <button @click="showPageCreator=false" class="gh-btn-outline text-xs">キャンセル</button>
-          <button @click="confirmCreatePage()" class="gh-btn-green text-xs">作成</button>
+          <button
+            @click="showPageCreator=false"
+            class="gh-btn-outline text-xs"
+            x-text="t('btn.cancel')"
+          ></button>
+          <button
+            @click="confirmCreatePage()"
+            class="gh-btn-green text-xs"
+            x-text="t('btn.create')"
+          ></button>
         </div>
       </div>
     </div>
@@ -3973,7 +4018,11 @@
               >
                 キャンセル
               </button>
-              <button @click="saveType()" class="gh-btn-green text-xs">保存</button>
+              <button
+                @click="saveType()"
+                class="gh-btn-green text-xs"
+                x-text="t('btn.save')"
+              ></button>
             </div>
           </div>
         </div>
@@ -4155,8 +4204,16 @@
           <button @click="addLangLocale()" class="gh-btn-outline text-xs">+ 言語追加</button>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="showLangEditor=false" class="gh-btn-outline text-xs">キャンセル</button>
-          <button @click="saveLangConfig()" class="gh-btn-green text-xs">保存</button>
+          <button
+            @click="showLangEditor=false"
+            class="gh-btn-outline text-xs"
+            x-text="t('btn.cancel')"
+          ></button>
+          <button
+            @click="saveLangConfig()"
+            class="gh-btn-green text-xs"
+            x-text="t('btn.save')"
+          ></button>
         </div>
       </div>
     </div>
@@ -4182,7 +4239,11 @@
           x-ref="modalInputRef"
         />
         <div class="flex justify-end gap-2">
-          <button @click="modalCancel()" class="gh-btn-outline text-xs">キャンセル</button>
+          <button
+            @click="modalCancel()"
+            class="gh-btn-outline text-xs"
+            x-text="t('btn.cancel')"
+          ></button>
           <button @click="modalOk()" class="gh-btn-green text-xs">OK</button>
         </div>
       </div>

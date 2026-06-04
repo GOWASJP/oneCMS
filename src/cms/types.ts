@@ -26,6 +26,7 @@ export interface CmsComponent {
   view: string
   currentLang: string
   exporting: boolean
+  zipping: boolean
   exportResult: ExportResult | null
   exportProgress: { step: number; total: number } | null
   toast: string | null
@@ -182,6 +183,7 @@ export interface CmsComponent {
   showPreview(): Promise<void>
   closePanel(): void
   exportSite(): Promise<void>
+  downloadChangedZip(): Promise<void>
   switchLang(lang: string): Promise<void>
   copyFromLang(sourceLang: string): Promise<void>
   getTranslationStatus(): Promise<Array<{ code: string; flag: string; status: string }>>

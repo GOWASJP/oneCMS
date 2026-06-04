@@ -136,6 +136,29 @@ export class FileSystem {
     }
   }
 
+  /** 指定ディレクトリ配下の全ファイルを再帰的に読み、
+   *  相対パス（ディレクトリ基準）→バイト列の一覧を返す。ZIP 化などに使用。 */
+  async readDirFilesRecursive(path: string): Promise<Array<{ path: string; bytes: Uint8Array }>> {
+    const dir = await this.getDir(path)
+    if (!dir) return []
+    const out: Array<{ path: string; bytes: Uint8Array }> = []
+    const walk = async (handle: FileSystemDirectoryHandle, prefix: string): Promise<void> => {
+      const entries = await collectEntries(handle)
+      for (const [name, h] of entries) {
+        const rel = prefix ? `${prefix}/${name}` : name
+        if (h.kind === 'file') {
+          const file = await (h as FileSystemFileHandle).getFile()
+          const buf = await file.arrayBuffer()
+          out.push({ path: rel, bytes: new Uint8Array(buf) })
+        } else if (h.kind === 'directory') {
+          await walk(h as FileSystemDirectoryHandle, rel)
+        }
+      }
+    }
+    await walk(dir, '')
+    return out
+  }
+
   /** JSONファイルを読み込み */
   async readJson<T = unknown>(path: string): Promise<T | null> {
     const handle = await this.getFile(path)

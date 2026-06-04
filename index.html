@@ -2050,11 +2050,21 @@
                   </ol>
                   <p class="text-[11px] text-[var(--ds-text-muted)] mt-2 leading-snug">
                     ※ ブラウザの仕様上、フォルダを Finder /
-                    エクスプローラーで自動表示することはできません。
+                    エクスプローラーで自動表示することはできません。FTP
+                    が使えない場合は、下の「ZIPでダウンロード」で更新分をまとめて取り出せます。
                   </p>
                 </div>
 
-                <div class="flex justify-end">
+                <div class="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    @click="downloadChangedZip()"
+                    :disabled="zipping"
+                    class="gh-btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span x-text="zipping ? 'ZIP作成中…' : 'changed/ をZIPでダウンロード'"></span>
+                  </button>
                   <button @click="view = 'welcome'" class="gh-btn-green">完了</button>
                 </div>
               </div>

@@ -32,6 +32,7 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
     currentLang: 'ja',
 
     exporting: false,
+    zipping: false,
 
     exportResult: null,
     exportProgress: null,

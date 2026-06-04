@@ -3,8 +3,9 @@ import type { CmsComponent } from './types.ts'
 import Handlebars from 'handlebars'
 import DiffMatchPatch from 'diff-match-patch'
 import { type RevisionEntry } from '../types.ts'
+import { zipSync } from 'fflate'
 import { INITIAL_TEMPLATES } from '../initial-templates.ts'
-import { PATH_TEMPLATES_BASELINE, PATH_EXPORT_SOURCE } from '../constants.ts'
+import { PATH_TEMPLATES_BASELINE, PATH_EXPORT_SOURCE, PATH_CHANGED } from '../constants.ts'
 import {
   injectTailwindRuntime,
   injectAlpineRuntime,
@@ -194,6 +195,38 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     } finally {
       this.exporting = false
       this.exportProgress = null
+    }
+  },
+
+  /** changed/ フォルダの中身（更新ファイル＋アセット）を ZIP にまとめてダウンロード。
+   *  ブラウザから Finder を開けないため、FTP 用にファイルを丸ごと取り出せる手段として提供。 */
+  async downloadChangedZip() {
+    if (!this.fs || this.zipping) return
+    this.zipping = true
+    try {
+      const files = await this.fs.readDirFilesRecursive(PATH_CHANGED)
+      if (!files.length) {
+        this.showToast('ダウンロードする更新ファイルがありません')
+        return
+      }
+      const entries: Record<string, Uint8Array> = {}
+      for (const f of files) entries[f.path] = f.bytes
+      const zipped = zipSync(entries, { level: 6 })
+      const blob = new Blob([zipped as BlobPart], { type: 'application/zip' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `changed-${new Date().toISOString().slice(0, 10)}.zip`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      this.showToast(`${files.length}ファイルを ZIP にまとめました`)
+    } catch (e) {
+      console.error('ZIP生成エラー:', e)
+      this.showToast('ZIP の作成に失敗しました')
+    } finally {
+      this.zipping = false
     }
   },
 

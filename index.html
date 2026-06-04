@@ -2630,7 +2630,10 @@
 
             <!-- テンプレートエディタ -->
             <template x-if="view === 'templates'">
-              <div class="flex h-full">
+              <div
+                class="flex h-full"
+                x-data="{ refWidth: Number(localStorage.getItem('cms-ref-width')) || 320 }"
+              >
                 <!-- 左: ファイル一覧 -->
                 <div
                   class="w-64 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
@@ -2732,7 +2735,7 @@
                 </div>
 
                 <!-- 中央: コードエディタ -->
-                <div class="flex-1 flex flex-col overflow-hidden">
+                <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
                   <template x-if="currentTemplateFile">
                     <div class="flex-1 flex flex-col">
                       <div class="gh-editor-header px-4">
@@ -2798,9 +2801,31 @@
                   </template>
                 </div>
 
+                <!-- リサイズハンドル（ドラッグでリファレンス幅を調整） -->
+                <div
+                  role="separator"
+                  aria-orientation="vertical"
+                  title="ドラッグで幅を調整"
+                  class="w-1 shrink-0 cursor-col-resize bg-[var(--ds-border-default)] hover:bg-[var(--ds-primary-400)] transition-colors"
+                  @mousedown.prevent="
+                    const startX = $event.clientX; const startW = refWidth;
+                    const move = (ev) => { refWidth = Math.min(720, Math.max(240, startW + (startX - ev.clientX))); };
+                    const up = () => {
+                      window.removeEventListener('mousemove', move);
+                      window.removeEventListener('mouseup', up);
+                      document.body.style.userSelect = '';
+                      localStorage.setItem('cms-ref-width', refWidth);
+                    };
+                    window.addEventListener('mousemove', move);
+                    window.addEventListener('mouseup', up);
+                    document.body.style.userSelect = 'none';
+                  "
+                ></div>
+
                 <!-- 右: リファレンスパネル -->
                 <aside
-                  class="w-80 shrink-0 border-l border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
+                  class="shrink-0 border-l border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
+                  :style="'width:' + refWidth + 'px'"
                 >
                   <div class="p-3">
                     <h3

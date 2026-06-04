@@ -184,6 +184,8 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
         totalFiles: result.totalFiles,
         changedFiles: result.changedFiles,
         removedFiles: removed.length,
+        changedPaths: changed.map((f) => f.path),
+        removedPaths: removed,
       }
       this.view = 'export-result'
     } catch (e) {

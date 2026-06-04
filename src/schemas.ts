@@ -181,6 +181,10 @@ export const ExportResultSchema = z.object({
   totalFiles: z.number(),
   changedFiles: z.number(),
   removedFiles: z.number(),
+  /** 今回 changed/ に出力された更新ファイルのパス一覧（dist/ 基準の相対パス） */
+  changedPaths: z.array(z.string()).optional(),
+  /** 今回削除されたファイルのパス一覧 */
+  removedPaths: z.array(z.string()).optional(),
 })
 
 // ----- リビジョン -----

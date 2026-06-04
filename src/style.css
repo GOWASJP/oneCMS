@@ -731,7 +731,7 @@ input[type='file']::file-selector-button:active {
    Editor.js
    ============================================================ */
 
-/* WordPress Gutenberg 風のキャンバス型エディタ：枠線・背景なし、本文全面に展開 */
+/* キャンバス型エディタ：枠線・背景なし、本文全面に展開 */
 .gh-editorjs {
   min-height: 480px;
   border: none;

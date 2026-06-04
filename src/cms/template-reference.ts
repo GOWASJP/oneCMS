@@ -152,6 +152,136 @@ export const TAG_SNIPPETS = [
 
 export const TEMPLATE_REFERENCE_GROUPS = [
   {
+    id: 'getting-started',
+    label: 'テーマの構成と作り方',
+    items: [
+      {
+        label: 'テーマの構成（themes/<id>/）',
+        code: `themes/my-theme/
+  theme.json          # テーマの識別情報（manifest）
+  _base.hbs           # 全ページ共通の外枠
+  home.hbs            # フロントページ（/）
+  page.hbs            # 固定ページ
+  list.hbs            # 投稿タイプ一覧
+  detail.hbs          # 投稿タイプ詳細
+  _components/        # {{> name}} で呼ぶ再利用パーシャル
+    head.hbs header.hbs footer.hbs nav.hbs styles.hbs ...`,
+        note: '1テーマ＝1フォルダの差し替え可能なパッケージ。CMS はアクティブテーマのフォルダを読んで公開サイトを生成します。',
+      },
+      {
+        label: 'theme.json（manifest）',
+        code: `{
+  "id": "my-theme",
+  "name": "My Theme",
+  "version": "1.0",
+  "author": "you",
+  "engine": "handlebars",
+  "apiVersion": "1"
+}`,
+        note: 'テーマの識別情報のみ。色やフォントはここではなく styles.hbs(CSS) に直接書きます。',
+      },
+      {
+        label: '_base.hbs（共通の外枠）',
+        code: `<!doctype html>
+<html lang="{{lang}}">
+<head>{{> head}}</head>
+<body>
+  {{> header}}
+  <main class="site-main">{{{content}}}</main>
+  {{> footer}}
+</body>
+</html>`,
+        note: '各ページ本体は {{{content}}}（三重括弧）に差し込まれます。<head> には書き出し時に generator/ライセンス透かしも自動注入されます。',
+      },
+      {
+        label: 'ページ本体（種別ごとに使い分け）',
+        code: `home.hbs    →  フロントページ（/）
+page.hbs    →  固定ページ
+list.hbs    →  投稿タイプの一覧
+detail.hbs  →  投稿タイプの詳細`,
+        note: 'home.hbs が無ければ page.hbs にフォールバック。各種別で使える変数は「ページ種別ごとの変数」を参照。',
+      },
+      {
+        label: 'コンポーネント（再利用パーシャル）',
+        code: `{{> head}}   {{> header}}   {{> footer}}   {{> nav}}   {{> styles}}`,
+        note: '_components/<name>.hbs を {{> name}} で呼び出します。テンプレートに無いものは最小デフォルトが補われます。',
+      },
+      {
+        label: 'レンダリングの流れ',
+        code: `本体(home/page/list/detail) を描画
+  → {{{content}}} に差し込み
+  → _base.hbs で全体を包む
+  → <head> に透かしを注入して書き出し`,
+        note: 'pageType（page / list / detail）で本体テンプレートが選ばれます。',
+      },
+      {
+        label: '最小テーマの雛形（_base + page）',
+        code: `<!-- _base.hbs -->
+<!doctype html><html lang="{{lang}}"><head>
+<meta charset="utf-8"><title>{{page.title}} | {{site.name}}</title>
+{{> styles}}
+</head><body>{{{content}}}</body></html>
+
+<!-- page.hbs -->
+<article><h1>{{page.title}}</h1>{{{page.body}}}</article>`,
+        note: 'ゼロから始めるなら、まず _base.hbs と page.hbs だけでも動きます。',
+      },
+      {
+        label: '色・フォントの定義（styles.hbs）',
+        code: `<style>
+  :root{
+    --color-primary:#2563eb;
+    --font-body: system-ui, sans-serif;
+  }
+  body{ font-family:var(--font-body); }
+  a{ color:var(--color-primary); }
+</style>`,
+        note: '見た目は CMS 設定ではなくテーマ内の CSS で直接定義します（_components/styles.hbs など）。',
+      },
+    ],
+  },
+  {
+    id: 'page-types',
+    label: 'ページ種別ごとの変数',
+    items: [
+      {
+        label: '全種別で共通',
+        code: `{{site.name}} {{site.url}} {{lang}} {{defaultLang}} {{pagePath}}
+{{#each breadcrumb}}{{label}}{{/each}}
+{{#each locales}}{{code}}{{/each}}`,
+        note: 'site / lang / defaultLang / pagePath / breadcrumb / locales はどのページでも使えます。',
+      },
+      {
+        label: '固定ページ（home.hbs / page.hbs）',
+        code: `{{page.title}}
+{{{page.body}}}
+{{page.slug}}
+{{#if isHome}}…フロントページ専用…{{/if}}`,
+        note: 'page（title / slug / body / _meta.updatedAt / _meta.author …）と、フロントページか判定する isHome。',
+      },
+      {
+        label: '一覧（list.hbs）',
+        code: `<h1>{{type.label}}</h1>
+{{#each items}}
+  <a href="{{url}}">{{title}}</a>
+{{/each}}
+ページ {{current}} / {{total}}
+{{#if prevUrl}}<a href="{{prevUrl}}">前へ</a>{{/if}}
+{{#if nextUrl}}<a href="{{nextUrl}}">次へ</a>{{/if}}`,
+        note: 'type / items / current / total / pages / prevUrl / nextUrl。',
+      },
+      {
+        label: '詳細（detail.hbs）',
+        code: `<h1>{{page.title}}</h1>
+<time>{{formatDate page.publishedAt 'YYYY年MM月DD日'}}</time>
+{{{page.body}}}
+{{page.category}}
+{{#each page.tags}}<span>{{this}}</span>{{/each}}`,
+        note: 'page = そのコンテンツ項目。投稿タイプで定義したフィールドも page.<キー> で参照できます。',
+      },
+    ],
+  },
+  {
     id: 'variables',
     label: 'サイト共通変数',
     items: [

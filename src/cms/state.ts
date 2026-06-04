@@ -208,9 +208,11 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
     categorySnippets: CATEGORY_SNIPPETS,
     tagSnippets: TAG_SNIPPETS,
 
-    // テンプレートエディタの右パネル開閉状態（デフォルトで variables のみ展開）
+    // テンプレートエディタの右パネル開閉状態（デフォルトで「テーマの構成と作り方」を展開）
     templateRefOpenSection: {
-      variables: true,
+      'getting-started': true,
+      'page-types': false,
+      variables: false,
       page: false,
       helpers: false,
       conditions: false,

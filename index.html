@@ -218,7 +218,7 @@
                     class="gh-nav-item w-full"
                   >
                     <i data-lucide="code" class="w-[18px] h-[18px]"></i>
-                    <span>テンプレート</span>
+                    <span>テーマ開発</span>
                   </button>
                 </template>
 
@@ -2636,6 +2636,26 @@
                   class="w-64 shrink-0 border-r border-[var(--ds-border-default)] overflow-y-auto bg-[var(--ds-bg-muted)]"
                 >
                   <div class="p-3">
+                    <!-- テーマ開発: 編集中テーマと案内（対象はウェブ制作者） -->
+                    <div class="mb-3 pb-3 border-b border-[var(--ds-border-default)]">
+                      <h2 class="text-sm font-bold text-[var(--ds-text-heading)]">テーマ開発</h2>
+                      <p class="text-[11px] text-[var(--ds-text-muted)] mt-1 leading-snug">
+                        編集中:
+                        <span
+                          class="font-medium"
+                          x-text="activeThemeManifest?.name || activeThemeId"
+                        ></span>
+                        <span class="font-mono">
+                          （themes/
+                          <span x-text="activeThemeId"></span>
+                          /）
+                        </span>
+                      </p>
+                      <p class="text-[10px] text-[var(--ds-text-muted)] mt-1 leading-snug">
+                        現在のテーマの Handlebars
+                        テンプレートを直接編集します。右の「テーマの構成と作り方」「ページ種別ごとの変数」やヘルパ一覧を参照しながら組み立ててください。
+                      </p>
+                    </div>
                     <template x-if="templateUpdates.length">
                       <button
                         @click="showTemplateUpdates = true"

@@ -134,7 +134,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
 
   openTypeEditor(type?: ContentType) {
     const raw = type
-      ? JSON.parse(JSON.stringify(type))
+      ? structuredClone(type)
       : {
           id: '',
           label: '',
@@ -222,7 +222,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
   },
 
   openFieldGroup(group: FieldGroup) {
-    this.currentFieldGroup = JSON.parse(JSON.stringify(group))
+    this.currentFieldGroup = structuredClone(group)
     if (!this.currentFieldGroup!.locations) this.currentFieldGroup!.locations = []
     // UI用プロパティ付与
     this.currentFieldGroup!.fields = this.currentFieldGroup!.fields.map((f: any) => ({

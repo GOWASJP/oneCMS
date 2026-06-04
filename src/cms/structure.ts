@@ -292,7 +292,7 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   // --- 言語設定 ---
 
   loadLangEditor() {
-    this.langEditorData = JSON.parse(JSON.stringify(this.languages))
+    this.langEditorData = structuredClone(this.languages)
     this.showLangEditor = true
   },
 

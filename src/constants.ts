@@ -91,6 +91,16 @@ export const CONTENT_STATUSES = [
   { value: 'archived', label: 'アーカイブ' },
 ] as const
 
+// --- 書き出し（静的サイト生成） ---
+/** 検索インデックスの本文抜粋の最大文字数 */
+export const SEARCH_EXCERPT_LENGTH = 300
+/** meta description を本文から自動生成する際の最大文字数 */
+export const AUTO_DESCRIPTION_LENGTH = 120
+/** コンテンツタイプ一覧の1ページあたり件数（type.pagination 未指定時の既定） */
+export const DEFAULT_PAGINATION = 10
+/** 詳細ページ書き出しで UI を固めないようメインスレッドを解放する件数間隔 */
+export const EXPORT_YIELD_INTERVAL = 50
+
 // --- カスタムフィールドタイプ ---
 export const FIELD_TYPES = [
   'text',

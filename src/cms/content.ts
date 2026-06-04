@@ -545,15 +545,22 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     const frontId = this.frontPageId
     const excludeFront = (p: ContentData): boolean => p.id !== frontId
     if (!currentId) return this.pages.filter(excludeFront)
+    // 親IDごとに子ページをインデックス化し、BFS内での全件走査（O(n^2)）を避ける
+    const childrenByParent = new Map<string, ContentData[]>()
+    for (const p of this.pages) {
+      const parent = (p.parent || '') as string
+      if (!childrenByParent.has(parent)) childrenByParent.set(parent, [])
+      childrenByParent.get(parent)!.push(p)
+    }
     // currentId の子孫 id 集合を計算（BFS）
     const descendants = new Set<string>()
     const queue: string[] = [currentId]
     while (queue.length) {
       const id = queue.shift() as string
-      for (const p of this.pages) {
-        if ((p.parent || '') === id && !descendants.has(p.id)) {
-          descendants.add(p.id)
-          queue.push(p.id)
+      for (const child of childrenByParent.get(id) || []) {
+        if (!descendants.has(child.id)) {
+          descendants.add(child.id)
+          queue.push(child.id)
         }
       }
     }
@@ -610,12 +617,13 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     const currentId = this.editData.id || ''
     const currentSlug = this.editData.slug || this.editData.id || ''
     if (!currentSlug || currentId === frontId) return '/'
+    const pageById = new Map(this.pages.map((p) => [p.id, p]))
     const chain: string[] = []
     let parentId = (this.editData.parent as string | undefined) || ''
     const visited = new Set<string>()
     while (parentId && !visited.has(parentId)) {
       visited.add(parentId)
-      const parent = this.pages.find((p) => p.id === parentId)
+      const parent = pageById.get(parentId)
       if (!parent) break
       // フロントページは / にマップされるのでパスには含めない
       if (parent.id !== frontId) chain.unshift(slugOf(parent))

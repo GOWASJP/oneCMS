@@ -16,6 +16,10 @@ import {
   LICENSE_ID,
   CANARY,
   STAMP_VERSION,
+  SEARCH_EXCERPT_LENGTH,
+  AUTO_DESCRIPTION_LENGTH,
+  DEFAULT_PAGINATION,
+  EXPORT_YIELD_INTERVAL,
 } from './constants.ts'
 
 // Alpine.js CDN ビルド: 公開サイトの dist/assets/js/ に書き出す
@@ -25,6 +29,11 @@ type TemplateFunction = (context: Record<string, unknown>) => string
 
 /** メインスレッドを一瞬解放して UI（進捗バー）を更新させる */
 const yieldToMain = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+/** 公開対象か判定：status が 'published'、または status 未指定（後方互換）なら公開とみなす */
+function isPublished(item: { status?: string }): boolean {
+  return item.status === 'published' || !item.status
+}
 
 /** 文字列の SHA-256（16進）。書き出し前の変更検知に使用 */
 async function sha256(text: string): Promise<string> {
@@ -152,7 +161,7 @@ export class Exporter {
       const desc =
         (page.description as string) ||
         stripHtmlTags((page.body as string) || '')
-          .substring(0, 120)
+          .substring(0, AUTO_DESCRIPTION_LENGTH)
           .trim()
       if (!desc) return ''
       return new Handlebars.SafeString(
@@ -358,18 +367,8 @@ export class Exporter {
     const menuData = (await this.fs.readJson<MenuData>('content/menus.json')) || {
       menus: [],
     }
-    // 全メニューを site.menus.<id> でアクセス可能にする
-    const menus: Record<string, MenuItem[]> = {}
-    for (const menu of menuData.menus || []) {
-      menus[menu.id] = menu.items || []
-    }
-    // site オブジェクトにメニューを注入
-    const site = {
-      ...siteConfig,
-      menus,
-      // 後方互換: 最初のメニューを nav として提供
-      nav: menuData.menus?.[0]?.items || siteConfig.nav || [],
-    }
+    // site オブジェクト（全メニューを site.menus.<id> で参照可能にし、後方互換で nav も付与）
+    const site = buildSiteObject(siteConfig, menuData)
 
     // 固定ページ・コンテンツを言語別に一度だけ並列読込してキャッシュする。
     // 従来は生成と検索インデックスで最大3回読んでいた I/O を1回に集約し、言語横断で並列化する。
@@ -433,7 +432,7 @@ export class Exporter {
       for (const type of contentTypes) {
         const items = rawItemsCache.get(lang)?.get(type.id) || []
         const published = items
-          .filter((i) => i.status === 'published' || !i.status)
+          .filter(isPublished)
           .sort((a, b) =>
             (b.publishedAt || b._meta?.createdAt || '').localeCompare(
               a.publishedAt || a._meta?.createdAt || '',
@@ -468,24 +467,8 @@ export class Exporter {
       // フロントページ（/ にマップする固定ページ id）。未設定サイトは 'index' にフォールバック。
       const frontPageId = siteConfig.frontPageId || 'index'
       // ページの最終URLパス（親チェーンを辿って / 区切りで連結）
-      // フロントページは / にマップされるため、親チェーンからは除外する
-      const resolvePagePath = (page: ContentData): string[] => {
-        const slugOf = (p: ContentData): string => p.slug || p.id
-        const chain: string[] = []
-        let current: ContentData | undefined = page
-        const visited = new Set<string>()
-        let isSelf = true
-        while (current && !visited.has(current.id)) {
-          visited.add(current.id)
-          const slug = slugOf(current)
-          // 親チェーンにフロントページが含まれた場合は省略（自身がフロントの場合のみ残す）
-          if (isSelf || current.id !== frontPageId) chain.unshift(slug)
-          isSelf = false
-          const parentId: string = (current.parent as string | undefined) || ''
-          current = parentId ? pageById.get(parentId) : undefined
-        }
-        return chain
-      }
+      const pagePathOf = (page: ContentData): string[] =>
+        resolvePagePath(page, pageById, frontPageId)
       // ページのパンくずを親チェーンから構築
       const resolveBreadcrumb = (page: ContentData): Array<{ label: string; url?: string }> => {
         const crumbs: Array<{ label: string; url?: string }> = [
@@ -503,7 +486,7 @@ export class Exporter {
           parentId = (parent.parent as string | undefined) || ''
         }
         for (const ancestor of ancestors) {
-          const segs = resolvePagePath(ancestor)
+          const segs = pagePathOf(ancestor)
           const url = ancestor.id === frontPageId ? '/' : `/${prefix}${segs.join('/')}/`
           crumbs.push({ label: ancestor.title, url })
         }
@@ -512,10 +495,10 @@ export class Exporter {
       }
 
       for (const page of langPages) {
-        if (page.status && page.status !== 'published') continue
+        if (!isPublished(page)) continue
 
         const breadcrumb = resolveBreadcrumb(page)
-        const segments = resolvePagePath(page)
+        const segments = pagePathOf(page)
         const isIndex = page.id === frontPageId
         const pagePath = isIndex ? '' : `${segments.join('/')}/`
 
@@ -555,9 +538,9 @@ export class Exporter {
       // コンテンツタイプ書き出し
       for (const type of contentTypes) {
         const items = rawItemsCache.get(lang)?.get(type.id) || []
-        const published = items.filter((i) => i.status === 'published' || !i.status)
+        const published = items.filter(isPublished)
 
-        const perPage = type.pagination || 10
+        const perPage = type.pagination || DEFAULT_PAGINATION
         const totalPages = Math.max(1, Math.ceil(published.length / perPage))
 
         for (let p = 1; p <= totalPages; p++) {
@@ -650,7 +633,7 @@ export class Exporter {
             content: fullHtml,
           })
           // 大量件数でも UI が固まらないよう一定間隔でメインスレッドを解放
-          if (++detailCount % 50 === 0) await yieldToMain()
+          if (++detailCount % EXPORT_YIELD_INTERVAL === 0) await yieldToMain()
         }
 
         step++
@@ -659,16 +642,9 @@ export class Exporter {
       }
     }
 
-    // sitemap.xml
+    // sitemap.xml（404・robots を追加する前の、実ページのみで構築）
     if (siteConfig.url) {
-      const sitemapEntries = files.map((f) => {
-        const url = `${siteConfig.url.replace(/\/$/, '')}/${f.path.replace(/index\.html$/, '')}`
-        return `  <url><loc>${url}</loc></url>`
-      })
-      files.push({
-        path: 'sitemap.xml',
-        content: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapEntries.join('\n')}\n</urlset>`,
-      })
+      files.push(buildSitemap(siteConfig.url, files))
     }
 
     // 404ページ書き出し（各言語・sitemap の後に追加して sitemap から除外）
@@ -739,17 +715,8 @@ export class Exporter {
       })
     }
 
-    // 透かしの注入：全 HTML の <head> にジェネレータ表記＋ライセンスID＋カナリアを埋め込む。
-    // テンプレートではなく書き出し側で注入するため、テンプレート編集では除去できない。
-    const stamp =
-      `<meta name="generator" content="ONE CMS${EDITION === 'pro' ? ' Pro' : ''}` +
-      `${LICENSE_ID ? ` #${LICENSE_ID}` : ''}">\n<!-- ${CANARY} -->`
-    for (const f of files) {
-      if (!f.path.endsWith('.html')) continue
-      f.content = f.content.includes('</head>')
-        ? f.content.replace('</head>', `${stamp}\n</head>`)
-        : `${stamp}\n${f.content}`
-    }
+    // 透かしを全 HTML に注入
+    injectStamp(files)
 
     return files
   }
@@ -774,30 +741,14 @@ export class Exporter {
       // 固定ページ（親チェーンで URL 構築）。読込済みキャッシュを再利用
       const pages = pagesCache.get(lang) || []
       const pageById = new Map(pages.map((p) => [p.id, p]))
-      const resolvePagePath = (page: ContentData): string[] => {
-        const slugOf = (p: ContentData): string => p.slug || p.id
-        const chain: string[] = []
-        let current: ContentData | undefined = page
-        const visited = new Set<string>()
-        let isSelf = true
-        while (current && !visited.has(current.id)) {
-          visited.add(current.id)
-          const slug = slugOf(current)
-          if (isSelf || current.id !== frontPageId) chain.unshift(slug)
-          isSelf = false
-          const parentId: string = (current.parent as string | undefined) || ''
-          current = parentId ? pageById.get(parentId) : undefined
-        }
-        return chain
-      }
       for (const page of pages) {
-        if (page.status && page.status !== 'published') continue
-        const segs = resolvePagePath(page)
+        if (!isPublished(page)) continue
+        const segs = resolvePagePath(page, pageById, frontPageId)
         const isIndex = page.id === frontPageId
         const url = isIndex ? `/${prefix}` : `/${prefix}${segs.join('/')}/`
         index.push({
           title: page.title,
-          body: stripHtmlTags(page.body || '').substring(0, 300),
+          body: stripHtmlTags(page.body || '').substring(0, SEARCH_EXCERPT_LENGTH),
           url,
           lang,
           type: 'page',
@@ -809,10 +760,10 @@ export class Exporter {
       for (const type of contentTypes) {
         const items = rawItemsCache.get(lang)?.get(type.id) || []
         for (const item of items) {
-          if (item.status && item.status !== 'published') continue
+          if (!isPublished(item)) continue
           index.push({
             title: item.title,
-            body: stripHtmlTags(item.body || '').substring(0, 300),
+            body: stripHtmlTags(item.body || '').substring(0, SEARCH_EXCERPT_LENGTH),
             url: `/${prefix}${type.slug}/${item.slug || item.id}/`,
             lang,
             type: type.id,
@@ -856,24 +807,95 @@ export class Exporter {
   <div class="results" id="results"></div>
   <script>
     let index=[];
-    fetch('/search-index.${lang}.json').then(r=>r.json()).then(d=>{index=d});
+    // 取得時に検索用の小文字インデックスを一度だけ作る（入力ごとの再変換を避ける）
+    fetch('/search-index.${lang}.json').then(r=>r.json()).then(d=>{
+      for(const i of d)i._s=(i.title+' '+i.body).toLowerCase();
+      index=d;
+    });
     const q=document.getElementById('q');
     const r=document.getElementById('results');
-    q.addEventListener('input',()=>{
+    function run(){
       const t=q.value.trim().toLowerCase();
       if(!t){r.innerHTML='';return}
-      const matches=index.filter(i=>(i.title+i.body).toLowerCase().includes(t));
+      const matches=index.filter(i=>i._s.includes(t));
       if(!matches.length){r.innerHTML='<div class="no-results">見つかりませんでした</div>';return}
       r.innerHTML='<div class="count">'+matches.length+'件</div>'+matches.map(m=>
         '<div class="result"><h2><a href="'+m.url+'">'+hl(m.title,t)+'</a></h2>'
         +(m.date?'<time>'+m.date+'</time>':'')
         +'<p>'+hl(m.body.substring(0,150),t)+'</p></div>'
       ).join('');
-    });
+    }
+    // 連続入力ではデバウンスして無駄な全件走査を抑える
+    let timer;
+    q.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(run,120)});
     function hl(s,t){return s.replace(new RegExp('('+t.replace(/[.*+?^\${}()|[\\]\\\\]/g,'\\\\$&')+')','gi'),'<mark>$1</mark>')}
   </script>
 </body>
 </html>`
+  }
+}
+
+/** ページの最終URLパスを親チェーンから解決して slug 配列で返す。
+ *  フロントページは / にマップされるため、親チェーンからは除外する（自身がフロントの場合のみ残す）。
+ *  exportAll の生成と buildSearchIndex の両方から使う共通ロジック。 */
+function resolvePagePath(
+  page: ContentData,
+  pageById: Map<string, ContentData>,
+  frontPageId: string,
+): string[] {
+  const slugOf = (p: ContentData): string => p.slug || p.id
+  const chain: string[] = []
+  let current: ContentData | undefined = page
+  const visited = new Set<string>()
+  let isSelf = true
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id)
+    const slug = slugOf(current)
+    if (isSelf || current.id !== frontPageId) chain.unshift(slug)
+    isSelf = false
+    const parentId: string = (current.parent as string | undefined) || ''
+    current = parentId ? pageById.get(parentId) : undefined
+  }
+  return chain
+}
+
+/** サイト設定とメニューデータから、テンプレートに渡す site オブジェクトを組み立てる。
+ *  全メニューを site.menus.<id> でアクセス可能にし、後方互換で先頭メニューを nav に出す。 */
+function buildSiteObject(siteConfig: SiteConfig, menuData: MenuData) {
+  const menus: Record<string, MenuItem[]> = {}
+  for (const menu of menuData.menus || []) {
+    menus[menu.id] = menu.items || []
+  }
+  return {
+    ...siteConfig,
+    menus,
+    nav: menuData.menus?.[0]?.items || siteConfig.nav || [],
+  }
+}
+
+/** これまでに生成した全ファイルの URL から sitemap.xml を構築する。 */
+function buildSitemap(siteUrl: string, files: ExportFile[]): ExportFile {
+  const base = siteUrl.replace(/\/$/, '')
+  const entries = files.map(
+    (f) => `  <url><loc>${base}/${f.path.replace(/index\.html$/, '')}</loc></url>`,
+  )
+  return {
+    path: 'sitemap.xml',
+    content: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>`,
+  }
+}
+
+/** 全 HTML の <head> にジェネレータ表記＋ライセンスID＋カナリアの透かしを注入する（files を破壊的に更新）。
+ *  テンプレートではなく書き出し側で注入するため、テンプレート編集では除去できない。 */
+function injectStamp(files: ExportFile[]): void {
+  const stamp =
+    `<meta name="generator" content="ONE CMS${EDITION === 'pro' ? ' Pro' : ''}` +
+    `${LICENSE_ID ? ` #${LICENSE_ID}` : ''}">\n<!-- ${CANARY} -->`
+  for (const f of files) {
+    if (!f.path.endsWith('.html')) continue
+    f.content = f.content.includes('</head>')
+      ? f.content.replace('</head>', `${stamp}\n</head>`)
+      : `${stamp}\n${f.content}`
   }
 }
 

@@ -308,7 +308,7 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       const hasRootSiteJson = await hasFile(handle, 'site.json')
       const hasContentDir = await hasDir(handle, 'content')
       if (hasRootSiteJson && !hasContentDir) {
-        this.showToast('content/ ではなくプロジェクトのルートフォルダを選択してください', 5000)
+        this.showToast(this.t('toast.selectRootFolder'), 5000)
         return
       }
 
@@ -568,7 +568,7 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
         this.schemaWarning =
           `このデータは新しいバージョン（データ形式 v${from}）で作成されています。` +
           `現在の本体は v${SCHEMA_VERSION} までの対応です。最新の cms.html をご利用ください。`
-        this.showToast('警告: このデータは新しいバージョンで作成されています', 6000)
+        this.showToast(this.t('toast.dataNewerWarning'), 6000)
         return
       }
       this.schemaWarning = null
@@ -577,11 +577,11 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       // メタ情報を現行の本体情報で更新（本体バージョン・エディションの記録も兼ねる）
       await writeMeta(this.fs, currentMeta())
       if (result.applied.length > 0) {
-        this.showToast(`データを最新形式に移行しました（バックアップ: ${result.backupPath}）`, 6000)
+        this.showToast(this.t('toast.migrated', { path: result.backupPath || '' }), 6000)
       }
     } catch (e) {
       console.error('[CMS] データ移行に失敗:', e)
-      this.showToast('データ移行中にエラーが発生しました。コンソールを確認してください。', 6000)
+      this.showToast(this.t('toast.migrationError'), 6000)
     }
   },
 
@@ -602,7 +602,7 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       /\.(ico|png|svg|webp)$/i,
     )
     if (!ext) {
-      this.showToast('ico / png / svg / webp 形式のみアップロードできます', 5000)
+      this.showToast(this.t('toast.faviconFormat'), 5000)
       input.value = ''
       return
     }
@@ -616,10 +616,10 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
       this.faviconBlobUrl = await loadFaviconBlobUrl(this.fs, this.siteConfig.favicon)
       applyFaviconLink(this.faviconBlobUrl)
-      this.showToast('ファビコンをアップロードしました')
+      this.showToast(this.t('toast.faviconUploaded'))
     } catch (e) {
       console.error('ファビコンアップロードエラー:', e)
-      this.showToast('ファビコンの処理に失敗しました')
+      this.showToast(this.t('toast.faviconFailed'))
     } finally {
       input.value = ''
     }
@@ -635,7 +635,7 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     clearFaviconBlobUrl()
     this.faviconBlobUrl = ''
     applyFaviconLink('')
-    this.showToast('ファビコンを削除しました')
+    this.showToast(this.t('toast.faviconRemoved'))
   },
 
   /** サイトロゴアップロード: assets/files/logo.<ext> に保存し、siteConfig.logo にパスを記録 */
@@ -654,7 +654,7 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       /\.(png|svg|webp|jpe?g)$/i,
     )
     if (!ext) {
-      this.showToast('png / svg / webp / jpg 形式のみアップロードできます', 5000)
+      this.showToast(this.t('toast.logoFormat'), 5000)
       input.value = ''
       return
     }
@@ -667,10 +667,10 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       this.siteConfig.logo = `/${path}`
       await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
       this.logoBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.logo)
-      this.showToast('ロゴをアップロードしました')
+      this.showToast(this.t('toast.logoUploaded'))
     } catch (e) {
       console.error('ロゴアップロードエラー:', e)
-      this.showToast('ロゴの処理に失敗しました')
+      this.showToast(this.t('toast.logoFailed'))
     } finally {
       input.value = ''
     }
@@ -685,12 +685,12 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
     if (this.logoBlobUrl) URL.revokeObjectURL(this.logoBlobUrl)
     this.logoBlobUrl = ''
-    this.showToast('ロゴを削除しました')
+    this.showToast(this.t('toast.logoRemoved'))
   },
 
   async saveSiteConfig() {
     if (!this.fs) return
     await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
-    this.showToast('サイト設定を保存しました')
+    this.showToast(this.t('toast.siteConfigSaved'))
   },
 }

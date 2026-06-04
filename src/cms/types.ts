@@ -28,7 +28,7 @@ export interface CmsComponent {
   // 管理画面の表示言語（i18n）。コンテンツ言語 currentLang とは別。
   uiLocale: string
   uiCatalog: Record<string, string>
-  t(key: string): string
+  t(key: string, params?: Record<string, string | number>): string
   setUiLocale(locale: string): Promise<void>
   loadUiCatalog(): Promise<void>
   ensureI18nFiles(): Promise<void>

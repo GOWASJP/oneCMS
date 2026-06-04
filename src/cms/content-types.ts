@@ -341,7 +341,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     if (!this.fs || !this.currentFieldGroup) return
     const g = this.currentFieldGroup
     if (!g.label.trim()) {
-      this.showToast('ラベルを入力してください')
+      this.showToast(this.t('toast.enterLabel'))
       return
     }
     if (!g.id) {
@@ -378,7 +378,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
       ...(cleanedLocations.length ? { locations: cleanedLocations } : {}),
     })
     this.fieldGroups = await this.fs.readFieldGroups()
-    this.showToast(`${g.label} を保存しました`)
+    this.showToast(this.t('toast.savedNamed', { name: g.label }))
   },
 
   async deleteFieldGroup() {
@@ -394,7 +394,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     }
     this.fieldGroups = await this.fs!.readFieldGroups()
     this.currentFieldGroup = null
-    this.showToast('削除しました')
+    this.showToast(this.t('toast.deleted'))
   },
 
   /** カスタムフィールドのテンプレートコードを生成 */
@@ -483,7 +483,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     if (!this.fs || !this.editingType) return
     const t = this.editingType
     if (!t.label.trim()) {
-      this.showToast('ラベルを入力してください')
+      this.showToast(this.t('toast.enterLabel'))
       return
     }
     if (!t.id) {
@@ -504,7 +504,7 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     this.contentTypes = await this.fs.readContentTypes()
     this.showTypeEditor = false
     this.editingType = null
-    this.showToast(`${t.label} を保存しました`)
+    this.showToast(this.t('toast.savedNamed', { name: t.label }))
   },
 
   async deleteType() {
@@ -534,6 +534,6 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
     this.editingType = null
     this.currentType = null
     this.view = 'welcome'
-    this.showToast('削除しました')
+    this.showToast(this.t('toast.deleted'))
   },
 }

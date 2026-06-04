@@ -4,13 +4,17 @@ import { DEFAULT_UI_CATALOGS } from '../i18n-catalogs.ts'
 
 export const i18nMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   /** 翻訳: シンボリックキー → 現在のUI言語の訳。
-   *  未訳は「既定カタログ(現在言語) → 既定カタログ(日本語) → キー」の順にフォールバック。 */
-  t(key: string): string {
+   *  未訳は「既定カタログ(現在言語) → 既定カタログ(日本語) → キー」の順にフォールバック。
+   *  params を渡すと訳文中の {name} 形式を置換（語順が言語で異なる文に対応）。 */
+  t(key: string, params?: Record<string, string | number>): string {
     const c = this.uiCatalog
-    if (c && c[key]) return c[key]
-    const def = DEFAULT_UI_CATALOGS[this.uiLocale]
-    if (def && def[key]) return def[key]
-    return DEFAULT_UI_CATALOGS.ja[key] || key
+    let s =
+      (c && c[key]) || DEFAULT_UI_CATALOGS[this.uiLocale]?.[key] || DEFAULT_UI_CATALOGS.ja[key]
+    if (s === undefined) return key
+    if (params) {
+      for (const [k, v] of Object.entries(params)) s = s.split(`{${k}}`).join(String(v))
+    }
+    return s
   },
 
   /** UI言語を切り替え（localStorage 保存＋カタログ再読込） */

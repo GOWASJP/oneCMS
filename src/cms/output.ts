@@ -50,7 +50,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.showRevisionPanel = false
     // 復元内容は未保存状態扱い（ユーザーが確認して保存ボタンを押せるように）
     this.markDirty()
-    this.showToast('リビジョンを復元しました')
+    this.showToast(this.t('toast.revisionRestored'))
   },
 
   // --- プレビュー ---
@@ -168,7 +168,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
 
       // 変更がなければ全体スキップ（増分書き出し）
       if (files === null) {
-        this.showToast('前回から変更がないため、書き出しをスキップしました', 5000)
+        this.showToast(this.t('toast.exportSkipped'), 5000)
         return
       }
 
@@ -191,7 +191,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       this.view = 'export-result'
     } catch (e) {
       console.error('書き出しエラー:', e)
-      this.showToast('書き出しに失敗しました')
+      this.showToast(this.t('toast.exportFailed'))
     } finally {
       this.exporting = false
       this.exportProgress = null
@@ -206,7 +206,7 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     try {
       const files = await this.fs.readDirFilesRecursive(PATH_CHANGED)
       if (!files.length) {
-        this.showToast('ダウンロードする更新ファイルがありません')
+        this.showToast(this.t('toast.noChangedFiles'))
         return
       }
       const entries: Record<string, Uint8Array> = {}
@@ -221,10 +221,10 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-      this.showToast(`${files.length}ファイルを ZIP にまとめました`)
+      this.showToast(this.t('toast.zipped', { n: files.length }))
     } catch (e) {
       console.error('ZIP生成エラー:', e)
-      this.showToast('ZIP の作成に失敗しました')
+      this.showToast(this.t('toast.zipFailed'))
     } finally {
       this.zipping = false
     }
@@ -401,6 +401,6 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   async saveTemplateFile() {
     if (!this.fs || !this.currentTemplateFile) return
     await this.fs.writeText(this.currentTemplateFile, this.templateCode)
-    this.showToast('テンプレートを保存しました')
+    this.showToast(this.t('toast.templateSaved'))
   },
 }

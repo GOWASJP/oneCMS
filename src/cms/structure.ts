@@ -77,7 +77,7 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       : (await this.fs.readPages(sourceLang)).find((p) => p.id === pageId) || null
 
     if (!sourceData) {
-      this.showToast(`${sourceLang} のデータが見つかりません`)
+      this.showToast(this.t('toast.langDataNotFound', { lang: sourceLang }))
       return
     }
 
@@ -99,7 +99,7 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       this.suppressDirty = false
       this.markDirty()
     })
-    this.showToast(`${sourceLang} の内容をコピーしました`)
+    this.showToast(this.t('toast.langCopied', { lang: sourceLang }))
   },
 
   /** 翻訳ステータスを取得・更新
@@ -203,7 +203,7 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       parent: '',
       order: this.currentMenu.items.length,
     })
-    this.showToast(`「${itemLabel}」を追加しました`)
+    this.showToast(this.t('toast.itemAdded', { name: itemLabel }))
   },
 
   async removeMenuItem(idx: number) {
@@ -240,7 +240,7 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       })
     }
     await this.fs.writeJson(PATH_MENUS, this.menuData)
-    this.showToast('メニューを保存しました')
+    this.showToast(this.t('toast.menuSaved'))
   },
 
   // --- タクソノミー管理 ---
@@ -280,7 +280,7 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     })
     this.availableCategories = this.taxonomyData.categories
     this.availableTags = this.taxonomyData.tags
-    this.showToast('カテゴリ・タグを保存しました')
+    this.showToast(this.t('toast.taxonomySaved'))
   },
 
   // --- 言語設定 ---
@@ -303,6 +303,6 @@ export const structureMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     await this.fs.writeJson(PATH_LANGUAGES, this.langEditorData)
     this.languages = JSON.parse(JSON.stringify(this.langEditorData))
     this.showLangEditor = false
-    this.showToast('言語設定を保存しました')
+    this.showToast(this.t('toast.langSaved'))
   },
 }

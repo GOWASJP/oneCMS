@@ -66,7 +66,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.pages = await this.fs.readPages(this.currentLang)
     const front = this.pages.find((p) => p.id === this.frontPageId)
     if (!front) {
-      this.showToast('フロントページが設定されていません。設定でフロントページを選択してください')
+      this.showToast(this.t('toast.noFrontPage'))
       await this.loadPageList()
       return
     }
@@ -116,7 +116,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     await this.fs.rebuildContentIndexForLang(this.currentType.id, this.currentLang)
     this.contentItems = await this.fs.readContentListLight(this.currentType.id, this.currentLang)
     this.contentPage = 1
-    this.showToast('一覧を再構築しました')
+    this.showToast(this.t('toast.listRebuilt'))
   },
 
   async openContent(item: ContentData) {
@@ -127,7 +127,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       if (full) {
         data = full
       } else {
-        this.showToast('コンテンツが見つかりませんでした')
+        this.showToast(this.t('toast.contentNotFound'))
         await this.openContentType(this.currentType)
         return
       }
@@ -241,10 +241,10 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
         [fieldKey]: `/${result.path}`,
       }
       const saved = ((1 - result.size / result.originalSize) * 100).toFixed(0)
-      this.showToast(`画像を最適化しました（${saved}%削減）`)
+      this.showToast(this.t('toast.imageOptimized', { pct: saved }))
     } catch (e) {
       console.error('画像最適化エラー:', e)
-      this.showToast('画像の処理に失敗しました')
+      this.showToast(this.t('toast.imageFailed'))
     }
   },
 
@@ -268,8 +268,8 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     }
     // 同じ input で再度同じファイルを選べるようにクリア
     input.value = ''
-    if (optimized) this.showToast(`${optimized}枚の画像を追加しました`)
-    else this.showToast('画像の処理に失敗しました')
+    if (optimized) this.showToast(this.t('toast.imagesAdded', { n: optimized }))
+    else this.showToast(this.t('toast.imageFailed'))
     this.markDirty()
   },
 
@@ -286,7 +286,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       this.markDirty()
     } catch (e) {
       console.error('画像最適化エラー:', e)
-      this.showToast('画像の処理に失敗しました')
+      this.showToast(this.t('toast.imageFailed'))
     }
   },
 
@@ -301,10 +301,10 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       const path = `${PATH_ASSETS_FILES}/${safeName}`
       await this.fs.writeBlob(path, new Blob([buffer]))
       this.editData[fieldKey] = `/${path}`
-      this.showToast(`${file.name} をアップロードしました`)
+      this.showToast(this.t('toast.uploaded', { name: file.name }))
     } catch (e) {
       console.error('ファイルアップロードエラー:', e)
-      this.showToast('ファイルのアップロードに失敗しました')
+      this.showToast(this.t('toast.fileUploadFailed'))
     }
   },
 
@@ -379,7 +379,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     if (this.editor) this.editData.body = bodyHtml
     // 必須フィールドバリデーション
     if (!this.editData.title?.trim()) {
-      if (!silent) this.showToast('タイトルを入力してください')
+      if (!silent) this.showToast(this.t('toast.enterTitle'))
       return
     }
     if (this.currentType) {
@@ -431,7 +431,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     }
 
     this.resetDirty()
-    if (!silent) this.showToast('保存しました')
+    if (!silent) this.showToast(this.t('toast.saved'))
   },
 
   // --- 削除 ---
@@ -457,7 +457,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.contentPage = 1
     this.currentPage = null
     this.view = 'content-list'
-    this.showToast('削除しました')
+    this.showToast(this.t('toast.deleted'))
   },
 
   async deletePage() {
@@ -475,7 +475,7 @@ export const contentMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.pages = await this.fs.readPages(this.currentLang)
     this.currentPage = null
     this.view = 'welcome'
-    this.showToast('削除しました')
+    this.showToast(this.t('toast.deleted'))
   },
 
   /** relation フィールドの候補リストを返す（指定コンテンツタイプの現言語公開済みアイテム） */

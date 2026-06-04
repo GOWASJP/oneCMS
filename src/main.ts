@@ -56,6 +56,7 @@ Alpine.data('cms', () => {
       if (this.view === 'site-info') return 'サイト情報'
       if (this.view === 'settings') return '設定'
       if (this.view === 'templates') return 'テンプレート'
+      if (this.view === 'themes') return 'テーマ'
       if (this.view === 'field-groups') return 'フィールド'
       if (this.view === 'taxonomy-categories') return 'カテゴリ'
       if (this.view === 'taxonomy-tags') return 'タグ'

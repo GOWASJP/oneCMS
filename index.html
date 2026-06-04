@@ -202,6 +202,14 @@
                   <i data-lucide="columns-3" class="w-[18px] h-[18px]"></i>
                   <span>フィールド</span>
                 </button>
+                <button
+                  @click="loadThemesPage()"
+                  :class="view === 'themes' ? 'gh-nav-active' : ''"
+                  class="gh-nav-item w-full"
+                >
+                  <i data-lucide="palette" class="w-[18px] h-[18px]"></i>
+                  <span>テーマ</span>
+                </button>
 
                 <template x-if="location.hostname === 'localhost'">
                   <button
@@ -2559,6 +2567,125 @@
               </div>
             </template>
 
+            <!-- テーマ（外観：テーマ選択＋カラー/フォント。WP の「外観 → テーマ」相当） -->
+            <template x-if="view === 'themes'">
+              <div class="px-8 pt-0 pb-16 max-w-5xl mx-auto">
+                <div class="gh-editor-header">
+                  <h1 class="text-lg font-bold">テーマ</h1>
+                  <div class="flex-1"></div>
+                  <button @click="saveSiteConfig()" class="gh-btn-green text-[13px]">保存</button>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- テーマを選ぶ -->
+                  <div>
+                    <h2 class="text-base font-bold text-[var(--ds-text-heading)] mb-1">
+                      テーマを選ぶ
+                    </h2>
+                    <p class="text-[12px] text-[var(--ds-text-muted)] mb-3">
+                      サイトの見た目（テンプレート一式）を選びます。「有効化」で即座に切り替わります。
+                    </p>
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                      <template x-for="t in installedThemes" :key="t.id">
+                        <div
+                          class="border rounded-lg p-4 transition"
+                          :class="activeThemeId === t.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)]' : 'border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)]'"
+                        >
+                          <div class="flex items-center gap-2 mb-1">
+                            <i
+                              data-lucide="palette"
+                              class="w-4 h-4 text-[var(--ds-primary-600)]"
+                            ></i>
+                            <span class="font-bold text-sm truncate" x-text="t.name"></span>
+                          </div>
+                          <p
+                            class="text-[11px] text-[var(--ds-text-muted)] mb-3"
+                            x-text="((t.version ? 'v' + t.version : '') + (t.author ? ' / ' + t.author : '')) || 'テーマパッケージ'"
+                          ></p>
+                          <template x-if="activeThemeId === t.id">
+                            <span
+                              class="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--ds-primary-600)]"
+                            >
+                              <i data-lucide="circle-check" class="w-3.5 h-3.5"></i>
+                              使用中
+                            </span>
+                          </template>
+                          <template x-if="activeThemeId !== t.id">
+                            <button @click="switchTheme(t.id)" class="gh-btn-outline text-[12px]">
+                              有効化
+                            </button>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+                    <p class="text-[11px] text-[var(--ds-text-muted)] mt-3 leading-snug">
+                      テーマは保存先フォルダの
+                      <code class="font-mono">themes/&lt;id&gt;/</code>
+                      に置かれた差し替え可能なパッケージです。
+                      <code class="font-mono">theme.json</code>
+                      を含む新しいテーマフォルダを追加すると、ここに表示されます。
+                    </p>
+                  </div>
+
+                  <div class="h-px bg-[var(--ds-border-default)]"></div>
+
+                  <!-- 外観（カラー・フォント。選択中テーマの theme.json 由来） -->
+                  <div>
+                    <h2 class="text-base font-bold text-[var(--ds-text-heading)] mb-1">外観</h2>
+                    <p class="text-[12px] text-[var(--ds-text-muted)] mb-3">
+                      選択中テーマ「
+                      <span x-text="activeThemeManifest?.name || activeThemeId"></span>
+                      」が提供するカラー・フォントから選び、「保存」で公開サイトに反映します。
+                    </p>
+
+                    <div class="mb-5">
+                      <label class="gh-label">カラー</label>
+                      <div class="flex gap-2 flex-wrap">
+                        <template x-for="c in (activeThemeManifest?.colors || [])" :key="c.id">
+                          <button
+                            @click="siteConfig.theme = {...(siteConfig.theme||{}), id: c.id, primary: c.primary, secondary: c.secondary}"
+                            class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all"
+                            :class="siteConfig.theme?.id === c.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] font-semibold text-[var(--ds-primary-600)]' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)] hover:border-[var(--ds-border-strong)]'"
+                          >
+                            <span
+                              class="w-4 h-4 rounded-full"
+                              :style="'background:'+c.primary"
+                            ></span>
+                            <span x-text="c.label"></span>
+                          </button>
+                        </template>
+                        <template x-if="!(activeThemeManifest?.colors || []).length">
+                          <p class="text-[12px] text-[var(--ds-text-muted)]">
+                            このテーマはカラー選択肢を提供していません。
+                          </p>
+                        </template>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="gh-label">フォント</label>
+                      <div class="flex gap-2 flex-wrap">
+                        <template x-for="f in (activeThemeManifest?.fonts || [])" :key="f.id">
+                          <button
+                            @click="siteConfig.theme = {...(siteConfig.theme||{}), fontId: f.id, fontFamily: f.family, fontCdn: f.cdn || ''}"
+                            class="px-3 py-2 rounded-md border text-sm transition-all"
+                            :class="siteConfig.theme?.fontId === f.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-600)]/5 font-semibold' : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'"
+                          >
+                            <span x-text="f.label"></span>
+                          </button>
+                        </template>
+                        <template x-if="!(activeThemeManifest?.fonts || []).length">
+                          <p class="text-[12px] text-[var(--ds-text-muted)]">
+                            このテーマはフォント選択肢を提供していません。
+                          </p>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+
             <!-- テンプレートエディタ -->
             <template x-if="view === 'templates'">
               <div class="flex h-full">
@@ -3005,77 +3132,17 @@
                     </div>
                   </div>
 
-                  <div class="h-px bg-[var(--ds-border-default)] my-2"></div>
-                  <h2 class="text-base font-bold text-[var(--ds-text-heading)]">
-                    公開サイトのデザイン
-                  </h2>
-
-                  <!-- テーマ（差し替え可能なパッケージ。themes/<id>/ をスキャン） -->
-                  <div>
-                    <label class="gh-label">テーマ</label>
-                    <div class="flex flex-col gap-2">
-                      <template x-for="t in installedThemes" :key="t.id">
-                        <button
-                          @click="switchTheme(t.id)"
-                          class="flex items-center justify-between gap-2 px-3 py-2 rounded-md border text-sm text-left transition-all"
-                          :class="activeThemeId === t.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] text-[var(--ds-primary-600)]' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)] hover:border-[var(--ds-border-strong)]'"
-                        >
-                          <span class="min-w-0">
-                            <span class="font-medium" x-text="t.name"></span>
-                            <span
-                              class="text-[11px] text-[var(--ds-text-muted)]"
-                              x-text="(t.version ? ' v' + t.version : '') + (t.author ? ' / ' + t.author : '')"
-                            ></span>
-                          </span>
-                          <template x-if="activeThemeId === t.id">
-                            <span class="shrink-0 text-[11px] font-semibold">使用中</span>
-                          </template>
-                        </button>
-                      </template>
-                      <p class="text-[11px] text-[var(--ds-text-muted)] leading-snug">
-                        テーマは
-                        <code class="font-mono">themes/&lt;id&gt;/</code>
-                        フォルダの差し替え可能なパッケージです。別フォルダを置くとここに表示され、切り替えられます。色/フォントの選択肢は選択中テーマの
-                        <code class="font-mono">theme.json</code>
-                        が提供します。
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- カラーテーマ（選択肢は theme.json 由来。公開サイトに反映） -->
-                  <div>
-                    <label class="gh-label">カラーテーマ</label>
-                    <div class="flex gap-2 flex-wrap">
-                      <template x-for="c in (activeThemeManifest?.colors || [])" :key="c.id">
-                        <button
-                          @click="siteConfig.theme = {...(siteConfig.theme||{}), id: c.id, primary: c.primary, secondary: c.secondary}"
-                          class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-all"
-                          :class="siteConfig.theme?.id === c.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-100)] font-semibold text-[var(--ds-primary-600)]' : 'border-[var(--ds-border-default)] text-[var(--ds-text-body)] hover:border-[var(--ds-border-strong)]'"
-                        >
-                          <span
-                            class="w-4 h-4 rounded-full"
-                            :style="'background:'+c.primary"
-                          ></span>
-                          <span x-text="c.label"></span>
-                        </button>
-                      </template>
-                    </div>
-                  </div>
-
-                  <!-- フォント（選択肢は theme.json 由来。family/cdn も保存して実際に反映） -->
-                  <div>
-                    <label class="gh-label">フォント</label>
-                    <div class="flex gap-2 flex-wrap">
-                      <template x-for="f in (activeThemeManifest?.fonts || [])" :key="f.id">
-                        <button
-                          @click="siteConfig.theme = {...(siteConfig.theme||{}), fontId: f.id, fontFamily: f.family, fontCdn: f.cdn || ''}"
-                          class="px-3 py-2 rounded-md border text-sm transition-all"
-                          :class="siteConfig.theme?.fontId === f.id ? 'border-[var(--ds-primary-600)] bg-[var(--ds-primary-600)]/5 font-semibold' : 'border-[var(--ds-border-default)] hover:border-[var(--ds-border-strong)]'"
-                        >
-                          <span x-text="f.label"></span>
-                        </button>
-                      </template>
-                    </div>
+                  <div
+                    class="rounded-md border border-[var(--ds-border-default)] bg-[var(--ds-bg-muted)] p-3 text-[12px] text-[var(--ds-text-muted)] leading-relaxed"
+                  >
+                    公開サイトの見た目（テーマ・カラー・フォント）は、左メニューの
+                    <button
+                      @click="loadThemesPage()"
+                      class="text-[var(--ds-primary-600)] font-medium hover:underline"
+                    >
+                      テーマ
+                    </button>
+                    から設定できます。
                   </div>
 
                   <div class="h-px bg-[var(--ds-border-default)] my-2"></div>

@@ -184,6 +184,8 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       hash = '#/menus'
     } else if (this.view === 'templates') {
       hash = '#/templates'
+    } else if (this.view === 'themes') {
+      hash = '#/themes'
     } else if (this.view === 'field-groups') {
       hash = '#/field-groups'
     } else if (this.view === 'taxonomy-categories') {
@@ -211,6 +213,8 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       this.view = 'site-info'
     } else if (parts[0] === 'templates') {
       await this.loadTemplateEditor()
+    } else if (parts[0] === 'themes') {
+      await this.loadThemesPage()
     } else if (parts[0] === 'field-groups') {
       await this.loadFieldGroupEditor()
     } else if (parts[0] === 'categories') {

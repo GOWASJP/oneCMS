@@ -93,6 +93,7 @@ export interface CmsComponent {
   loadActiveThemeManifest(): Promise<void>
   loadInstalledThemes(): Promise<void>
   switchTheme(id: string): Promise<void>
+  loadThemesPage(): Promise<void>
   // 拡張（Pro/プラグイン）が追加するサイドバー項目
   extensionNavItems: Array<{
     id: string

@@ -241,6 +241,15 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.showToast(`テーマを「${this.activeThemeManifest?.name || id}」に切り替えました`)
   },
 
+  /** テーマ設定ページ（外観）を開く。インストール済みテーマと manifest を読み込む。 */
+  async loadThemesPage() {
+    if (!this.fs) return
+    await this.loadInstalledThemes()
+    await this.loadActiveThemeManifest()
+    this.view = 'themes'
+    this.updateHash()
+  },
+
   // --- テンプレートエディタ ---
 
   async loadTemplateEditor() {

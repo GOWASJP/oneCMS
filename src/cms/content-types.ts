@@ -311,7 +311,8 @@ export const contentTypesMixin: Partial<CmsComponent> & ThisType<CmsComponent> =
 
   /** タイプ id → 日本語ラベル */
   fieldTypeLabel(id: string): string {
-    return this.fieldTypes.find((t) => t.id === id)?.label || id
+    if (!this.fieldTypes.find((t) => t.id === id)) return id
+    return this.t('fieldType.' + id)
   },
 
   /** タイプ id → Lucide アイコン名 */

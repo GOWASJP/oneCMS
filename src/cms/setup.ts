@@ -1,5 +1,6 @@
 import type { CmsComponent } from './types.ts'
 import { INITIAL_TEMPLATES } from '../initial-templates.ts'
+import { DEFAULT_ASSETS, fetchDefaultAssetBlob } from '../default-assets.ts'
 import { PATH_SITE_CONFIG, PATH_LANGUAGES, SCHEMA_VERSION } from '../constants.ts'
 import { readMeta, writeMeta, runMigrations, currentMeta } from '../migrations.ts'
 
@@ -137,6 +138,24 @@ export const setupMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     for (const [path, content] of Object.entries(INITIAL_TEMPLATES)) {
       await this.fs.writeText(path, content)
     }
+  },
+
+  /** 既定ブランド素材（ファビコン・ロゴ・OGP画像）を補完する。
+   *  - 未設定の項目だけ、同梱デフォルトを assets/files/ に書き出して siteConfig に設定
+   *  - 一度適用したら _brandingDefaultsApplied フラグで以後はスキップ（ユーザーが削除しても再追加しない）
+   *  - 既にユーザーが設定済みの項目は一切上書きしない
+   *  loadSiteData で siteConfig 読込直後・Blob URL 生成前に呼ぶこと。 */
+  async ensureDefaultBranding() {
+    if (!this.fs) return
+    if (this.siteConfig._brandingDefaultsApplied) return
+    for (const key of ['favicon', 'logo', 'ogImage'] as const) {
+      if (this.siteConfig[key]) continue
+      const def = DEFAULT_ASSETS[key]
+      await this.fs.writeBlob(def.path, await fetchDefaultAssetBlob(def))
+      this.siteConfig[key] = `/${def.path}`
+    }
+    this.siteConfig._brandingDefaultsApplied = true
+    await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
   },
 
   /** バンドル内のテンプレートで、ユーザーフォルダに存在しないファイルだけ補完。

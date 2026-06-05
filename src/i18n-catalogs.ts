@@ -77,6 +77,10 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'toast.logoRemoved': 'ロゴを削除しました',
     'toast.logoFailed': 'ロゴの処理に失敗しました',
     'toast.logoFormat': 'png / svg / webp / jpg 形式のみアップロードできます',
+    'toast.ogImageUploaded': 'OGP画像をアップロードしました',
+    'toast.ogImageRemoved': 'OGP画像を削除しました',
+    'toast.ogImageFailed': 'OGP画像の処理に失敗しました',
+    'toast.ogImageFormat': 'png / svg / webp / jpg 形式のみアップロードできます',
     'toast.exportFailed': '書き出しに失敗しました',
     'toast.exportSkipped': '前回から変更がないため、書き出しをスキップしました',
     'toast.noChangedFiles': 'ダウンロードする更新ファイルがありません',
@@ -134,6 +138,7 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'confirm.deleteNamed': '「{name}」を削除しますか？',
     'confirm.removeFavicon': 'ファビコンを削除しますか？',
     'confirm.removeLogo': 'ロゴを削除しますか？',
+    'confirm.removeOgImage': 'OGP画像を削除しますか？',
     'confirm.overwriteDefault': '「{name}」を新しい既定の内容で上書きします。よろしいですか？',
     'confirm.updateSafe': '未編集の {n} 件を新しい既定に更新します。よろしいですか？',
     // 共通ボタン
@@ -172,6 +177,8 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'media.uploadFavicon': 'ファビコンをアップロード',
     'media.changeLogo': 'ロゴを変更',
     'media.uploadLogo': 'ロゴをアップロード',
+    'media.changeOgImage': 'OGP画像を変更',
+    'media.uploadOgImage': 'OGP画像をアップロード',
     'common.untitled': '無題',
     'common.untitledParen': '（無題）',
     'fields.newGroup': '新規フィールドグループ',
@@ -244,6 +251,7 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'site.frontPage': 'フロントページ',
     'site.logoLabel': 'サイトロゴ',
     'site.faviconLabel': 'ファビコン',
+    'site.ogImageLabel': 'OGP画像（SNSシェア時のデフォルト）',
     'site.headScript': '<HEAD> 内スクリプト（全ページ共通）',
     'site.bodyScript': '</BODY> 直前スクリプト（全ページ共通）',
     'site.i18nSettings': '多言語設定',
@@ -404,6 +412,8 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
       'png / svg / webp / jpg 形式。ヘッダー等で表示されます（推奨: SVG または横長の透過 PNG）',
     'note.faviconFormat':
       'ico / png / svg / webp 形式（推奨: 32×32 または 64×64 の png、もしくは svg）',
+    'note.ogImageFormat':
+      'png / svg / webp / jpg 形式。SNSでシェアされた際の既定画像です（推奨: 1200×630 の png または jpg）',
     'note.templateDiff':
       '同梱の新しい既定テンプレートと、お使いのファイルの差分です。「未編集」は安全に取り込めます。「編集済み」は差分を確認のうえ更新してください（あなたの変更は上書きされます）。',
     'note.themeDevEdit':
@@ -489,6 +499,10 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'toast.logoRemoved': 'Logo removed',
     'toast.logoFailed': 'Failed to process the logo',
     'toast.logoFormat': 'Only png / svg / webp / jpg formats can be uploaded',
+    'toast.ogImageUploaded': 'OGP image uploaded',
+    'toast.ogImageRemoved': 'OGP image removed',
+    'toast.ogImageFailed': 'Failed to process the OGP image',
+    'toast.ogImageFormat': 'Only png / svg / webp / jpg formats can be uploaded',
     'toast.exportFailed': 'Export failed',
     'toast.exportSkipped': 'No changes since the last export, so it was skipped',
     'toast.noChangedFiles': 'No updated files to download',
@@ -541,6 +555,7 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'confirm.deleteNamed': 'Delete “{name}”?',
     'confirm.removeFavicon': 'Remove the favicon?',
     'confirm.removeLogo': 'Remove the logo?',
+    'confirm.removeOgImage': 'Remove the OGP image?',
     'confirm.overwriteDefault': 'Overwrite “{name}” with the new default content. Are you sure?',
     'confirm.updateSafe': 'Update {n} unedited file(s) to the new defaults. Are you sure?',
     'btn.cancel': 'Cancel',
@@ -574,6 +589,8 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'media.uploadFavicon': 'Upload favicon',
     'media.changeLogo': 'Change logo',
     'media.uploadLogo': 'Upload logo',
+    'media.changeOgImage': 'Change OGP image',
+    'media.uploadOgImage': 'Upload OGP image',
     'common.untitled': 'Untitled',
     'common.untitledParen': '(Untitled)',
     'fields.newGroup': 'New field group',
@@ -644,6 +661,7 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'site.frontPage': 'Front page',
     'site.logoLabel': 'Site logo',
     'site.faviconLabel': 'Favicon',
+    'site.ogImageLabel': 'OGP image (default for social shares)',
     'site.headScript': '<HEAD> script (all pages)',
     'site.bodyScript': 'Pre-</BODY> script (all pages)',
     'site.i18nSettings': 'Multilingual',
@@ -799,6 +817,8 @@ export const DEFAULT_UI_CATALOGS: Record<string, Record<string, string>> = {
     'note.logoFormat':
       'png / svg / webp / jpg. Shown in the header, etc. (recommended: SVG or a wide transparent PNG)',
     'note.faviconFormat': 'ico / png / svg / webp (recommended: a 32×32 or 64×64 png, or svg)',
+    'note.ogImageFormat':
+      'png / svg / webp / jpg. Default image when shared on social media (recommended: 1200×630 png or jpg)',
     'note.templateDiff':
       'Differences between the bundled new default templates and your files. “Unedited” can be applied safely. For “Edited”, review the diff before updating (your changes will be overwritten).',
     'note.themeDevEdit':

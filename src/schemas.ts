@@ -14,6 +14,10 @@ export const SiteConfigSchema = z.object({
   timezone: z.string().optional(),
   favicon: z.string().optional(),
   logo: z.string().optional(),
+  /** OGP 既定画像（ページに個別画像が無いときの og:image フォールバック） */
+  ogImage: z.string().optional(),
+  /** 既定ブランド素材（favicon/logo/ogImage）を一度適用済みかのフラグ。再追加を防ぐ。 */
+  _brandingDefaultsApplied: z.boolean().optional(),
   customHeadScript: z.string().optional(),
   customBodyScript: z.string().optional(),
   nav: z

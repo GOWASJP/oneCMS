@@ -301,11 +301,14 @@ export const coreMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
       url: '',
       description: '',
     }
+    // 既定ブランド素材（ファビコン・ロゴ・OGP）を未設定項目だけ補完（初回のみ）
+    await this.ensureDefaultBranding()
     // 管理画面のブラウザタブと設定プレビュー用にファビコン Blob URL を生成
     this.faviconBlobUrl = await loadFaviconBlobUrl(this.fs, this.siteConfig.favicon)
     applyFaviconLink(this.faviconBlobUrl)
-    // ロゴプレビュー用 Blob URL を生成
+    // ロゴ・OGPプレビュー用 Blob URL を生成
     this.logoBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.logo)
+    this.ogImageBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.ogImage)
     this.languages = (await this.fs.readJson<Languages>(PATH_LANGUAGES)) || this.languages
     this.currentLang = this.languages.default || 'ja'
     // 管理画面UIの翻訳カタログを用意し、選択中UI言語のカタログを読み込む

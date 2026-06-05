@@ -148,4 +148,55 @@ export const assetsMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     this.logoBlobUrl = ''
     this.showToast(this.t('toast.logoRemoved'))
   },
+
+  /** OGP画像アップロード: assets/files/ogp.<ext> に保存し、siteConfig.ogImage にパスを記録 */
+  async handleOgImageUpload(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file || !this.fs) return
+    const ext = detectAssetExt(
+      file,
+      {
+        'image/png': 'png',
+        'image/svg+xml': 'svg',
+        'image/webp': 'webp',
+        'image/jpeg': 'jpg',
+      },
+      /\.(png|svg|webp|jpe?g)$/i,
+    )
+    if (!ext) {
+      this.showToast(this.t('toast.ogImageFormat'), 5000)
+      input.value = ''
+      return
+    }
+    try {
+      // 古い拡張子の OGP が残っていたら削除（拡張子切替時）
+      await removeOldAssetFiles(this.fs, 'ogp', LOGO_EXTS, ext)
+      const buffer = await file.arrayBuffer()
+      const path = `${PATH_ASSETS_FILES}/ogp.${ext}`
+      await this.fs.writeBlob(path, new Blob([buffer]))
+      this.siteConfig.ogImage = `/${path}`
+      await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+      if (this.ogImageBlobUrl) URL.revokeObjectURL(this.ogImageBlobUrl)
+      this.ogImageBlobUrl = await loadAssetBlobUrl(this.fs, this.siteConfig.ogImage)
+      this.showToast(this.t('toast.ogImageUploaded'))
+    } catch (e) {
+      console.error('OGP画像アップロードエラー:', e)
+      this.showToast(this.t('toast.ogImageFailed'))
+    } finally {
+      input.value = ''
+    }
+  },
+
+  /** OGP画像削除 */
+  async removeOgImage() {
+    if (!this.fs) return
+    if (!(await this.showConfirm(this.t('confirm.removeOgImage')))) return
+    await removeOldAssetFiles(this.fs, 'ogp', LOGO_EXTS)
+    delete (this.siteConfig as { ogImage?: string }).ogImage
+    await this.fs.writeJson(PATH_SITE_CONFIG, this.siteConfig)
+    if (this.ogImageBlobUrl) URL.revokeObjectURL(this.ogImageBlobUrl)
+    this.ogImageBlobUrl = ''
+    this.showToast(this.t('toast.ogImageRemoved'))
+  },
 }

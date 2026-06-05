@@ -3573,6 +3573,57 @@
                     </div>
                   </div>
 
+                  <!-- OGP画像（SNSシェア時のデフォルト画像） -->
+                  <div>
+                    <label class="gh-label" x-text="t('site.ogImageLabel')"></label>
+                    <div class="flex items-start gap-4">
+                      <template x-if="ogImageBlobUrl">
+                        <div
+                          class="w-40 h-[84px] rounded-md border border-[var(--ds-border-default)] bg-[var(--ds-bg-surface)] flex items-center justify-center overflow-hidden p-2 shrink-0"
+                        >
+                          <img
+                            :src="ogImageBlobUrl"
+                            alt="ogp"
+                            class="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      </template>
+                      <template x-if="!ogImageBlobUrl">
+                        <div
+                          class="w-40 h-[84px] rounded-md border border-dashed border-[var(--ds-border-strong)] bg-[var(--ds-bg-muted)] flex items-center justify-center text-[var(--ds-text-placeholder)] shrink-0"
+                        >
+                          <i data-lucide="image-plus" class="w-6 h-6"></i>
+                        </div>
+                      </template>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <label class="ds-file-button">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                            <span
+                              x-text="siteConfig.ogImage ? t('media.changeOgImage') : t('media.uploadOgImage')"
+                            ></span>
+                            <input
+                              type="file"
+                              accept=".png,.svg,.webp,.jpg,.jpeg,image/png,image/svg+xml,image/webp,image/jpeg"
+                              @change="handleOgImageUpload($event)"
+                            />
+                          </label>
+                          <template x-if="siteConfig.ogImage">
+                            <button
+                              @click="removeOgImage()"
+                              class="text-[var(--ds-danger-600)] text-xs hover:underline whitespace-nowrap"
+                            >
+                              <span x-text="t('btn.delete')"></span>
+                            </button>
+                          </template>
+                        </div>
+                        <p class="text-[11px] text-[var(--ds-text-muted)] mt-2 leading-snug">
+                          <span x-text="t('note.ogImageFormat')"></span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div
                     class="rounded-md border border-[var(--ds-border-default)] bg-[var(--ds-bg-muted)] p-3 text-[12px] text-[var(--ds-text-muted)] leading-relaxed"
                   >

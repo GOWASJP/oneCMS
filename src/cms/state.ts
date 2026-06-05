@@ -185,6 +185,9 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
     // ロゴプレビュー用 Blob URL
     logoBlobUrl: '',
 
+    // OGP画像プレビュー用 Blob URL
+    ogImageBlobUrl: '',
+
     // テーマ（light / dark / system）
     themeMode: (localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode) || 'system',
 

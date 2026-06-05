@@ -72,6 +72,8 @@ export interface CmsComponent {
   faviconBlobUrl: string
   // ロゴプレビュー用 Blob URL
   logoBlobUrl: string
+  // OGP画像プレビュー用 Blob URL
+  ogImageBlobUrl: string
 
   // テーマ
   themeMode: ThemeMode
@@ -158,6 +160,7 @@ export interface CmsComponent {
   migrateTypeFieldGroupsToLocations(): Promise<void>
   ensureInitialData(): Promise<void>
   ensureMissingTemplates(): Promise<void>
+  ensureDefaultBranding(): Promise<void>
   createPage(): void
   confirmCreatePage(): void
   openHomePage(): Promise<void>
@@ -184,6 +187,8 @@ export interface CmsComponent {
   removeFavicon(): Promise<void>
   handleLogoUpload(event: Event): Promise<void>
   removeLogo(): Promise<void>
+  handleOgImageUpload(event: Event): Promise<void>
+  removeOgImage(): Promise<void>
   savePage(opts?: { silent?: boolean }): Promise<void>
   saveSiteConfig(): Promise<void>
   showRevisions(): Promise<void>

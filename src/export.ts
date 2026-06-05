@@ -185,6 +185,27 @@ export class Exporter {
       return new Handlebars.SafeString(`<link rel="icon"${typeAttr} href="${favicon}">`)
     })
 
+    // OGP画像タグ（og:image / twitter:image / twitter:card）。
+    // ページに画像があればそれを、無ければサイト既定の OGP を使う。site.url があれば絶対URL化。
+    hbs.registerHelper(
+      'ogImageTags',
+      function (page: Record<string, unknown>, site: Record<string, unknown>) {
+        const raw = (page?.image as string) || (site?.ogImage as string) || ''
+        if (!raw) {
+          return new Handlebars.SafeString('<meta name="twitter:card" content="summary">')
+        }
+        const base = site?.url ? String(site.url).replace(/\/$/, '') : ''
+        const url = /^https?:\/\//.test(raw) ? raw : `${base}${raw}`
+        return new Handlebars.SafeString(
+          [
+            `<meta property="og:image" content="${url}">`,
+            `<meta name="twitter:image" content="${url}">`,
+            '<meta name="twitter:card" content="summary_large_image">',
+          ].join('\n'),
+        )
+      },
+    )
+
     // hreflangタグ生成
     hbs.registerHelper(
       'hreflangTags',
@@ -313,8 +334,7 @@ export class Exporter {
           '{{faviconTag site}}',
           '<meta property="og:title" content="{{page.title}}">',
           '<meta property="og:type" content="website">',
-          '{{#if page.image}}<meta property="og:image" content="{{page.image}}">{{/if}}',
-          '<meta name="twitter:card" content="{{#if page.image}}summary_large_image{{else}}summary{{/if}}">',
+          '{{ogImageTags page site}}',
           '<meta name="twitter:title" content="{{page.title}}">',
           '{{#if site.url}}<link rel="canonical" href="{{site.url}}">{{/if}}',
           '{{breadcrumbJsonLd breadcrumb site.url}}',

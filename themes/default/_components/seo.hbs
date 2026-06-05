@@ -6,10 +6,9 @@
 {{faviconTag site}}
 <meta property="og:title" content="{{page.title}}">
 <meta property="og:type" content="website">
-{{#if page.image}}<meta property="og:image" content="{{page.image}}">{{/if}}
 {{#if site.url}}<meta property="og:url" content="{{site.url}}/{{pagePath}}">{{/if}}
 {{#if site.name}}<meta property="og:site_name" content="{{site.name}}">{{/if}}
-<meta name="twitter:card" content="{{#if page.image}}summary_large_image{{else}}summary{{/if}}">
+{{ogImageTags page site}}
 <meta name="twitter:title" content="{{page.title}}">
 {{#if site.url}}<link rel="canonical" href="{{site.url}}/{{pagePath}}">{{/if}}
 {{breadcrumbJsonLd breadcrumb site.url}}

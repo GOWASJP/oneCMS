@@ -106,6 +106,13 @@
     font-weight: 600;
     color: var(--color-ink);
   }
+  /* 見出し行の無い「項目名｜値」テーブルでも、先頭列を見出し風にして読みやすく */
+  .site-main table tr > td:first-child {
+    background: var(--color-bg-soft);
+    font-weight: 600;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
   figure {
     margin: 1.75em 0;
   }
@@ -271,6 +278,25 @@
   }
   .site-footer a {
     color: #e2e8f0;
+  }
+  .footer-nav {
+    display: flex;
+    gap: 1.5em;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.2em;
+    padding-bottom: 1.2em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .footer-nav a {
+    font-size: 0.9em;
+  }
+  .footer-nav a:hover {
+    color: #fff;
+  }
+  .footer-copy {
+    margin: 0;
+    color: #94a3b8;
   }
 
   /* ===== Content ===== */

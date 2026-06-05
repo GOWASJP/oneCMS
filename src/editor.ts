@@ -294,6 +294,17 @@ export function htmlToEditorJson(html: string): EditorData {
           },
         })
       }
+    } else if (tag === 'table') {
+      // <table> を Editor.js の table ブロックへ変換（行×セルの2次元配列）。
+      // 先頭行に th があれば見出し行として扱う。
+      const rows = Array.from(el.querySelectorAll('tr'))
+      const content = rows.map((tr) =>
+        Array.from(tr.querySelectorAll('th, td')).map((cell) => (cell as HTMLElement).innerHTML),
+      )
+      if (content.length) {
+        const withHeadings = rows[0]?.querySelector('th') !== null
+        blocks.push({ type: 'table', data: { withHeadings, content } })
+      }
     } else {
       // p, div, etc.
       blocks.push({ type: 'paragraph', data: { text: el.innerHTML } })

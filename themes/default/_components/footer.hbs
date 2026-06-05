@@ -1,5 +1,13 @@
 <footer class="site-footer">
   <div class="container">
-    <p>&copy; {{site.name}}. All rights reserved.</p>
+    {{!-- フッターメニュー（メニュー管理の「フッターメニュー」を出力。プライバシーポリシー等の導線） --}}
+    {{#if site.menus.footer}}
+    <nav class="footer-nav">
+      {{#each site.menus.footer}}
+      <a href="{{url}}">{{label}}</a>
+      {{/each}}
+    </nav>
+    {{/if}}
+    <p class="footer-copy">&copy; {{site.name}}. All rights reserved.</p>
   </div>
 </footer>

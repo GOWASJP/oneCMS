@@ -4,7 +4,7 @@
 
 // --- アプリケーション ---
 export const APP_NAME = 'ONE CMS'
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '0.9.0'
 
 // エディション。Pro ビルドは VITE_EDITION=pro でビルドして上書きする。
 export type Edition = 'free' | 'pro'

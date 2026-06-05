@@ -60,6 +60,11 @@ export interface CmsComponent {
   showRevisionPanel: boolean
   previewHtml: string
   showPreviewPanel: boolean
+  // サイト全体プレビュー（リンク回遊できる全画面プレビュー）
+  showSitePreview: boolean
+  sitePreviewSrcdoc: string
+  sitePreviewPath: string
+  sitePreviewLoading: boolean
 
   // 自動保存・離脱警告
   isDirty: boolean
@@ -199,6 +204,9 @@ export interface CmsComponent {
   showPreview(): Promise<void>
   openPreviewInNewTab(): Promise<void>
   closePanel(): void
+  openSitePreview(): Promise<void>
+  navigateSitePreview(href: string): void
+  closeSitePreview(): void
   exportSite(): Promise<void>
   downloadChangedZip(): Promise<void>
   switchLang(lang: string): Promise<void>

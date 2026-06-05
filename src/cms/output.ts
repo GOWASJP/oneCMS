@@ -9,10 +9,32 @@ import { PATH_TEMPLATES_BASELINE, PATH_EXPORT_SOURCE, PATH_CHANGED } from '../co
 import {
   injectTailwindRuntime,
   injectAlpineRuntime,
+  injectSitePreviewNav,
   revokePreviewBlobUrls,
   rewriteAssetUrlsToBlob,
   stripHtml,
 } from './dom.ts'
+
+/** サイト全体プレビューの「ファイルパス → 描画済みHTML」マップ（非リアクティブに保持）。
+ *  例キー: 'index.html', 'news/index.html', 'en/about/index.html', '404.html' */
+let sitePreviewPages = new Map<string, string>()
+/** message リスナーを二重登録しないためのフラグ */
+let sitePreviewListenerBound = false
+
+/** クリックされた href（相対/絶対）と現在のパスから、pages マップのキーへ正規化する。 */
+function resolveSitePreviewKey(href: string, currentPath: string): string {
+  let pathname: string
+  try {
+    pathname = new URL(href, `http://preview.local/${currentPath}`).pathname
+  } catch {
+    return ''
+  }
+  let key = pathname.replace(/^\//, '')
+  if (key === '') key = 'index.html'
+  else if (key.endsWith('/')) key += 'index.html'
+  else if (!key.endsWith('.html')) key += '/index.html'
+  return key
+}
 
 export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
   // --- リビジョン管理 ---
@@ -157,6 +179,80 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     window.open(url, '_blank')
     // 新規タブの読み込み完了後に解放（アセットのプレビューBlobは revoke しない）
     window.setTimeout(() => URL.revokeObjectURL(url), 60000)
+  },
+
+  /** サイト全体プレビューを開く。全ページをメモリ上に描画し、リンクで回遊できる全画面プレビューを表示。
+   *  サーバーやファイル操作は不要で、アプリ内で完結する（非エンジニア向け）。 */
+  async openSitePreview() {
+    if (!this.fs || !this.exporter || this.sitePreviewLoading) return
+    this.sitePreviewLoading = true
+    try {
+      // 書き出しと同じ描画結果（全ファイル）を取得。force=true で常に再生成。ディスクには書かない。
+      const files = await this.exporter.exportAll(
+        this.siteConfig,
+        this.languages,
+        this.pages,
+        this.contentTypes,
+        undefined,
+        true,
+      )
+      if (!files) {
+        this.showToast(this.t('toast.sitePreviewFailed'))
+        return
+      }
+      // プレビュー用アセット Blob を作り直す
+      revokePreviewBlobUrls()
+      const pages = new Map<string, string>()
+      for (const f of files) {
+        if (!f.path.endsWith('.html')) continue
+        // /assets/... を Blob URL に書き換え、Tailwind/Alpine ランタイムと回遊スクリプトを注入
+        let html = await rewriteAssetUrlsToBlob(f.content, this.fs)
+        html = injectTailwindRuntime(html)
+        html = injectAlpineRuntime(html)
+        html = injectSitePreviewNav(html)
+        pages.set(f.path, html)
+      }
+      sitePreviewPages = pages
+      // ホーム（無ければ先頭ページ）から開始
+      const homeHtml = pages.get('index.html') || pages.values().next().value || ''
+      this.sitePreviewPath = ''
+      this.sitePreviewSrcdoc = homeHtml
+      // 子フレームからのナビゲーション通知を受け取る（一度だけ登録）
+      if (!sitePreviewListenerBound) {
+        sitePreviewListenerBound = true
+        window.addEventListener('message', (e: MessageEvent) => {
+          const data = e.data as { __sitePreviewNav?: string } | null
+          if (data && typeof data.__sitePreviewNav === 'string') {
+            this.navigateSitePreview(data.__sitePreviewNav)
+          }
+        })
+      }
+      this.showSitePreview = true
+      this.showPreviewPanel = false
+      this.showRevisionPanel = false
+    } catch (e) {
+      console.error('サイトプレビューエラー:', e)
+      this.showToast(this.t('toast.sitePreviewFailed'))
+    } finally {
+      this.sitePreviewLoading = false
+    }
+  },
+
+  /** サイト全体プレビュー内のリンク遷移。href を解決して対象ページの HTML に差し替える。 */
+  navigateSitePreview(href: string) {
+    const key = resolveSitePreviewKey(href, this.sitePreviewPath)
+    const html = sitePreviewPages.get(key)
+    if (!html) return // プレビュー対象外（外部・未生成）の場合は何もしない
+    this.sitePreviewPath = key.replace(/[^/]*\.html$/, '')
+    this.sitePreviewSrcdoc = html
+  },
+
+  closeSitePreview() {
+    this.showSitePreview = false
+    this.sitePreviewSrcdoc = ''
+    this.sitePreviewPath = ''
+    sitePreviewPages = new Map()
+    revokePreviewBlobUrls()
   },
 
   // --- 書き出し（静的HTML生成 + 差分抽出） ---

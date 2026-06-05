@@ -168,6 +168,12 @@ export function createInitialState(): Partial<CmsComponent> & ThisType<CmsCompon
 
     showPreviewPanel: false,
 
+    // サイト全体プレビュー（リンク回遊できる全画面プレビュー）
+    showSitePreview: false,
+    sitePreviewSrcdoc: '',
+    sitePreviewPath: '',
+    sitePreviewLoading: false,
+
     // 自動保存・離脱警告
     isDirty: false,
 

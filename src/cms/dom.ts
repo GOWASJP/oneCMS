@@ -178,6 +178,26 @@ export async function rewriteAssetUrlsToBlob(html: string, fs: FileSystem | null
   return result
 }
 
+/** サイト全体プレビュー用：各ページに「リンククリックを親へ通知する」スクリプトを注入する。
+ *  内部リンクは既定動作を止めて親(window)へ postMessage し、親が iframe の中身を差し替える。
+ *  外部リンクは新規タブ、アンカー/mailto/tel はそのまま。 */
+export function injectSitePreviewNav(html: string): string {
+  const script = `<script>(function(){
+  document.addEventListener('click',function(e){
+    var a=e.target&&e.target.closest?e.target.closest('a'):null;
+    if(!a)return;
+    var href=a.getAttribute('href');
+    if(!href)return;
+    if(/^(https?:)?\\/\\//i.test(href)){a.target='_blank';return;}
+    if(/^(mailto:|tel:|#)/i.test(href))return;
+    e.preventDefault();
+    parent.postMessage({__sitePreviewNav:href},'*');
+  },true);
+})();</script>`
+  if (html.includes('</body>')) return html.replace('</body>', `${script}</body>`)
+  return html + script
+}
+
 export async function hasFile(dir: FileSystemDirectoryHandle, name: string): Promise<boolean> {
   try {
     await dir.getFileHandle(name)

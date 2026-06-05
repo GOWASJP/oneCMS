@@ -3032,6 +3032,21 @@
                     <p class="text-[12px] text-[var(--ds-text-muted)] mb-3">
                       <span x-text="t('theme.chooseNote')"></span>
                     </p>
+                    <div class="mb-4">
+                      <button
+                        @click="openSitePreview()"
+                        :disabled="sitePreviewLoading"
+                        class="gh-btn-green text-sm disabled:opacity-60"
+                      >
+                        <i data-lucide="monitor" class="w-4 h-4"></i>
+                        <span
+                          x-text="sitePreviewLoading ? t('sitePreview.loading') : t('btn.sitePreview')"
+                        ></span>
+                      </button>
+                      <span class="ml-2 text-[11px] text-[var(--ds-text-muted)]">
+                        <span x-text="t('sitePreview.hint')"></span>
+                      </span>
+                    </div>
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
                       <template x-for="theme in installedThemes" :key="theme.id">
                         <div
@@ -3990,6 +4005,50 @@
         </aside>
       </div>
     </template>
+
+    <!-- サイト全体プレビュー（リンクで回遊できる全画面プレビュー） -->
+    <div x-show="showSitePreview" x-cloak class="fixed inset-0 z-[60] bg-white flex flex-col">
+      <div
+        class="flex items-center justify-between px-4 h-12 border-b border-[var(--ds-border-default)] shrink-0 bg-[var(--ds-bg-surface)]"
+      >
+        <div class="flex items-center gap-2 min-w-0">
+          <i data-lucide="monitor" class="w-4 h-4 text-[var(--ds-primary-600)]"></i>
+          <span
+            class="text-sm font-semibold text-[var(--ds-text-heading)]"
+            x-text="t('sitePreview.title')"
+          ></span>
+          <span class="text-[11px] text-[var(--ds-text-muted)] truncate hidden sm:inline">
+            <span x-text="t('sitePreview.hint')"></span>
+          </span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button
+            @click="navigateSitePreview('/')"
+            class="inline-flex items-center gap-1 h-8 px-2 text-xs text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] rounded hover:bg-[var(--ds-bg-hover)]"
+          >
+            <i data-lucide="home" class="w-4 h-4"></i>
+          </button>
+          <button
+            @click="closeSitePreview()"
+            class="w-8 h-8 flex items-center justify-center text-[var(--ds-text-muted)] hover:text-[var(--ds-text-heading)] rounded hover:bg-[var(--ds-bg-hover)]"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <iframe
+        :srcdoc="sitePreviewSrcdoc"
+        class="flex-1 w-full border-0 bg-white"
+        sandbox="allow-same-origin allow-scripts allow-popups"
+      ></iframe>
+    </div>
 
     <!-- ページ作成モーダル -->
     <div

@@ -59,14 +59,15 @@ my-site/
 │   ├── taxonomies/         カテゴリ・タグ
 │   └── {type}/             投稿データ
 ├── themes/                 ← テーマ（差し替え可能なパッケージ）
-│   └── default/            既定テーマ
-│       ├── theme.json      テーマ定義（manifest）
-│       ├── _base.hbs       共通レイアウト
-│       ├── _components/    コンポーネント（14種）
-│       ├── home.hbs        フロントページ用
-│       ├── page.hbs        固定ページ用
-│       ├── list.hbs        一覧用
-│       └── detail.hbs      詳細用
+│   ├── default/            既定テーマ（作り込んだコーポレート向け）
+│   │   ├── theme.json      テーマ定義（manifest）
+│   │   ├── _base.hbs       共通レイアウト
+│   │   ├── _components/    コンポーネント（14種）
+│   │   ├── home.hbs        フロントページ用
+│   │   ├── page.hbs        固定ページ用
+│   │   ├── list.hbs        一覧用
+│   │   └── detail.hbs      詳細用
+│   └── skeleton/           最小構成テーマ（デザインを一から作る出発点）
 ├── assets/                 ← 画像・ファイル
 │   ├── images/             最適化済み（WebP）
 │   └── _originals/         元画像バックアップ
@@ -111,7 +112,7 @@ my-site/
 
 - Handlebars テンプレートで静的HTML生成
 - sitemap.xml / robots.txt 自動生成
-- OGP / Twitter Card / meta description 自動生成
+- OGP / Twitter Card / meta description 自動生成（ページに画像が無ければサイト既定の OGP 画像にフォールバック。サムネイルも同様）
 - JSON-LD 構造化データ（パンくず・記事）
 - SHA-256 ハッシュによる差分検出
 - 増分書き出し（前回から変更がなければ全体スキップ。テンプレート・コンテンツ・アセットの変更を検知）
@@ -129,9 +130,16 @@ my-site/
 ### テーマ・デザイン
 
 - テーマは差し替え可能なパッケージ（`themes/<id>/`）。既定テーマもその1つで特別扱いしない
+- 初期テーマを2種類同梱：**default**（作り込んだコーポレート向け）と **skeleton**（最小構成・デザインを一から作る出発点）
 - 管理画面の「テーマ」でインストール済みテーマを切り替え（サイト全体のデザインをテーマ単位で変更）
 - 「テーマ開発」ワークスペースで Handlebars テンプレートを直接編集（フィールド参照パネル付き・パネル幅はドラッグ調整可）
 - 14種の HBS コンポーネント（hero / accordion / tabs / timeline / card-list / gallery / nav / breadcrumb / pagination / header / footer / head / seo / styles）
+
+### プレビュー・セットアップ
+
+- **サイト全体プレビュー** — ボタン1つでサイト全ページをメモリ上に描画し、リンクをクリックして回遊できる全画面プレビュー（サーバー・ファイル操作不要）
+- ページ単体プレビュー（編集中ページを別タブでも表示可能）。書き出し結果と同じ描画
+- **サンプルサイトの挿入** — オーソドックスなコーポレートサイト一式（固定ページ・お知らせ・メニュー）をワンクリックで生成。凝ったレイアウトはテーマ、本文は編集可能なコンテンツとして分離
 
 ## 開発
 
@@ -159,7 +167,7 @@ npm run format       # Prettier フォーマット
 
 ```bash
 npm run build
-# → build/onecms.html（約1.6MB, gzip約570KB）
+# → build/onecms.html（約1.9MB, gzip約680KB）
 ```
 
 `vite-plugin-singlefile` で JS / CSS をすべてインライン化し、ビルド後に `build/index.html` を `build/onecms.html` へ自動リネームします。配布物はこの1ファイルのみです。
@@ -173,6 +181,7 @@ npm run build
 | Alpine.js                          | 管理画面 UI + 公開サイトへの同梱            |
 | Inter フォント（Latin サブセット） | 管理画面タイポグラフィ                      |
 | Handlebars / Zod / Lucide          | テンプレート生成・検証・アイコン            |
+| 既定テーマ2種 + 既定ブランド素材   | default / skeleton テーマ・favicon/logo/OGP |
 
 アイコンは使用分のみ tree-shake（`src/icons.ts`）し、フォントは Latin サブセットに限定済み。いずれもオフライン要件のため外部 CDN には依存しません。
 

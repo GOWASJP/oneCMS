@@ -78,6 +78,9 @@ export class Exporter {
   private themeDir = 'templates'
   /** 直近の exportAll で算出したソース署名（呼び出し側が成功後に保存する） */
   lastSourceHash = ''
+  /** latestItems ヘルパーが参照する「言語 → コンテンツタイプ → 公開アイテム」キャッシュ。
+   *  exportAll とプレビューの両方で populate するため、書き出しとプレビューの描画が一致する。 */
+  private latestItemsCache = new Map<string, Map<string, ContentData[]>>()
 
   constructor(fs: FileSystem) {
     this.fs = fs
@@ -215,6 +218,13 @@ export class Exporter {
       },
     )
 
+    // latestItems(typeId, count, lang): 指定コンテンツタイプの最新N件を返す。
+    // 参照元は this.latestItemsCache（exportAll / プレビューが事前に populate する）。
+    hbs.registerHelper('latestItems', (typeId: string, count: number, lang: string) => {
+      const items = this.latestItemsCache.get(lang)?.get(typeId) || []
+      return items.slice(0, count || items.length)
+    })
+
     // hreflangタグ生成
     hbs.registerHelper(
       'hreflangTags',
@@ -300,6 +310,58 @@ export class Exporter {
       if (u === '/') return p === '/'
       return p.startsWith(u)
     })
+  }
+
+  /** 言語別に「公開済み・日付降順・URL付与」のアイテムマップを構築（latestItems ヘルパー用）。 */
+  private buildLatestItemsCache(
+    contentTypes: ContentType[],
+    rawByLang: Map<string, Map<string, ContentData[]>>,
+    locales: ReadonlyArray<{ code: string }>,
+    defaultLang: string,
+  ): Map<string, Map<string, ContentData[]>> {
+    const cache = new Map<string, Map<string, ContentData[]>>()
+    for (const locale of locales) {
+      const lang = locale.code
+      const prefix = lang === defaultLang ? '' : `${lang}/`
+      const byType = new Map<string, ContentData[]>()
+      for (const type of contentTypes) {
+        const items = rawByLang.get(lang)?.get(type.id) || []
+        const published = items
+          .filter(isPublished)
+          .sort((a, b) =>
+            (b.publishedAt || b._meta?.createdAt || '').localeCompare(
+              a.publishedAt || a._meta?.createdAt || '',
+            ),
+          )
+          .map((item) => ({ ...item, url: `/${prefix}${type.slug}/${item.slug || item.id}/` }))
+        byType.set(type.id, published)
+      }
+      cache.set(lang, byType)
+    }
+    return cache
+  }
+
+  /** プレビュー用に latestItems キャッシュを用意する（指定言語のコンテンツを取得して構築）。
+   *  exportAll を経由しないプレビューでも home.hbs 等の latestItems を正しく描画するため。 */
+  async prepareLatestItems(
+    contentTypes: ContentType[],
+    locales: ReadonlyArray<{ code: string }>,
+    defaultLang: string,
+  ): Promise<void> {
+    const rawByLang = new Map<string, Map<string, ContentData[]>>()
+    for (const locale of locales) {
+      const byType = new Map<string, ContentData[]>()
+      for (const type of contentTypes) {
+        byType.set(type.id, await this.fs.readContentList(type.id, locale.code))
+      }
+      rawByLang.set(locale.code, byType)
+    }
+    this.latestItemsCache = this.buildLatestItemsCache(
+      contentTypes,
+      rawByLang,
+      locales,
+      defaultLang,
+    )
   }
 
   /** アクティブテーマのフォルダを解決（themes/<id>/。無ければ旧 templates/ にフォールバック）。
@@ -452,37 +514,12 @@ export class Exporter {
     // 進捗表示の総ステップ数（言語ごとに「固定ページ群」＋「各コンテンツタイプ」）
     const totalSteps = locales.length * (contentTypes.length + 1)
 
-    // コンテンツタイプのアイテムを言語別に事前取得（Handlebarsヘルパーから同期参照するため）
-    const typeItemsCache = new Map<string, Map<string, ContentData[]>>()
-    for (const locale of locales) {
-      const lang = locale.code
-      const prefix = lang === defaultLang ? '' : `${lang}/`
-      const byType = new Map<string, ContentData[]>()
-      for (const type of contentTypes) {
-        const items = rawItemsCache.get(lang)?.get(type.id) || []
-        const published = items
-          .filter(isPublished)
-          .sort((a, b) =>
-            (b.publishedAt || b._meta?.createdAt || '').localeCompare(
-              a.publishedAt || a._meta?.createdAt || '',
-            ),
-          )
-          .map((item) => ({
-            ...item,
-            url: `/${prefix}${type.slug}/${item.slug || item.id}/`,
-          }))
-        byType.set(type.id, published)
-      }
-      typeItemsCache.set(lang, byType)
-    }
-
-    // latestItems(typeId, count, lang) ヘルパー: 指定コンテンツタイプの最新N件を返す
-    this.handlebars.registerHelper(
-      'latestItems',
-      function (typeId: string, count: number, lang: string) {
-        const items = typeItemsCache.get(lang)?.get(typeId) || []
-        return items.slice(0, count || items.length)
-      },
+    // latestItems ヘルパー用に、コンテンツタイプの公開アイテムを言語別に事前構築
+    this.latestItemsCache = this.buildLatestItemsCache(
+      contentTypes,
+      rawItemsCache,
+      locales,
+      defaultLang,
     )
 
     // フロントページ（/ にマップする固定ページ id）。未設定サイトは 'index' にフォールバック。

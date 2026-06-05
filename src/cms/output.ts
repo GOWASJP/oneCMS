@@ -86,13 +86,26 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
     try {
       await this.exporter.resolveThemeDir(this.activeThemeId)
       await this.exporter.registerPartials()
-      const baseTemplate = await this.exporter.loadTemplate('_base')
-      const pageTemplate = await this.exporter.loadTemplate(this.currentType ? 'detail' : 'page')
 
       const pageData = { ...this.editData }
       const lang = this.currentLang
-
       const pageType = this.currentType ? 'detail' : 'page'
+      const isHome = !this.currentType && pageData.id === this.frontPageId
+
+      // latestItems ヘルパー用キャッシュを用意（home.hbs のお知らせ一覧などを書き出しと一致させる）
+      await this.exporter.prepareLatestItems(
+        this.contentTypes,
+        [{ code: lang }],
+        this.languages.default,
+      )
+
+      const baseTemplate = await this.exporter.loadTemplate('_base')
+      // フロントページは home.hbs があれば優先（書き出し＝サイト全体プレビューと同じ挙動）
+      let pageTemplate = await this.exporter.loadTemplate(this.currentType ? 'detail' : 'page')
+      if (isHome) {
+        const homeTemplate = await this.exporter.loadTemplate('home')
+        if (homeTemplate) pageTemplate = homeTemplate
+      }
       // プレビュー用に site にメニューデータを注入
       const menuData = (await this.fs?.readJson<MenuData>('content/menus.json')) || { menus: [] }
       const menus: Record<string, unknown[]> = {}
@@ -107,7 +120,6 @@ export const outputMixin: Partial<CmsComponent> & ThisType<CmsComponent> = {
 
       // pagePath を計算（カレント判定で使用）
       const pageSlug = pageData.slug || pageData.id || ''
-      const isHome = !this.currentType && pageData.id === this.frontPageId
       const previewPagePath = this.currentType
         ? `${this.currentType.slug}/${pageSlug}/`
         : isHome
